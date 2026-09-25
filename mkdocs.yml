@@ -1,0 +1,88 @@
+site_name: Learning Hub - Unity, Golang & Python
+site_description: Tài liệu tự học Unity, Golang và Python bằng tiếng Việt
+site_url: https://nguyenthanh1205tb.github.io/learning/
+repo_url: https://github.com/nguyenthanh1205tb/learning
+
+# Thư mục docs/ được tạo lúc build bằng cách copy README.md, unity/, golang/, python/
+# (xem .github/workflows/pages.yml) nên không cần di chuyển file bài học
+docs_dir: docs
+
+theme:
+  name: material
+  language: vi
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.footer
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: Chế độ tối
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Chế độ sáng
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.details
+
+nav:
+  - Trang chủ: README.md
+  - Unity:
+      - unity/README.md
+      - Bài 1 - C# cơ bản: unity/01-csharp-basics.md
+      - Bài 2 - Unity Fundamentals: unity/02-unity-fundamentals.md
+      - Bài 3 - Physics System: unity/03-physics-system.md
+      - Bài 4 - Scripting Essentials: unity/04-scripting-essentials.md
+      - Bài 5 - UI System: unity/05-ui-system.md
+      - Bài 6 - Audio & Animation: unity/06-audio-animation.md
+      - Bài 7 - Resources & Best Practices: unity/07-resources.md
+      - Bài 8 - Dự án cuối khóa: unity/08-final-project.md
+  - Golang:
+      - golang/README.md
+      - Bài 1 - Giới thiệu & Cài đặt: golang/01-introduction-setup.md
+      - Bài 2 - Biến & Kiểu dữ liệu: golang/02-variables-types.md
+      - Bài 3 - Cấu trúc điều khiển: golang/03-control-flow.md
+      - Bài 4 - Hàm: golang/04-functions.md
+      - Bài 5 - Array, Slice & Map: golang/05-arrays-slices-maps.md
+      - Bài 6 - Struct, Method & Interface: golang/06-structs-methods-interfaces.md
+      - Bài 7 - Xử lý lỗi: golang/07-error-handling.md
+      - Bài 8 - Concurrency: golang/08-concurrency.md
+      - Bài 9 - Package, Module & Testing: golang/09-packages-modules-testing.md
+      - Bài 10 - Dự án cuối khóa: golang/10-final-project.md
+  - Python:
+      - python/README.md
+      - Bài 1 - Giới thiệu & Cài đặt: python/01-introduction-setup.md
+      - Bài 2 - Biến & Kiểu dữ liệu: python/02-variables-types.md
+      - Bài 3 - Cấu trúc điều khiển: python/03-control-flow.md
+      - Bài 4 - Hàm: python/04-functions.md
+      - Bài 5 - Cấu trúc dữ liệu: python/05-data-structures.md
+      - Bài 6 - OOP: python/06-oop.md
+      - Bài 7 - Exceptions & File: python/07-exceptions-files.md
+      - Bài 8 - Modules & Packages: python/08-modules-packages.md
+      - Bài 9 - Python nâng cao: python/09-advanced-python.md
+      - Bài 10 - Dự án cuối khóa: python/10-final-project.md
