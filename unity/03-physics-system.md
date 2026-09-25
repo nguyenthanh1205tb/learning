@@ -10,6 +10,20 @@
 - Thành thạo Physics Materials và Collision Matrix
 - Sử dụng Joints cho physics interactions
 - Tối ưu performance với physics best practices
+- Biết Physics 2D (Rigidbody2D, Collider2D) cho game 2D
+
+> ⚠️ **Lưu ý phiên bản Unity**: Từ **Unity 6**, một số API vật lý được đổi tên. Tên cũ vẫn chạy (có cảnh báo *obsolete*, Unity có thể tự cập nhật), nhưng nên dùng tên mới:
+>
+> | Unity 2022 trở về trước | Unity 6+ |
+> | --- | --- |
+> | `rb.velocity` | `rb.linearVelocity` |
+> | `rb.drag` | `rb.linearDamping` |
+> | `rb.angularDrag` | `rb.angularDamping` |
+> | `PhysicMaterial`, `PhysicMaterialCombine` | `PhysicsMaterial`, `PhysicsMaterialCombine` |
+>
+> Các ví dụ trong bài giữ tên cũ để chạy được trên cả Unity 2022 LTS; nếu dùng Unity 6 hãy đổi sang tên mới. (Rigidbody2D cũng vậy: `velocity` → `linearVelocity`.)
+
+> 💡 **Về `Input` và `Update`/`FixedUpdate`**: Một số ví dụ dùng `Input.GetKey`, `Input.GetAxis` (đọc bàn phím) - sẽ học chi tiết ở **Bài 4**. Để đơn giản, vài ví dụ đặt code vật lý trong `Update()`; trong game thật, **code tác động Rigidbody (AddForce, velocity liên tục) nên đặt trong `FixedUpdate()`**, còn đọc input thì trong `Update()` (xem Bài 4, phần 1 và 3).
 
 ## 🏃‍♂️ 1. Rigidbody - Vật lý cơ bản
 
@@ -50,8 +64,8 @@ public class RigidbodyExample : MonoBehaviour
 
         // Cấu hình Rigidbody
         rb.mass = 2f;           // Khối lượng (kg) - ảnh hưởng đến inertia
-        rb.drag = 0.5f;         // Lực cản không khí (air resistance)
-        rb.angularDrag = 0.1f;  // Lực cản xoay (angular resistance)
+        rb.drag = 0.5f;         // Lực cản không khí (Unity 6: rb.linearDamping)
+        rb.angularDrag = 0.1f;  // Lực cản xoay (Unity 6: rb.angularDamping)
         rb.useGravity = true;   // Có chịu trọng lực không
 
         // Kiểm tra Rigidbody
@@ -93,6 +107,7 @@ public class RigidbodyProperties : MonoBehaviour
         rb.constraints = RigidbodyConstraints.FreezePositionY; // Không di chuyển Y
 
         // Freeze Rotation - Khóa xoay theo trục
+        // Lưu ý: phép gán này GHI ĐÈ dòng trên. Muốn khóa nhiều thứ thì kết hợp bằng |
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
 
         // Center of Mass - Trọng tâm
@@ -207,7 +222,7 @@ public class VelocityExample : MonoBehaviour
 
     void Update()
     {
-        // Đặt vận tốc trực tiếp
+        // Đặt vận tốc trực tiếp (Unity 6: rb.linearVelocity)
         if (Input.GetKey(KeyCode.W))
         {
             rb.velocity = new Vector3(0, rb.velocity.y, 5f);
@@ -292,10 +307,11 @@ public class ColliderProperties : MonoBehaviour
         collider.size = new Vector3(2, 1, 3);
         collider.center = new Vector3(0, 0.5f, 0);
 
-        // Vật liệu va chạm
+        // Vật liệu va chạm (Unity 6: PhysicsMaterial)
         PhysicMaterial bouncyMaterial = new PhysicMaterial("Bouncy");
         bouncyMaterial.bounciness = 0.8f;
-        bouncyMaterial.friction = 0.1f;
+        bouncyMaterial.dynamicFriction = 0.1f;
+        bouncyMaterial.staticFriction = 0.1f;
         collider.material = bouncyMaterial;
 
         // Trigger mode
@@ -311,6 +327,13 @@ public class ColliderProperties : MonoBehaviour
 
 **Trigger** = Chỉ phát hiện va chạm, không có physics interaction
 **Collision** = Có physics interaction (đẩy, bounce, friction)
+
+> ⚠️ **Điều kiện để các hàm `OnTrigger...`/`OnCollision...` được gọi**:
+>
+> - Cả hai object đều phải có **Collider**
+> - **Ít nhất một** trong hai object phải có **Rigidbody** (có thể là Kinematic)
+> - Trigger: ít nhất một Collider bật **Is Trigger**; Collision: cả hai Collider đều **không** bật Is Trigger
+> - Script chứa hàm phải gắn trên một trong hai GameObject đó
 
 ```csharp
 public class TriggerExample : MonoBehaviour
@@ -350,8 +373,8 @@ public class CollisionExample : MonoBehaviour
         Debug.Log($"Collision Enter: {collision.gameObject.name}");
         Debug.Log($"Impact Force: {collision.impulse.magnitude}");
 
-        // Lấy điểm va chạm
-        ContactPoint contact = collision.contacts[0];
+        // Lấy điểm va chạm (GetContact không tạo mảng mới như collision.contacts)
+        ContactPoint contact = collision.GetContact(0);
         Debug.Log($"Contact Point: {contact.point}");
         Debug.Log($"Contact Normal: {contact.normal}");
 
@@ -374,9 +397,12 @@ public class CollisionExample : MonoBehaviour
 
 ### Collision Matrix - Kiểm soát va chạm
 
-**Collision Matrix** cho phép bạn kiểm soát **object nào va chạm với object nào**.
+**Collision Matrix** cho phép bạn kiểm soát **object nào va chạm với object nào**. Cách thường dùng nhất là chỉnh trong Editor: **Edit → Project Settings → Physics → Layer Collision Matrix** (bỏ tick cặp layer không cần va chạm). Hoặc làm bằng code:
 
 ```csharp
+using System.Linq; // Cho .Select() và .ToArray() (LINQ - thư viện xử lý collection của C#)
+using UnityEngine;
+
 public class CollisionMatrixExample : MonoBehaviour
 {
     void Start()
@@ -550,7 +576,9 @@ public class PlayerMovement : MonoBehaviour
 {
     public float moveSpeed = 5f;
     public float jumpForce = 10f;
-    public float groundCheckDistance = 0.1f;
+    // Tia bắn từ TÂM nhân vật, nên phải dài hơn nửa chiều cao:
+    // Capsule cao 2 → nửa chiều cao = 1, cộng thêm 0.1 dư → 1.1
+    public float groundCheckDistance = 1.1f;
     public LayerMask groundLayerMask;
 
     private Rigidbody rb;
@@ -559,6 +587,8 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+        // Khóa xoay X/Z để nhân vật không bị ngã khi di chuyển
+        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
     }
 
     void Update()
@@ -589,7 +619,8 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 movement = new Vector3(horizontal, 0, vertical) * moveSpeed;
 
-        // Chỉ áp dụng lực theo trục X và Z, giữ nguyên Y
+        // Đặt vận tốc theo trục X và Z, giữ nguyên Y (để trọng lực/nhảy vẫn hoạt động)
+        // Unity 6: rb.linearVelocity
         rb.velocity = new Vector3(movement.x, rb.velocity.y, movement.z);
     }
 
@@ -724,10 +755,11 @@ public class PhysicsMaterialExample : MonoBehaviour
 {
     void Start()
     {
-        // Tạo vật liệu bouncy
+        // Tạo vật liệu bouncy (Unity 6: PhysicsMaterial / PhysicsMaterialCombine)
         PhysicMaterial bouncyMaterial = new PhysicMaterial("Bouncy");
         bouncyMaterial.bounciness = 0.8f;        // Độ đàn hồi (0-1)
-        bouncyMaterial.friction = 0.1f;          // Ma sát (0-1)
+        bouncyMaterial.dynamicFriction = 0.1f;   // Ma sát động (0-1)
+        bouncyMaterial.staticFriction = 0.1f;    // Ma sát tĩnh (0-1)
         bouncyMaterial.bounceCombine = PhysicMaterialCombine.Multiply;
         bouncyMaterial.frictionCombine = PhysicMaterialCombine.Minimum;
 
@@ -844,10 +876,11 @@ public class FixedJointExample : MonoBehaviour
         fixedJoint.breakForce = 1000f;  // Lực cần thiết để phá vỡ joint
         fixedJoint.breakTorque = 1000f; // Moment cần thiết để phá vỡ joint
 
-        // Event khi joint bị phá vỡ
-        fixedJoint.connectedBody = null; // Disconnect
+        // Muốn ngắt kết nối thủ công (vd: khi nhấn phím), dùng: Destroy(fixedJoint);
+        // KHÔNG gán connectedBody = null ở đây - nó sẽ ngắt kết nối ngay lập tức!
     }
 
+    // Unity tự gọi hàm này khi joint bị phá vỡ (lực vượt breakForce)
     void OnJointBreak(float breakForce)
     {
         Debug.Log($"Joint broke with force: {breakForce}");
@@ -939,21 +972,14 @@ public class ConfigurableJointExample : MonoBehaviour
         configJoint.angularYMotion = ConfigurableJointMotion.Locked;
         configJoint.angularZMotion = ConfigurableJointMotion.Free;
 
-        // Linear limits
-        configJoint.linearLimit = new SoftJointLimit()
-        {
-            limit = 5f,
-            spring = 10f,
-            damper = 1f
-        };
+        // Linear limits (SoftJointLimit chỉ có limit/bounciness/contactDistance)
+        configJoint.linearLimit = new SoftJointLimit() { limit = 5f };
+        // Độ "mềm" của giới hạn cấu hình riêng bằng SoftJointLimitSpring
+        configJoint.linearLimitSpring = new SoftJointLimitSpring() { spring = 10f, damper = 1f };
 
         // Angular limits
-        configJoint.angularYLimit = new SoftJointLimit()
-        {
-            limit = 45f,
-            spring = 10f,
-            damper = 1f
-        };
+        configJoint.angularYLimit = new SoftJointLimit() { limit = 45f };
+        configJoint.angularYZLimitSpring = new SoftJointLimitSpring() { spring = 10f, damper = 1f };
     }
 }
 ```
@@ -961,6 +987,10 @@ public class ConfigurableJointExample : MonoBehaviour
 ### Ví dụ thực tế: Rope System
 
 ```csharp
+using System.Collections.Generic;
+using UnityEngine;
+
+// GameObject gắn script này là điểm treo: cần có Rigidbody với Is Kinematic = true
 public class RopeSystem : MonoBehaviour
 {
     public GameObject ropeSegmentPrefab;
@@ -1004,13 +1034,9 @@ public class RopeSystem : MonoBehaviour
             joint.angularYMotion = ConfigurableJointMotion.Free;
             joint.angularZMotion = ConfigurableJointMotion.Free;
 
-            // Linear limit
-            joint.linearLimit = new SoftJointLimit()
-            {
-                limit = segmentLength,
-                spring = 100f,
-                damper = 10f
-            };
+            // Linear limit + độ mềm
+            joint.linearLimit = new SoftJointLimit() { limit = segmentLength };
+            joint.linearLimitSpring = new SoftJointLimitSpring() { spring = 100f, damper = 10f };
 
             ropeSegments.Add(segment);
             previousSegment = segment;
@@ -1084,15 +1110,17 @@ public class PhysicsSettings : MonoBehaviour
 ```csharp
 public class PhysicsMistakes : MonoBehaviour
 {
+    // (Các đoạn dưới chỉ để minh họa - trong game thật, code input đặt trong Update,
+    //  code vật lý đặt trong FixedUpdate)
     void Start()
     {
-        // ❌ MISTAKE 1: Sử dụng Transform.position trong FixedUpdate
+        // ❌ MISTAKE 1: Di chuyển object có Rigidbody bằng Transform.position
         // void FixedUpdate()
         // {
         //     transform.position += Vector3.forward * Time.deltaTime; // WRONG!
         // }
 
-        // ✅ CORRECT: Sử dụng Rigidbody.velocity
+        // ✅ CORRECT: Sử dụng Rigidbody.velocity (Unity 6: linearVelocity) hoặc rb.MovePosition
         Rigidbody rb = GetComponent<Rigidbody>();
         rb.velocity = Vector3.forward * 5f; // CORRECT!
 
@@ -1105,20 +1133,20 @@ public class PhysicsMistakes : MonoBehaviour
         //     }
         // }
 
-        // ✅ CORRECT: Kiểm tra isGrounded
-        bool isGrounded = Physics.Raycast(transform.position, Vector3.down, 0.1f);
+        // ✅ CORRECT: Kiểm tra isGrounded (1.1 = nửa chiều cao nhân vật + 0.1)
+        bool isGrounded = Physics.Raycast(transform.position, Vector3.down, 1.1f);
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             Jump(); // Chỉ jump khi grounded
         }
 
-        // ❌ MISTAKE 3: Sử dụng AddForce trong Update
+        // ❌ MISTAKE 3: Gọi AddForce liên tục trong Update
         // void Update()
         // {
-        //     rb.AddForce(Vector3.forward * 10f); // Tích lũy force!
+        //     rb.AddForce(Vector3.forward * 10f); // Lực phụ thuộc FPS - máy nhanh đẩy mạnh hơn!
         // }
 
-        // ✅ CORRECT: Sử dụng velocity hoặc FixedUpdate
+        // ✅ CORRECT: Gọi AddForce trong FixedUpdate, hoặc đặt velocity trực tiếp
         rb.velocity = new Vector3(Input.GetAxis("Horizontal") * 5f, rb.velocity.y, 0);
     }
 
@@ -1145,13 +1173,6 @@ public class PhysicsDebugging : MonoBehaviour
             Debug.Log($"Hit: {hit.collider.name} at {hit.point}");
         }
 
-        // Debug collider bounds
-        Collider collider = GetComponent<Collider>();
-        if (collider != null)
-        {
-            Debug.DrawWireCube(collider.bounds.center, collider.bounds.size, Color.blue);
-        }
-
         // Debug rigidbody info
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
@@ -1170,9 +1191,95 @@ public class PhysicsDebugging : MonoBehaviour
         // Draw detection range
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, 10f);
+
+        // Debug collider bounds (Debug không có DrawWireCube - phải dùng Gizmos)
+        Collider col = GetComponent<Collider>();
+        if (col != null)
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawWireCube(col.bounds.center, col.bounds.size);
+        }
     }
 }
 ```
+
+## 🟩 8. Physics 2D - Rigidbody2D và Collider2D
+
+### Physics 2D khác gì Physics 3D?
+
+Unity có **2 hệ thống vật lý riêng biệt**. Game 2D (platformer, top-down...) dùng bộ **2D**, và hai bộ **không tương tác với nhau** (Collider 3D không va chạm với Collider2D).
+
+| 3D | 2D |
+| --- | --- |
+| `Rigidbody` | `Rigidbody2D` |
+| `BoxCollider`, `SphereCollider`, `CapsuleCollider` | `BoxCollider2D`, `CircleCollider2D`, `CapsuleCollider2D` |
+| `OnCollisionEnter(Collision)` | `OnCollisionEnter2D(Collision2D)` |
+| `OnTriggerEnter(Collider)` | `OnTriggerEnter2D(Collider2D)` |
+| `Physics.Raycast` | `Physics2D.Raycast` |
+| `Physics.OverlapSphere` | `Physics2D.OverlapCircle` |
+| `ForceMode.Impulse` | `ForceMode2D.Impulse` |
+
+### Ví dụ: Nhân vật 2D đơn giản
+
+```csharp
+using UnityEngine;
+
+[RequireComponent(typeof(Rigidbody2D))] // Tự thêm Rigidbody2D nếu chưa có
+public class Player2D : MonoBehaviour
+{
+    public float moveSpeed = 5f;
+    public float jumpForce = 7f;
+    public Transform groundCheck;      // Empty object đặt ở chân nhân vật
+    public LayerMask groundLayer;
+
+    private Rigidbody2D rb;
+    private float moveX;
+    private bool jumpRequested;
+
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        rb.freezeRotation = true; // Không cho nhân vật 2D bị lật
+    }
+
+    void Update()
+    {
+        // Đọc input trong Update
+        moveX = Input.GetAxisRaw("Horizontal");
+
+        // Kiểm tra chạm đất bằng một vòng tròn nhỏ ở chân
+        bool isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
+
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        {
+            jumpRequested = true; // Ghi nhớ, xử lý trong FixedUpdate
+        }
+    }
+
+    void FixedUpdate()
+    {
+        // Giữ nguyên vận tốc Y (trọng lực) - Unity 6: rb.linearVelocity, bản cũ: rb.velocity
+        rb.linearVelocity = new Vector2(moveX * moveSpeed, rb.linearVelocity.y);
+
+        if (jumpRequested)
+        {
+            jumpRequested = false;
+            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+        }
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Coin"))
+        {
+            Debug.Log("Nhặt được xu!");
+            Destroy(other.gameObject);
+        }
+    }
+}
+```
+
+> 💡 Trong game 2D, trọng lực chỉnh bằng **Gravity Scale** của Rigidbody2D (mặc định 1). Bạn sẽ dùng lại toàn bộ kiến thức này trong **Bài 8 - Dự án cuối khóa**.
 
 ## 🎮 Bài tập thực hành nâng cao
 
@@ -1221,6 +1328,7 @@ Tạo physics simulation với:
 - [ ] Sử dụng Collision Matrix để kiểm soát va chạm
 - [ ] Implement Joints cho physics interactions
 - [ ] Áp dụng Physics Best Practices
+- [ ] Biết dùng Rigidbody2D, Collider2D và các hàm `...2D` cho game 2D
 - [ ] Hoàn thành ít nhất 2 bài tập nâng cao
 
 ## 🚀 Tiếp theo

@@ -13,6 +13,8 @@
 - Sử dụng Audio Mixing và Audio Groups
 - Tạo procedural animations với Animation Curves
 
+> 💡 Các ví dụ dùng Coroutine (`IEnumerator`) cần `using System.Collections;`, và AudioMixer cần `using UnityEngine.Audio;` ở đầu file (lược bỏ cho gọn). Một số ví dụ dùng Input Manager cũ (`Input.GetKey`) - xem lưu ý về Input System ở Bài 4.
+
 ## 🎵 1. Audio System chi tiết
 
 ### Audio Source - Nguồn phát âm thanh
@@ -199,16 +201,19 @@ public class AudioManager : MonoBehaviour
 
     public void PlaySFX(AudioClip clip)
     {
-        sfxSource.PlayOneShot(clip);
-
-        // Duck music when SFX plays
-        StartCoroutine(DuckMusic());
+        PlaySFX(clip, 1f);
     }
 
     public void PlaySFX(AudioClip clip, float volume)
     {
         sfxSource.PlayOneShot(clip, volume);
-        StartCoroutine(DuckMusic());
+
+        // Duck music when SFX plays - dừng lần duck trước để không chồng nhiều coroutine
+        if (sfxDuckCoroutine != null)
+        {
+            StopCoroutine(sfxDuckCoroutine);
+        }
+        sfxDuckCoroutine = StartCoroutine(DuckMusic());
     }
 
     public void PlayAmbient(AudioClip clip)
@@ -279,12 +284,15 @@ public class AudioManager : MonoBehaviour
 
     IEnumerator DuckMusic()
     {
-        float originalVolume = musicSource.volume;
-        musicSource.volume = originalVolume * 0.3f; // Duck to 30%
+        // Tính từ setting, KHÔNG lấy musicSource.volume hiện tại
+        // (nếu đang bị duck dở, volume hiện tại đã bị giảm → nhạc sẽ nhỏ dần mãi)
+        float normalVolume = musicVolume * masterVolume;
+        musicSource.volume = normalVolume * 0.3f; // Duck to 30%
 
         yield return new WaitForSeconds(0.5f);
 
-        musicSource.volume = originalVolume;
+        musicSource.volume = normalVolume;
+        sfxDuckCoroutine = null;
     }
 
     public void StopMusic()
@@ -304,12 +312,47 @@ public class AudioManager : MonoBehaviour
 }
 ```
 
+### Audio Mixer - Trộn và nhóm âm thanh
+
+**Audio Mixer** cho phép nhóm các âm thanh (Music, SFX, Ambient...) thành **Audio Groups**, chỉnh volume/hiệu ứng cho cả nhóm thay vì từng AudioSource.
+
+Các bước setup trong Editor:
+
+1. **Project → Create → Audio Mixer**, đặt tên `MainMixer`
+2. Mở cửa sổ **Window → Audio → Audio Mixer**, thêm các group con của `Master`: `Music`, `SFX`
+3. Kéo group vào ô **Output** của từng AudioSource (nhạc nền → `Music`, hiệu ứng → `SFX`)
+4. Chọn group `Music` → trong Inspector, chuột phải vào **Volume** → **Expose 'Volume' to script** → đổi tên tham số thành `MusicVolume` (trong tab **Exposed Parameters**). Làm tương tự với `SFXVolume`
+
+```csharp
+using UnityEngine;
+using UnityEngine.Audio; // Cho AudioMixer
+
+public class MixerVolume : MonoBehaviour
+{
+    public AudioMixer mixer;
+
+    // Gắn vào Slider.onValueChanged (giá trị slider 0.0001 → 1)
+    public void SetMusicVolume(float value)
+    {
+        // Mixer dùng decibel (dB): 0 dB = bình thường, -80 dB = im lặng
+        // Log10 chuyển giá trị tuyến tính (0-1) sang dB
+        mixer.SetFloat("MusicVolume", Mathf.Log10(Mathf.Max(value, 0.0001f)) * 20f);
+    }
+
+    public void SetSFXVolume(float value)
+    {
+        mixer.SetFloat("SFXVolume", Mathf.Log10(Mathf.Max(value, 0.0001f)) * 20f);
+    }
+}
+```
+
 ### 3D Audio chi tiết
 
 ```csharp
 public class Audio3D : MonoBehaviour
 {
-    public AudioSource audioSource;
+    public AudioSource audioSource;      // Phát âm thanh ambient (loop)
+    public AudioSource footstepSource;   // AudioSource riêng cho tiếng bước chân
     public AudioClip footstepSound;
     public AudioClip ambientSound;
 
@@ -340,9 +383,10 @@ public class Audio3D : MonoBehaviour
         // Phát âm thanh bước chân khi di chuyển
         if (Input.GetAxis("Horizontal") != 0 || Input.GetAxis("Vertical") != 0)
         {
-            if (!audioSource.isPlaying)
+            // Dùng source riêng: audioSource đang loop ambient nên isPlaying luôn true
+            if (!footstepSource.isPlaying)
             {
-                audioSource.PlayOneShot(footstepSound);
+                footstepSource.PlayOneShot(footstepSound);
             }
         }
     }
@@ -350,6 +394,16 @@ public class Audio3D : MonoBehaviour
 ```
 
 ## 🎭 2. Animation System chi tiết
+
+### Tạo Animation trong Editor (từng bước)
+
+Code chỉ **điều khiển** animation - bản thân animation được tạo trong Editor:
+
+1. **Tạo Animation Clip**: chọn GameObject → **Window → Animation → Animation** → **Create** → lưu `Idle.anim`. Bấm nút ghi (⏺), thay đổi Transform/Sprite ở các mốc thời gian để tạo keyframe. (Game 2D: kéo nhiều sprite vào cửa sổ Animation để tạo animation theo khung hình.)
+2. **Animator Controller**: khi tạo clip đầu tiên, Unity tự tạo Animator Controller và gắn component **Animator** vào GameObject. Mở **Window → Animation → Animator** để xem State Machine.
+3. **Parameters**: trong tab **Parameters** của cửa sổ Animator, thêm `Speed` (Float), `IsGrounded` (Bool), `Jump` (Trigger)...
+4. **Transitions**: chuột phải vào state → **Make Transition** sang state khác. Chọn mũi tên transition → thêm **Conditions** (vd: `Speed > 0.1`). Bỏ tick **Has Exit Time** nếu muốn chuyển ngay lập tức.
+5. **Animation Events**: trong cửa sổ Animation, đặt thanh thời gian tại frame muốn → bấm **Add Event** → chọn tên hàm public trên script cùng GameObject (vd `OnFootstep`).
 
 ### Animator Controller
 
@@ -399,8 +453,8 @@ public class AnimationController : MonoBehaviour
 
     bool CheckGrounded()
     {
-        // Raycast để kiểm tra ground
-        return Physics.Raycast(transform.position, Vector3.down, 0.1f);
+        // Raycast để kiểm tra ground (giả sử pivot của model nằm ở chân, nên bắn từ hơi cao hơn chân)
+        return Physics.Raycast(transform.position + Vector3.up * 0.05f, Vector3.down, 0.15f);
     }
 }
 ```
@@ -478,7 +532,8 @@ public class PlayerStateMachine : MonoBehaviour
     {
         animator = GetComponent<Animator>();
 
-        // Cache state hashes
+        // Cache state hashes - đây là hash của TÊN ĐẦY ĐỦ ("Layer.State")
+        // nên phải so sánh với stateInfo.fullPathHash (không phải shortNameHash)
         idleStateHash = Animator.StringToHash("Base Layer.Idle");
         walkStateHash = Animator.StringToHash("Base Layer.Walk");
         runStateHash = Animator.StringToHash("Base Layer.Run");
@@ -491,23 +546,23 @@ public class PlayerStateMachine : MonoBehaviour
         // Kiểm tra state hiện tại
         AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
 
-        if (stateInfo.shortNameHash == idleStateHash)
+        if (stateInfo.fullPathHash == idleStateHash)
         {
             Debug.Log("Player is idle");
         }
-        else if (stateInfo.shortNameHash == walkStateHash)
+        else if (stateInfo.fullPathHash == walkStateHash)
         {
             Debug.Log("Player is walking");
         }
-        else if (stateInfo.shortNameHash == runStateHash)
+        else if (stateInfo.fullPathHash == runStateHash)
         {
             Debug.Log("Player is running");
         }
-        else if (stateInfo.shortNameHash == jumpStateHash)
+        else if (stateInfo.fullPathHash == jumpStateHash)
         {
             Debug.Log("Player is jumping");
         }
-        else if (stateInfo.shortNameHash == attackStateHash)
+        else if (stateInfo.fullPathHash == attackStateHash)
         {
             Debug.Log("Player is attacking");
         }
@@ -634,7 +689,8 @@ public class AnimationCurves : MonoBehaviour
 
     void Start()
     {
-        // Tạo animation curves
+        // Tạo animation curves bằng code (sẽ GHI ĐÈ curve bạn chỉnh trong Inspector).
+        // Thực tế thường vẽ curve trực tiếp trong Inspector và bỏ phần code này.
         scaleCurve = new AnimationCurve();
         scaleCurve.AddKey(0f, 1f); // Start at scale 1
         scaleCurve.AddKey(0.5f, 2f); // Peak at scale 2
@@ -911,6 +967,8 @@ public class BlendModes : MonoBehaviour
 
 **IK (Inverse Kinematics)** cho phép bạn control **end effectors** (như tay, chân) và tự động tính toán joint positions.
 
+> ⚠️ `OnAnimatorIK` chỉ được gọi khi: model dùng rig **Humanoid**, và layer trong Animator Controller đã bật **IK Pass** (bấm biểu tượng ⚙ của layer).
+
 ### IK Setup
 
 ```csharp
@@ -1028,6 +1086,8 @@ public class IKWithRaycast : MonoBehaviour
     private Vector3 rightFootIKPosition;
     private Quaternion leftFootIKRotation;
     private Quaternion rightFootIKRotation;
+    private bool leftFootHit;   // Raycast có chạm đất không
+    private bool rightFootHit;
 
     void Start()
     {
@@ -1036,15 +1096,17 @@ public class IKWithRaycast : MonoBehaviour
 
     void OnAnimatorIK(int layerIndex)
     {
-        // Left Foot IK
-        animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, ikWeight);
-        animator.SetIKRotationWeight(AvatarIKGoal.LeftFoot, ikWeight);
+        // Left Foot IK - chỉ bật khi raycast chạm đất (nếu không, vị trí mặc định (0,0,0) kéo chân đi sai)
+        float leftWeight = leftFootHit ? ikWeight : 0f;
+        animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, leftWeight);
+        animator.SetIKRotationWeight(AvatarIKGoal.LeftFoot, leftWeight);
         animator.SetIKPosition(AvatarIKGoal.LeftFoot, leftFootIKPosition);
         animator.SetIKRotation(AvatarIKGoal.LeftFoot, leftFootIKRotation);
 
         // Right Foot IK
-        animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, ikWeight);
-        animator.SetIKRotationWeight(AvatarIKGoal.RightFoot, ikWeight);
+        float rightWeight = rightFootHit ? ikWeight : 0f;
+        animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, rightWeight);
+        animator.SetIKRotationWeight(AvatarIKGoal.RightFoot, rightWeight);
         animator.SetIKPosition(AvatarIKGoal.RightFoot, rightFootIKPosition);
         animator.SetIKRotation(AvatarIKGoal.RightFoot, rightFootIKRotation);
     }
@@ -1053,7 +1115,8 @@ public class IKWithRaycast : MonoBehaviour
     {
         // Raycast for left foot
         RaycastHit leftHit;
-        if (Physics.Raycast(transform.position + Vector3.left * 0.5f, Vector3.down, out leftHit, raycastDistance, groundLayerMask))
+        leftFootHit = Physics.Raycast(transform.position + Vector3.left * 0.5f, Vector3.down, out leftHit, raycastDistance, groundLayerMask);
+        if (leftFootHit)
         {
             leftFootIKPosition = leftHit.point;
             leftFootIKRotation = Quaternion.FromToRotation(Vector3.up, leftHit.normal);
@@ -1061,7 +1124,8 @@ public class IKWithRaycast : MonoBehaviour
 
         // Raycast for right foot
         RaycastHit rightHit;
-        if (Physics.Raycast(transform.position + Vector3.right * 0.5f, Vector3.down, out rightHit, raycastDistance, groundLayerMask))
+        rightFootHit = Physics.Raycast(transform.position + Vector3.right * 0.5f, Vector3.down, out rightHit, raycastDistance, groundLayerMask);
+        if (rightFootHit)
         {
             rightFootIKPosition = rightHit.point;
             rightFootIKRotation = Quaternion.FromToRotation(Vector3.up, rightHit.normal);

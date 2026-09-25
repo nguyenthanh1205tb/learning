@@ -35,23 +35,25 @@ Chào mừng bạn đến với khóa học Unity! Đây là tài liệu hướn
 
 ### Tuần 1: Nền tảng
 
-- [x] **Bài 1**: C# cơ bản cho Unity
-- [x] **Bài 2**: Unity Fundamentals (GameObject, Component, Transform)
-- [x] **Bài 3**: Physics System (Rigidbody, Collider)
+- [x] **Bài 1**: [C# cơ bản cho Unity](./01-csharp-basics.md)
+- [x] **Bài 2**: [Unity Fundamentals (GameObject, Component, Transform)](./02-unity-fundamentals.md)
+- [x] **Bài 3**: [Physics System (Rigidbody, Collider)](./03-physics-system.md)
 
 ### Tuần 2: Scripting & Logic
 
-- [x] **Bài 4**: Scripting Essentials (MonoBehaviour, Input, Movement)
-- [x] **Bài 5**: UI System (Canvas, Button, Text)
+- [x] **Bài 4**: [Scripting Essentials (MonoBehaviour, Input, Movement)](./04-scripting-essentials.md)
+- [x] **Bài 5**: [UI System (Canvas, Button, Text)](./05-ui-system.md)
 
 ### Tuần 3: Audio & Animation
 
-- [x] **Bài 6**: Audio & Animation (Audio Source, Animator)
+- [x] **Bài 6**: [Audio & Animation (Audio Source, Animator)](./06-audio-animation.md)
 
 ### Tuần 4: Tổng hợp & Nâng cao
 
-- [x] **Bài 7**: Resources & Best Practices
-- [ ] **Dự án cuối khóa**: Tạo game hoàn chỉnh
+- [x] **Bài 7**: [Resources & Best Practices](./07-resources.md)
+- [x] **Bài 8**: [Dự án cuối khóa - Game 2D "Coin Collector" hoàn chỉnh](./08-final-project.md)
+
+> 💡 Bài 1-2 có nhiều kiến thức C#/Unity nâng cao (Generics, Events, Object Pooling, ScriptableObject). Nếu thấy khó, hãy đọc phần cơ bản trước, làm tiếp các bài sau rồi quay lại - Bài 8 sẽ dùng lại hầu hết các kiến thức này trong một game thực tế.
 
 ## 🚀 Bắt đầu học
 
@@ -66,8 +68,11 @@ Chào mừng bạn đến với khóa học Unity! Đây là tài liệu hướn
 
 1. Mở Unity Hub
 2. Click "New Project"
-3. Chọn template "3D" hoặc "2D"
+3. Chọn template "3D" hoặc "2D" (Unity 6: **Universal 3D** hoặc **Universal 2D**)
 4. Đặt tên project và chọn thư mục lưu
+5. ⚠️ Khóa học dùng hệ thống Input cũ (`Input.GetKey`...). Với Unity 6, vào **Edit → Project Settings → Player → Other Settings → Active Input Handling** và chọn **Both**, nếu không sẽ gặp lỗi `InvalidOperationException` khi chạy (xem Bài 4)
+
+> 💡 **Phiên bản Unity**: Tài liệu viết cho Unity 6 LTS, và vẫn dùng được với Unity 2022 LTS. Một số API đổi tên ở Unity 6 (vd `Rigidbody.velocity` → `linearVelocity`, `FindObjectOfType` → `FindFirstObjectByType`) được ghi chú ngay trong bài.
 
 ### Bước 3: Làm quen với giao diện
 
@@ -107,7 +112,7 @@ Chào mừng bạn đến với khóa học Unity! Đây là tài liệu hướn
 ### Tuần 4
 
 - [ ] Hoàn thành Bài 7: Resources
-- [ ] Hoàn thành dự án cuối khóa
+- [ ] Hoàn thành Bài 8: Dự án cuối khóa
 - [ ] Upload game lên itch.io hoặc GameJolt
 
 ## 🎯 Tips học hiệu quả
@@ -122,7 +127,7 @@ Chào mừng bạn đến với khóa học Unity! Đây là tài liệu hướn
 
 - **Unity Documentation**: [docs.unity3d.com](https://docs.unity3d.com)
 - **Unity Learn**: [learn.unity.com](https://learn.unity.com)
-- **Unity Forum**: [forum.unity.com](https://forum.unity.com)
+- **Unity Discussions (Forum)**: [discussions.unity.com](https://discussions.unity.com)
 - **Cộng đồng Việt Nam**: Unity Việt Nam Facebook Group
 
 ---

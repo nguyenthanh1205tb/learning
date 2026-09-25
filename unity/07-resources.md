@@ -75,9 +75,9 @@ public class PlayerController : MonoBehaviour
 - `Transform` - Position, rotation, scale
 - `Profiler` - Performance analysis
 
-### Unity Forum
+### Unity Discussions (Forum)
 
-**Website**: [forum.unity.com](https://forum.unity.com)
+**Website**: [discussions.unity.com](https://discussions.unity.com) (forum.unity.com cũ đã chuyển sang đây từ 2024)
 
 #### Các section quan trọng:
 
@@ -127,11 +127,11 @@ public class PlayerController : MonoBehaviour
 
 #### Các loại assets miễn phí:
 
-- **Standard Assets** - Assets cơ bản của Unity
+- **Starter Assets (First/Third Person)** - Nhân vật điều khiển sẵn của Unity (thay cho Standard Assets cũ đã ngừng hỗ trợ)
 - **2D Game Kit** - Template game 2D
 - **3D Game Kit** - Template game 3D
-- **TextMeshPro** - Text rendering nâng cao
-- **Post Processing Stack** - Visual effects
+
+> 💡 **TextMeshPro** và **Post Processing** không cần tải từ Asset Store: TextMeshPro đã có sẵn trong Unity (Package Manager), còn project URP có sẵn Post-processing qua **Volume**.
 
 #### Assets trả phí chất lượng:
 
@@ -147,9 +147,9 @@ public class PlayerController : MonoBehaviour
 - **Pixabay** - Images và videos
 - **Unsplash** - High-quality photos
 
-### Paid Resources
+### Công cụ hỗ trợ (trả phí và miễn phí)
 
-- **Adobe Creative Suite** - Photoshop, Illustrator
+- **Adobe Creative Suite** - Photoshop, Illustrator (trả phí)
 - **Blender** - 3D modeling (miễn phí)
 - **Maya/3ds Max** - 3D modeling chuyên nghiệp
 - **Audacity** - Audio editing (miễn phí)
@@ -205,6 +205,10 @@ public class GameManager : MonoBehaviour
 ### Observer Pattern
 
 ```csharp
+using System;   // Action
+using TMPro;    // TextMeshProUGUI
+using UnityEngine;
+
 public class GameEvents : MonoBehaviour
 {
     public static GameEvents Instance { get; private set; }
@@ -300,6 +304,9 @@ public class UIManager : MonoBehaviour
 ### State Machine Pattern
 
 ```csharp
+using System;
+using UnityEngine;
+
 public enum GameState
 {
     MainMenu,
@@ -375,6 +382,10 @@ public class GameStateManager : MonoBehaviour
 ### Object Pool Pattern
 
 ```csharp
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
 public class ObjectPool<T> where T : Component
 {
     private Queue<T> pool = new Queue<T>();
@@ -452,7 +463,12 @@ public class BulletPool : MonoBehaviour
 
 ### Profiler Usage
 
+Mở Profiler: **Window → Analysis → Profiler**, bấm Play rồi xem biểu đồ CPU/Memory. Có thể đánh dấu đoạn code để thấy tên riêng trong Profiler:
+
 ```csharp
+using UnityEngine;
+using UnityEngine.Profiling; // Cho Profiler.BeginSample/EndSample
+
 public class PerformanceProfiler : MonoBehaviour
 {
     void Start()
@@ -569,9 +585,10 @@ public class MemoryOptimizer : MonoBehaviour
         // ✅ Tốt - Sử dụng cached references
         cachedTransform.position += Vector3.forward * Time.deltaTime;
 
-        // ✅ Tốt - Reuse collections
+        // ✅ Tốt - Reuse collections: Clear() thay vì tạo new List mỗi frame
         tempList.Clear();
-        tempList.AddRange(FindObjectsOfType<GameObject>());
+        // ... thêm các object cần xử lý trong frame này vào tempList
+        // ❌ KHÔNG gọi FindObjectsByType/GameObject.Find trong Update - rất chậm!
 
         // Process tempList
         foreach (GameObject obj in tempList)
@@ -603,6 +620,8 @@ public class MemoryOptimizer : MonoBehaviour
 
 ### Rendering Optimization
 
+> 💡 Unity **đã tự động** frustum culling (không vẽ object ngoài camera). Ví dụ dưới chỉ minh họa ý tưởng; trong thực tế nên dùng component **LOD Group** và **Occlusion Culling** có sẵn của Unity.
+
 ```csharp
 public class RenderingOptimizer : MonoBehaviour
 {
@@ -621,7 +640,7 @@ public class RenderingOptimizer : MonoBehaviour
         playerTransform = Camera.main.transform;
 
         // Find all renderers
-        renderers.AddRange(FindObjectsOfType<Renderer>());
+        renderers.AddRange(FindObjectsByType<Renderer>(FindObjectsSortMode.None));
     }
 
     void Update()
@@ -657,7 +676,11 @@ public class RenderingOptimizer : MonoBehaviour
             if (renderer != null)
             {
                 float distance = Vector3.Distance(playerTransform.position, renderer.transform.position);
-                renderer.enabled = distance <= cullDistance;
+                // Chỉ TẮT thêm các object quá xa - không bật lại object đã bị frustum culling tắt
+                if (distance > cullDistance)
+                {
+                    renderer.enabled = false;
+                }
             }
         }
     }
@@ -801,6 +824,7 @@ public class UnoptimizedScript : MonoBehaviour
 // ✅ Tốt - Quản lý memory
 public class MemoryManager : MonoBehaviour
 {
+    public GameObject prefab;
     private List<GameObject> spawnedObjects = new List<GameObject>();
 
     void SpawnObject()
@@ -827,13 +851,15 @@ public class MemoryManager : MonoBehaviour
     }
 }
 
-// ❌ Tồi - Memory leak
+// ❌ Tồi - Object tích tụ trong scene
 public class BadMemoryManager : MonoBehaviour
 {
+    public GameObject prefab;
+
     void SpawnObject()
     {
         GameObject obj = Instantiate(prefab);
-        // Không lưu reference - không thể cleanup
+        // Không lưu reference - không thể cleanup, object cứ tăng dần và chiếm bộ nhớ
     }
 }
 ```
@@ -1040,15 +1066,20 @@ Scene
 # Khởi tạo Git repository
 git init
 
-# Tạo .gitignore cho Unity
-echo "Library/
-Temp/
-Obj/
-Build/
-Builds/
+# Tạo .gitignore cho Unity (bản đầy đủ: github.com/github/gitignore/blob/main/Unity.gitignore)
+echo "[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
 Assets/AssetStoreTools*
 .vs/
 .vscode/
+*.csproj
+*.sln
 *.tmp
 *.user
 *.userprefs
@@ -1111,7 +1142,8 @@ git push origin v1.0.0
 ### Build Settings
 
 ```csharp
-// Build script
+// Build script - PHẢI đặt trong thư mục tên "Editor" (vd: Assets/Editor/BuildScript.cs),
+// nếu không, `using UnityEditor` sẽ làm lỗi khi build game
 using UnityEngine;
 using UnityEditor;
 
@@ -1130,7 +1162,7 @@ public class BuildScript
         BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions();
         buildPlayerOptions.scenes = new[] { "Assets/Scenes/MainMenu.unity", "Assets/Scenes/Game.unity" };
         buildPlayerOptions.locationPathName = "Builds/Windows/MyGame.exe";
-        buildPlayerOptions.target = BuildTarget.StandaloneWindows;
+        buildPlayerOptions.target = BuildTarget.StandaloneWindows64; // 64-bit
         buildPlayerOptions.options = BuildOptions.None;
 
         BuildPipeline.BuildPlayer(buildPlayerOptions);
@@ -1198,6 +1230,8 @@ public class BuildScript
 
 ### Dự án: Tạo game hoàn chỉnh
 
+> 👉 Hướng dẫn **từng bước** (kèm đầy đủ script) nằm ở [Bài 8 - Dự án cuối khóa](./08-final-project.md). Danh sách dưới đây là các tính năng bạn có thể mở rộng sau khi làm xong Bài 8.
+
 Tạo một game 2D platformer với các tính năng:
 
 1. **Player Controller**:
@@ -1255,7 +1289,7 @@ Tạo một game 2D platformer với các tính năng:
 
 ## 🎉 Chúc mừng!
 
-Bạn đã hoàn thành khóa học Unity cơ bản VÀ nâng cao! Bây giờ bạn có đủ kiến thức để:
+Bạn đã hoàn thành phần lý thuyết của khóa học Unity cơ bản VÀ nâng cao! Sau khi làm xong dự án cuối khóa (Bài 8), bạn sẽ có đủ kiến thức để:
 
 - Tạo game 2D/3D đơn giản
 - Hiểu cách Unity hoạt động
@@ -1282,5 +1316,7 @@ Bạn đã hoàn thành khóa học Unity cơ bản VÀ nâng cao! Bây giờ b�
 - **Tạo game hoàn chỉnh** - Từ ý tưởng đến release
 - **Sử dụng Design Patterns** - Code maintainable và scalable
 - **Optimize performance** - Game mượt mà và responsive
+
+**Bài tiếp theo**: [Dự án cuối khóa - Game 2D Coin Collector](./08-final-project.md)
 
 **Chúc bạn thành công trên con đường phát triển game! 🎮✨**

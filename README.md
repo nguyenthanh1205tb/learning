@@ -14,7 +14,7 @@ Tài liệu tự học bằng tiếng Việt, đi từ cơ bản đến thực h
 
 ```
 .
-├── unity/    # Khóa học Unity (7 bài)
+├── unity/    # Khóa học Unity (8 bài)
 ├── golang/   # Khóa học Golang (10 bài)
 └── python/   # Khóa học Python (10 bài)
 ```
