@@ -1,4 +1,4 @@
-# 📚 Learning Hub - Unity, Golang & Python
+# 📚 Learning Hub - Golang & Python
 
 Tài liệu tự học bằng tiếng Việt, đi từ cơ bản đến thực hành dự án.
 
@@ -8,17 +8,15 @@ Tài liệu tự học bằng tiếng Việt, đi từ cơ bản đến thực h
 
 | Khóa học | Mô tả | Bắt đầu |
 | --- | --- | --- |
-| 🎮 **Unity** | C# cho Unity, GameObject, Physics, UI, Audio & Animation | [unity/README.md](./unity/README.md) |
-| 🐹 **Golang** | Cú pháp Go, struct & interface, error handling, concurrency, REST API | [golang/README.md](./golang/README.md) |
-| 🐍 **Python** | Cú pháp Python, cấu trúc dữ liệu, OOP, file, module, advanced Python | [python/README.md](./python/README.md) |
+| 🐹 **Golang** | Cú pháp Go, struct & interface, error handling, concurrency, file/JSON/CLI, HTTP API, database, production | [golang/README.md](./golang/README.md) |
+| 🐍 **Python** | Cú pháp Python, OOP, file, module, advanced Python, FastAPI, database, xử lý dữ liệu, production | [python/README.md](./python/README.md) |
 
 ## 📁 Cấu trúc thư mục
 
 ```
 .
-├── unity/    # Khóa học Unity (8 bài)
-├── golang/   # Khóa học Golang (10 bài)
-└── python/   # Khóa học Python (10 bài)
+├── golang/   # Khóa học Golang (16 bài)
+└── python/   # Khóa học Python (16 bài)
 ```
 
 ## 🎯 Cách học
@@ -34,6 +32,6 @@ Website được build bằng [MkDocs Material](https://squidfunk.github.io/mkdo
 
 ```bash
 pip install -r requirements.txt
-mkdir -p docs && cp -r README.md unity golang python docs/
+mkdir -p docs && cp -r README.md golang python docs/
 mkdocs serve   # mở http://127.0.0.1:8000
 ```
