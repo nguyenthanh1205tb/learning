@@ -681,11 +681,11 @@ print([b - a for a, b in itertools.pairwise(prices)])
 | `json`, `csv` | Đọc/ghi dữ liệu ([Bài 7](./07-exceptions-files.md)) |
 | `collections` | `Counter`, `defaultdict`, `deque` ([Bài 5](./05-data-structures.md)) |
 | `functools` | `lru_cache`, `wraps`, `partial`, `reduce` ([Bài 9](./09-advanced-python.md)) |
-| `re` | Biểu thức chính quy (regex) - tìm kiếm mẫu văn bản |
+| `re` | Biểu thức chính quy (regex) - tìm kiếm mẫu văn bản ([Bài 11](./11-stdlib-practical.md)) |
 | `argparse` | Xây dựng ứng dụng dòng lệnh ([Bài 10](./10-final-project.md)) |
-| `logging` | Ghi log chuyên nghiệp thay cho `print` |
-| `sqlite3` | Cơ sở dữ liệu SQLite có sẵn |
-| `urllib.request` | Gửi HTTP request đơn giản |
+| `logging` | Ghi log chuyên nghiệp thay cho `print` ([Bài 11](./11-stdlib-practical.md)) |
+| `sqlite3` | Cơ sở dữ liệu SQLite có sẵn ([Bài 13](./13-databases.md)) |
+| `urllib.request` | Gửi HTTP request đơn giản (thực tế hay dùng `requests`/`httpx` - [Bài 12](./12-http-web-apis.md)) |
 | `shutil` | Copy, di chuyển, xóa cây thư mục, nén zip |
 | `time` | `time.sleep()`, đo thời gian với `time.perf_counter()` |
 | `unittest` | Viết test có sẵn ([Bài 10](./10-final-project.md)) |
@@ -991,6 +991,268 @@ print(round(total, 2))
 
 > ✅ **Lời khuyên**: Bật **Pylance** trong VS Code (`"python.analysis.typeCheckingMode": "basic"`) để thấy lỗi kiểu ngay khi gõ, và chạy `mypy` trong CI trước khi merge code.
 
+## 🌍 Ứng dụng thực tế
+
+### 1. Tổ chức package cho ứng dụng quản lý thư viện
+
+Khi ứng dụng lớn dần, câu hỏi quan trọng nhất là: **file nào được import file nào?** Quy tắc vàng: phụ thuộc chỉ đi **một chiều**, từ tầng "cao" (giao diện) xuống tầng "thấp" (dữ liệu). Nhờ vậy không bao giờ bị circular import.
+
+```text
+library_app/
+├── main.py                     ← Điểm khởi động: chỉ ghép các mảnh lại và in kết quả
+└── library/
+    ├── __init__.py             ← "Mặt tiền": export các tên quan trọng
+    ├── models.py               ← Dữ liệu (Book, Loan, Member) - không import ai trong package
+    ├── catalog.py              ← Quản lý đầu sách        (import models)
+    ├── loans.py                ← Mượn/trả, tính phạt      (import models, catalog)
+    └── utils/
+        ├── __init__.py
+        └── formatting.py       ← Hàm tiện ích chung, không biết gì về "thư viện"
+
+Chiều phụ thuộc:  main.py → library → loans → catalog → models
+                  main.py → library.utils (độc lập)
+```
+
+```python
+# file: library_app/library/models.py
+"""Dữ liệu cốt lõi - KHÔNG import module nào khác trong package (tránh import vòng)."""
+from dataclasses import dataclass, field
+from datetime import date
+
+
+@dataclass
+class Book:
+    isbn: str
+    title: str
+    author: str
+    copies: int = 1
+
+
+@dataclass
+class Loan:
+    isbn: str
+    member: str
+    borrowed_on: date
+    due_on: date
+    returned_on: date | None = None
+
+
+@dataclass
+class Member:
+    name: str
+    loans: list[Loan] = field(default_factory=list)
+```
+
+```python
+# file: library_app/library/catalog.py
+"""Quản lý đầu sách: thêm, tìm kiếm."""
+from .models import Book
+
+
+class Catalog:
+    def __init__(self) -> None:
+        self._books: dict[str, Book] = {}
+
+    def add(self, book: Book) -> None:
+        self._books[book.isbn] = book
+
+    def get(self, isbn: str) -> Book:
+        return self._books[isbn]
+
+    def search(self, keyword: str) -> list[Book]:
+        keyword = keyword.lower()
+        return [b for b in self._books.values()
+                if keyword in b.title.lower() or keyword in b.author.lower()]
+```
+
+```python
+# file: library_app/library/loans.py
+"""Nghiệp vụ mượn/trả sách và tính tiền phạt trả trễ."""
+from datetime import date, timedelta
+
+from .catalog import Catalog
+from .models import Loan, Member
+
+LOAN_DAYS = 14                  # Được mượn tối đa 14 ngày
+FINE_PER_DAY = 2_000            # Phạt 2.000đ cho mỗi ngày trễ
+MAX_BOOKS = 3                   # Mỗi thành viên mượn tối đa 3 cuốn cùng lúc
+
+
+def borrow(catalog: Catalog, member: Member, isbn: str, today: date) -> Loan:
+    book = catalog.get(isbn)
+    active = [loan for loan in member.loans if loan.returned_on is None]
+    if len(active) >= MAX_BOOKS:
+        raise ValueError(f"{member.name} đã mượn đủ {MAX_BOOKS} cuốn")
+    if book.copies == 0:
+        raise ValueError(f"'{book.title}' đã được mượn hết")
+    book.copies -= 1
+    loan = Loan(isbn, member.name, today, today + timedelta(days=LOAN_DAYS))
+    member.loans.append(loan)
+    return loan
+
+
+def give_back(catalog: Catalog, loan: Loan, today: date) -> int:
+    """Trả sách, trả về số tiền phạt (0 nếu đúng hạn)."""
+    loan.returned_on = today
+    catalog.get(loan.isbn).copies += 1
+    late_days = (today - loan.due_on).days
+    return max(late_days, 0) * FINE_PER_DAY
+```
+
+```python
+# file: library_app/library/utils/formatting.py
+"""Hàm định dạng dùng chung - không phụ thuộc gì vào nghiệp vụ thư viện."""
+from datetime import date
+
+
+def format_vnd(amount: int) -> str:
+    return f"{amount:,}đ".replace(",", ".")
+
+
+def format_date(d: date) -> str:
+    return d.strftime("%d/%m/%Y")
+```
+
+```python
+# file: library_app/library/utils/__init__.py
+from .formatting import format_date, format_vnd
+
+__all__ = ["format_date", "format_vnd"]
+```
+
+```python
+# file: library_app/library/__init__.py
+"""Package library - ứng dụng quản lý thư viện mini."""
+from .catalog import Catalog
+from .loans import borrow, give_back
+from .models import Book, Member
+
+__all__ = ["Book", "Catalog", "Member", "borrow", "give_back"]
+__version__ = "0.1.0"
+```
+
+```python
+# file: library_app/main.py
+from datetime import date
+
+from library import Book, Catalog, Member, __version__, borrow, give_back
+from library.utils import format_date, format_vnd
+
+catalog = Catalog()
+catalog.add(Book("978-604-1", "Dế Mèn phiêu lưu ký", "Tô Hoài", copies=2))
+catalog.add(Book("978-604-2", "Số đỏ", "Vũ Trọng Phụng"))
+catalog.add(Book("978-604-3", "Tắt đèn", "Ngô Tất Tố"))
+an, binh = Member("An"), Member("Bình")
+
+print(f"📚 Thư viện mini v{__version__}")
+print("Tìm 'tô':", [b.title for b in catalog.search("tô")])
+
+loan = borrow(catalog, an, "978-604-2", today=date(2026, 9, 1))
+print(f"{an.name} mượn '{catalog.get(loan.isbn).title}', hạn trả {format_date(loan.due_on)}")
+
+try:
+    borrow(catalog, binh, "978-604-2", today=date(2026, 9, 2))
+except ValueError as error:
+    print("⚠️", error)
+
+fine = give_back(catalog, loan, today=date(2026, 9, 20))
+print(f"{an.name} trả sách ngày 20/09/2026 → tiền phạt: {format_vnd(fine)}")
+print("Còn trong kho:", {b.title: b.copies for b in catalog.search("")})
+
+# Output:
+# 📚 Thư viện mini v0.1.0
+# Tìm 'tô': ['Dế Mèn phiêu lưu ký']
+# An mượn 'Số đỏ', hạn trả 15/09/2026
+# ⚠️ 'Số đỏ' đã được mượn hết
+# An trả sách ngày 20/09/2026 → tiền phạt: 10.000đ
+# Còn trong kho: {'Dế Mèn phiêu lưu ký': 2, 'Số đỏ': 1, 'Tắt đèn': 1}
+```
+
+Chạy từ thư mục `library_app/`:
+
+```bash
+python main.py
+```
+
+> 💡 **Hằng số nghiệp vụ** (`LOAN_DAYS`, `FINE_PER_DAY`, `MAX_BOOKS`) đặt ở đầu module `loans.py` - khi thư viện đổi quy định, bạn biết chính xác phải sửa ở đâu. Hàm `borrow`/`give_back` nhận `today` làm tham số thay vì tự gọi `date.today()` → test được với bất kỳ ngày nào ([Bài 10](./10-final-project.md) sẽ tận dụng kỹ thuật này).
+
+### 2. Module tiện ích dùng lại cho mọi project: tìm kiếm tiếng Việt không dấu
+
+Ở ví dụ trên, tìm `"tô"` **không** ra "Ngô Tất Tố" vì `"tô"` ≠ `"tố"`. Người dùng Việt thường gõ không dấu, nên ta viết một module tiện ích (dùng `unicodedata` của standard library) và **import lại ở nhiều nơi**:
+
+```python
+# file: vn_utils.py - Module tiện ích tiếng Việt, dùng lại được cho mọi project
+"""Các hàm xử lý chuỗi tiếng Việt: bỏ dấu, tạo slug."""
+import unicodedata
+
+
+def remove_accents(text: str) -> str:
+    """'Tiếng Việt' → 'Tieng Viet'. Dùng cho tìm kiếm không dấu, tên file..."""
+    # NFD tách "ế" thành "e" + dấu mũ + dấu sắc; sau đó bỏ các ký tự dấu (category "Mn")
+    decomposed = unicodedata.normalize("NFD", text)
+    no_marks = "".join(ch for ch in decomposed if unicodedata.category(ch) != "Mn")
+    return no_marks.replace("đ", "d").replace("Đ", "D")   # "đ" không tách được nên thay tay
+
+
+def slugify(text: str) -> str:
+    """'Học Python cơ bản!' → 'hoc-python-co-ban' (dùng cho URL, tên file)."""
+    cleaned = "".join(ch if ch.isalnum() else " " for ch in remove_accents(text).lower())
+    return "-".join(cleaned.split())
+
+
+if __name__ == "__main__":
+    # Chỉ chạy khi gõ "python vn_utils.py" - KHÔNG chạy khi module bị import
+    # assert điều_kiện: sai thì báo AssertionError (sẽ dùng nhiều khi viết test ở Bài 10)
+    assert remove_accents("Đường Nguyễn Huệ") == "Duong Nguyen Hue"
+    assert slugify("  Học Python cơ bản! ") == "hoc-python-co-ban"
+    print("✅ vn_utils: tất cả kiểm tra đều đạt")
+
+# Output: ✅ vn_utils: tất cả kiểm tra đều đạt
+```
+
+```python
+# file: search_books.py - Dùng lại vn_utils để tìm kiếm không dấu
+import sys
+
+from vn_utils import remove_accents, slugify
+
+BOOKS = ["Dế Mèn phiêu lưu ký", "Số đỏ", "Tắt đèn", "Tôi thấy hoa vàng trên cỏ xanh"]
+
+
+def search(keyword: str) -> list[str]:
+    key = remove_accents(keyword).lower()
+    return [b for b in BOOKS if key in remove_accents(b).lower()]
+
+
+def main() -> None:
+    # sys.argv[1:] là các tham số dòng lệnh; không có thì dùng từ khóa mẫu
+    keywords = sys.argv[1:] or ["den", "SO DO", "hoa vang"]
+    for keyword in keywords:
+        print(f"🔎 '{keyword}' → {search(keyword)}")
+    print("🔗 URL:", "/books/" + slugify(BOOKS[-1]))
+
+
+if __name__ == "__main__":
+    main()
+
+# Output:
+# 🔎 'den' → ['Tắt đèn']
+# 🔎 'SO DO' → ['Số đỏ']
+# 🔎 'hoa vang' → ['Tôi thấy hoa vàng trên cỏ xanh']
+# 🔗 URL: /books/toi-thay-hoa-vang-tren-co-xanh
+```
+
+Truyền từ khóa qua dòng lệnh (đọc bằng `sys.argv`):
+
+```bash
+python search_books.py "de men"
+# Output:
+# 🔎 'de men' → ['Dế Mèn phiêu lưu ký']
+# 🔗 URL: /books/toi-thay-hoa-vang-tren-co-xanh
+```
+
+> 🧠 Nhờ `if __name__ == "__main__":`, `vn_utils.py` vừa là **module** để import, vừa tự kiểm tra được khi chạy trực tiếp. Khi nhiều project cùng cần, bạn có thể đóng gói nó thành package riêng và `pip install` như thư viện thật.
+
 ## ⚠️ Lỗi thường gặp
 
 ### 1. Đặt tên file trùng module chuẩn
@@ -1144,6 +1406,7 @@ print(slugify("  Học lập trình Đà Nẵng!!! "))
 - [ ] Viết `requirements.txt` với ràng buộc phiên bản
 - [ ] Dùng `Optional`, `Union` / `X | None`, `list[int]`, `TypedDict`, `Callable`
 - [ ] Chạy `mypy` và hiểu thông báo lỗi
+- [ ] Tổ chức được package nhiều module với chiều phụ thuộc một chiều, viết module tiện ích dùng lại (phần 🌍 Ứng dụng thực tế)
 - [ ] Hoàn thành ít nhất 3 bài tập
 
 ## 🚀 Tiếp theo

@@ -1,10 +1,10 @@
-# 📚 Bài 10: Dự án cuối khóa - Ứng dụng Todo CLI
+# 📚 Bài 10: Dự án tổng hợp phần cơ bản - Ứng dụng Todo CLI
 
 ## 🎯 Mục tiêu bài học
 
 - Xây dựng **từ đầu đến cuối** một ứng dụng dòng lệnh (CLI) quản lý công việc
 - **Chỉ dùng standard library** - không cần cài thư viện nào để chạy ứng dụng
-- Áp dụng tổng hợp kiến thức cả khóa: hàm, dataclass, Enum, exceptions, pathlib, JSON, module/package, type hints, `match-case`
+- Áp dụng tổng hợp kiến thức Phần 1 (Bài 1-9): hàm, dataclass, Enum, exceptions, pathlib, JSON, module/package, type hints, `match-case`
 - Xây dựng giao diện dòng lệnh chuyên nghiệp với **argparse**
 - Tổ chức code theo **kiến trúc nhiều tầng** (models → storage → service → cli)
 - Viết **automated tests** với **pytest** (và phương án dự phòng bằng `unittest`)
@@ -1507,6 +1507,172 @@ FastAPI tự sinh trang tài liệu tương tác tại `/docs` - bạn có thể
 - 🔔 **Nhắc việc**: script chạy định kỳ (cron / Task Scheduler) in ra việc sắp tới hạn
 - 📦 **Đóng gói**: thêm `[project.scripts] todo = "todo.cli:main"` vào `pyproject.toml`, chạy `pip install -e .` → gõ `todo` ở bất kỳ đâu thay vì `python -m todo`
 
+## 🌍 Ứng dụng thực tế
+
+Kiến trúc và kỹ thuật trong dự án này **tái sử dụng được ngay** cho công việc thật. Hai gợi ý mở rộng dưới đây đều chạy độc lập, chỉ dùng standard library.
+
+### 1. Bản tin công việc buổi sáng (tự động hóa với cron)
+
+Một script nhỏ đọc **cùng file `tasks.json`** mà Todo CLI tạo ra, rồi in danh sách việc quá hạn / hôm nay / sắp tới. Đặt lịch chạy mỗi sáng, bạn có ngay "trợ lý nhắc việc":
+
+```python
+# daily_digest.py - Bản tin công việc buổi sáng, đọc CÙNG file tasks.json của Todo CLI
+# Chạy tự động mỗi sáng bằng cron (Linux/macOS) hoặc Task Scheduler (Windows):
+#   45 7 * * 1-5  cd ~/todo-cli && .venv/bin/python daily_digest.py >> digest.log
+import json
+from datetime import date, timedelta
+from pathlib import Path
+
+ICONS = {"high": "🔴", "medium": "🟡", "low": "🟢"}
+
+# Dữ liệu mẫu đúng định dạng Task.to_dict() của Bài 10 (thực tế: file do "python -m todo" tạo ra)
+Path("tasks.json").write_text(json.dumps([
+    {"id": 1, "title": "Nộp báo cáo tháng", "priority": "high", "done": False, "due": "2026-09-24", "tags": ["work"]},
+    {"id": 2, "title": "Họp team", "priority": "medium", "done": False, "due": "2026-09-25", "tags": ["work"]},
+    {"id": 3, "title": "Đóng tiền điện", "priority": "high", "done": False, "due": "2026-09-27", "tags": ["home"]},
+    {"id": 4, "title": "Học Bài 11", "priority": "low", "done": False, "due": None, "tags": ["study"]},
+    {"id": 5, "title": "Mua quà sinh nhật", "priority": "medium", "done": True, "due": "2026-09-20", "tags": []},
+], ensure_ascii=False), encoding="utf-8")
+
+
+def build_digest(tasks: list[dict], today: date, days_ahead: int = 3) -> list[str]:
+    """Chỉ trả về các dòng văn bản - không print → dễ test, dễ gửi qua email/Telegram sau này."""
+    groups = {"⏰ Quá hạn": [], "📌 Hôm nay": [], f"🗓️ Trong {days_ahead} ngày tới": []}
+    for task in tasks:
+        if task["done"] or not task["due"]:
+            continue
+        due = date.fromisoformat(task["due"])
+        line = f"  {ICONS[task['priority']]} #{task['id']} {task['title']} ({due:%d/%m})"
+        if due < today:
+            groups["⏰ Quá hạn"].append(line)
+        elif due == today:
+            groups["📌 Hôm nay"].append(line)
+        elif due <= today + timedelta(days=days_ahead):
+            groups[f"🗓️ Trong {days_ahead} ngày tới"].append(line)
+
+    lines = [f"☀️ Bản tin ngày {today:%d/%m/%Y}"]
+    for title, items in groups.items():
+        if items:
+            lines += [f"{title} ({len(items)}):", *items]
+    pending = sum(1 for t in tasks if not t["done"])
+    lines.append(f"Còn {pending} việc chưa xong. Chúc một ngày hiệu quả! 💪")
+    return lines
+
+
+tasks = json.loads(Path("tasks.json").read_text(encoding="utf-8"))
+print("\n".join(build_digest(tasks, today=date(2026, 9, 25))))   # Thực tế: today=date.today()
+
+# Output:
+# ☀️ Bản tin ngày 25/09/2026
+# ⏰ Quá hạn (1):
+#   🔴 #1 Nộp báo cáo tháng (24/09)
+# 📌 Hôm nay (1):
+#   🟡 #2 Họp team (25/09)
+# 🗓️ Trong 3 ngày tới (1):
+#   🔴 #3 Đóng tiền điện (27/09)
+# Còn 4 việc chưa xong. Chúc một ngày hiệu quả! 💪
+```
+
+> 💡 `build_digest` **trả về list dòng** thay vì `print` và nhận `today` làm tham số - đúng tinh thần "logic tách khỏi giao diện" của dự án. Muốn gửi bản tin qua email hay Telegram? Chỉ cần thay dòng `print` cuối cùng, còn logic giữ nguyên và đã test được.
+
+### 2. Tái sử dụng kiến trúc cho ứng dụng khác: Sổ chi tiêu cá nhân
+
+Kiến trúc **models → storage → service → cli** không chỉ dành cho Todo. Đây là bản rút gọn của một app quản lý chi tiêu - bạn sẽ phát triển nó thành **Expense Tracker API** hoàn chỉnh, sẵn sàng chạy production ở [Bài 16](./16-production-ready.md):
+
+```python
+# expense_tracker.py - Áp dụng ĐÚNG kiến trúc Todo CLI (models → storage → service) cho app khác
+# Gói gọn trong 1 file để dễ chạy thử; thực tế nên tách thành package như Bài 10.
+from collections import defaultdict
+from dataclasses import dataclass
+from datetime import date
+from enum import Enum
+
+
+# ---------- models ----------
+class Category(Enum):
+    FOOD = "Ăn uống"
+    TRANSPORT = "Đi lại"
+    BILLS = "Hóa đơn"
+    FUN = "Giải trí"
+
+
+@dataclass
+class Expense:
+    id: int
+    amount: int
+    category: Category
+    spent_on: date
+    note: str = ""
+
+    def __post_init__(self):
+        if self.amount <= 0:
+            raise ValueError("Số tiền phải lớn hơn 0")
+
+
+# ---------- storage: chỉ cần có load()/save() - giống Protocol Storage ở Bài 10 ----------
+class MemoryStorage:
+    """Lưu trong RAM - dùng cho test. Muốn lưu thật: viết JsonStorage/SqliteStorage cùng 2 method."""
+
+    def __init__(self):
+        self._data: list[Expense] = []
+
+    def load(self) -> list[Expense]:
+        return list(self._data)
+
+    def save(self, items: list[Expense]) -> None:
+        self._data = list(items)
+
+
+# ---------- service: logic nghiệp vụ, không print/input ----------
+class ExpenseService:
+    def __init__(self, storage, monthly_budget: int):
+        self.storage = storage
+        self.budget = monthly_budget
+        self.items = storage.load()
+
+    def add(self, amount: int, category: Category, spent_on: date, note: str = "") -> Expense:
+        expense = Expense(len(self.items) + 1, amount, category, spent_on, note)
+        self.items.append(expense)
+        self.storage.save(self.items)
+        return expense
+
+    def monthly_report(self, year: int, month: int) -> dict:
+        by_category = defaultdict(int)
+        for e in self.items:
+            if (e.spent_on.year, e.spent_on.month) == (year, month):
+                by_category[e.category] += e.amount
+        total = sum(by_category.values())
+        return {"total": total, "by_category": dict(by_category),
+                "remaining": self.budget - total, "over_budget": total > self.budget}
+
+
+# ---------- "cli": chỉ lo hiển thị ----------
+service = ExpenseService(MemoryStorage(), monthly_budget=5_000_000)
+service.add(1_250_000, Category.BILLS, date(2026, 9, 5), "Điện + nước")
+service.add(85_000, Category.FOOD, date(2026, 9, 6), "Phở")
+service.add(3_200_000, Category.FOOD, date(2026, 9, 20), "Đi chợ cả tháng")
+service.add(600_000, Category.FUN, date(2026, 9, 21), "Xem phim")
+service.add(150_000, Category.TRANSPORT, date(2026, 10, 1), "Grab - tháng sau, không tính")
+
+report = service.monthly_report(2026, 9)
+print("📒 Chi tiêu tháng 09/2026")
+for category, amount in sorted(report["by_category"].items(), key=lambda kv: -kv[1]):
+    print(f"  {category.value:<10}{amount:>12,}đ  {amount / report['total']:>5.1%}")
+print(f"  {'Tổng':<10}{report['total']:>12,}đ")
+status = "⚠️ VƯỢT ngân sách" if report["over_budget"] else "✅ Trong ngân sách"
+print(f"{status}: {report['remaining']:+,}đ")
+
+# Output:
+# 📒 Chi tiêu tháng 09/2026
+#   Ăn uống      3,285,000đ  64.0%
+#   Hóa đơn      1,250,000đ  24.3%
+#   Giải trí       600,000đ  11.7%
+#   Tổng         5,135,000đ
+# ⚠️ VƯỢT ngân sách: -135,000đ
+```
+
+> 🧠 `MemoryStorage` có cùng `load()`/`save()` như `JsonStorage` - `ExpenseService` không biết và không cần biết dữ liệu nằm ở đâu. Đây chính là lợi ích của `Protocol`/duck typing: test bằng storage trong RAM (nhanh, không đụng file thật), chạy thật bằng JSON hoặc SQLite.
+
 ## ⚠️ Lỗi thường gặp
 
 ### 1. `ModuleNotFoundError: No module named 'todo'`
@@ -1624,22 +1790,24 @@ Hoàn thiện `api.py` với đầy đủ các endpoint: `GET /tasks/{id}`, `PAT
 - [ ] Cài pytest trong venv, viết test với fixture, `parametrize`, `pytest.raises`, `capsys`
 - [ ] Chạy được test bằng `unittest` khi không có pytest
 - [ ] Tất cả test đều pass ✅
+- [ ] Chạy thử các gợi ý mở rộng trong phần 🌍 Ứng dụng thực tế (bản tin buổi sáng, sổ chi tiêu)
 - [ ] Hoàn thành ít nhất 2 bài tập mở rộng
 - [ ] Đưa project lên GitHub 🚀
 
 ## 🚀 Tiếp theo
 
-🎉 **Chúc mừng bạn đã hoàn thành khóa học Python!**
+🎉 **Chúc mừng bạn đã hoàn thành Phần 1: Cơ bản → Trung cấp!**
 
-Từ dòng `print("Hello World")` đầu tiên, giờ bạn đã tự xây dựng được một ứng dụng hoàn chỉnh có kiến trúc rõ ràng, xử lý lỗi cẩn thận và được kiểm thử tự động. Đó là nền tảng vững chắc cho bất kỳ hướng đi nào tiếp theo:
+Từ dòng `print("Hello World")` đầu tiên, giờ bạn đã tự xây dựng được một ứng dụng hoàn chỉnh có kiến trúc rõ ràng, xử lý lỗi cẩn thận và được kiểm thử tự động. Đó là nền tảng vững chắc để bước sang **Phần 2: Nâng cao & Thực tế** - nơi bạn học những thứ dùng hằng ngày khi đi làm:
 
-- 🌐 **Web Backend**: FastAPI, Django, Flask
-- 📊 **Data Science**: pandas, NumPy, Matplotlib, Jupyter
-- 🤖 **AI / Machine Learning**: scikit-learn, PyTorch
-- ⚙️ **Tự động hóa & DevOps**: script, Ansible, CI/CD
-- 🕷️ **Thu thập dữ liệu web**: httpx, BeautifulSoup, Playwright
+- 🧰 **Bài 11**: Thư viện chuẩn thực chiến - regex, datetime, logging, enum...
+- 🌐 **Bài 12**: HTTP & Web API - gọi API với requests/httpx, viết API với FastAPI
+- 🗄️ **Bài 13**: Làm việc với Database - sqlite3, SQLAlchemy
+- ⚡ **Bài 14**: Concurrency & Parallelism - threading, multiprocessing, asyncio
+- 📊 **Bài 15**: Xử lý dữ liệu & Tự động hóa - pandas, Excel, scraping
+- 🚀 **Bài 16**: Python trong Production - dự án tổng kết Expense Tracker API
 
-**Quay lại**: [Tổng quan khóa học](./README.md)
+**Bài tiếp theo**: [Bài 11: Thư viện chuẩn thực chiến](./11-stdlib-practical.md)
 
 ---
 

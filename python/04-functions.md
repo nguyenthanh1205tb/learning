@@ -948,6 +948,148 @@ print(fib_fast(100))
 
 > 💡 **Khi nào dùng đệ quy?** Khi dữ liệu/bài toán có cấu trúc **tự lặp lại** (cây thư mục, JSON lồng nhau, thuật toán chia để trị). Với bài toán tuyến tính đơn giản (tổng, giai thừa), **vòng lặp** thường nhanh và an toàn hơn trong Python.
 
+## 🌍 Ứng dụng thực tế
+
+Trong dự án thật, những đoạn logic như kiểm tra dữ liệu hay tính tiền luôn được đóng gói thành **hàm nhỏ, có docstring và type hints** để dùng lại ở nhiều nơi (form đăng ký, API, script import dữ liệu...).
+
+### 1. Kiểm tra mật khẩu và email khi đăng ký
+
+Thay vì trả về `True/False`, hàm `check_password` trả về **danh sách lỗi** - giao diện có thể hiện cho người dùng biết cần sửa gì:
+
+```python
+# validators.py - Kiểm tra mật khẩu và email khi đăng ký tài khoản
+SPECIAL_CHARS = "!@#$%^&*()-_=+[]{};:,.?/"
+
+
+def check_password(password: str, *, min_length: int = 8) -> list[str]:
+    """Trả về danh sách lỗi của mật khẩu. List rỗng = mật khẩu hợp lệ."""
+    errors = []
+    if len(password) < min_length:
+        errors.append(f"cần ít nhất {min_length} ký tự")
+    # any(...): True nếu có ÍT NHẤT 1 ký tự thỏa mãn (đã gặp ở Bài 3)
+    if not any(ch.isupper() for ch in password):
+        errors.append("cần ít nhất 1 chữ HOA")
+    if not any(ch.islower() for ch in password):
+        errors.append("cần ít nhất 1 chữ thường")
+    if not any(ch.isdigit() for ch in password):
+        errors.append("cần ít nhất 1 chữ số")
+    if not any(ch in SPECIAL_CHARS for ch in password):
+        errors.append("cần ít nhất 1 ký tự đặc biệt")
+    if " " in password:
+        errors.append("không được chứa khoảng trắng")
+    return errors
+
+
+def is_valid_email(email: str) -> bool:
+    """Kiểm tra email ở mức cơ bản (regex chuẩn hơn sẽ học ở Bài 11)."""
+    email = email.strip()
+    if email.count("@") != 1 or " " in email:
+        return False                            # Guard clause: loại sớm trường hợp sai
+    local, domain = email.split("@")
+    if not local or "." not in domain:
+        return False
+    return not domain.startswith(".") and not domain.endswith(".")
+
+
+def password_strength(password: str) -> str:
+    """Đánh giá độ mạnh - tái sử dụng check_password (hàm gọi hàm)."""
+    problems = len(check_password(password))
+    if problems == 0 and len(password) >= 12:
+        return "💪 Mạnh"
+    if problems <= 1:
+        return "👌 Khá"
+    return "⚠️ Yếu"
+
+
+for pwd in ["abc123", "Python2026", "Python@2026", "Ma Khau#1", "Hoc#Python2026"]:
+    errors = check_password(pwd)
+    status = "✅ OK" if not errors else "❌ " + "; ".join(errors)
+    print(f"{pwd!r:<17} {password_strength(pwd):<8} {status}")
+
+for email in ["an.nguyen@gmail.com", "binh@@mail.com", "chi@localhost", " dung@company.vn "]:
+    print(f"{email.strip():<20} → {'hợp lệ' if is_valid_email(email) else 'KHÔNG hợp lệ'}")
+
+# Output:
+# 'abc123'          ⚠️ Yếu   ❌ cần ít nhất 8 ký tự; cần ít nhất 1 chữ HOA; cần ít nhất 1 ký tự đặc biệt
+# 'Python2026'      👌 Khá    ❌ cần ít nhất 1 ký tự đặc biệt
+# 'Python@2026'     👌 Khá    ✅ OK
+# 'Ma Khau#1'       👌 Khá    ❌ không được chứa khoảng trắng
+# 'Hoc#Python2026'  💪 Mạnh   ✅ OK
+# an.nguyen@gmail.com  → hợp lệ
+# binh@@mail.com       → KHÔNG hợp lệ
+# chi@localhost        → KHÔNG hợp lệ
+# dung@company.vn      → hợp lệ
+```
+
+> 💡 Để ý `check_password(password, *, min_length=8)`: `min_length` là **keyword-only**, nên khi đổi chính sách chỉ cần gọi `check_password(pwd, min_length=12)` - code gọi hàm đọc là hiểu ngay.
+
+### 2. Tính lãi vay trả góp
+
+Mua xe, mua điện thoại trả góp: cùng "lãi 12%/năm" nhưng **cách tính khác nhau** thì số tiền phải trả chênh lệch rất nhiều. Viết hàm để tự kiểm chứng:
+
+```python
+# loan.py - Tính tiền trả góp khi vay mua xe / điện thoại
+# So sánh 2 cách tính lãi phổ biến ở Việt Nam:
+#   - Dư nợ giảm dần: lãi tính trên số tiền CÒN NỢ (ngân hàng thường dùng)
+#   - Lãi phẳng (flat): lãi tính trên số tiền vay BAN ĐẦU suốt kỳ hạn (hay gặp ở vay tiêu dùng)
+
+
+def monthly_payment(principal: float, annual_rate: float, months: int) -> float:
+    """Số tiền trả ĐỀU mỗi tháng theo dư nợ giảm dần (công thức niên kim).
+
+    annual_rate: lãi suất năm, ví dụ 0.12 = 12%/năm.
+    """
+    r = annual_rate / 12                    # Lãi suất tháng
+    if r == 0:
+        return principal / months           # Vay 0% lãi
+    return principal * r / (1 - (1 + r) ** -months)
+
+
+def flat_rate_payment(principal: float, annual_rate: float, months: int) -> float:
+    """Trả mỗi tháng theo lãi phẳng: gốc chia đều + lãi trên số vay ban đầu."""
+    return principal / months + principal * annual_rate / 12
+
+
+def schedule(principal: float, annual_rate: float, months: int, *, show: int = 3) -> list:
+    """Lịch trả nợ dư nợ giảm dần: list các tuple (tháng, gốc, lãi, còn nợ)."""
+    payment = monthly_payment(principal, annual_rate, months)
+    balance = principal
+    rows = []
+    for month in range(1, months + 1):
+        interest = balance * annual_rate / 12
+        principal_part = payment - interest
+        balance -= principal_part
+        rows.append((month, principal_part, interest, max(balance, 0)))
+    return rows[:show] + rows[-1:]          # Chỉ lấy vài tháng đầu + tháng cuối cho gọn
+
+
+loan, rate, term = 60_000_000, 0.12, 12     # Vay 60 triệu, 12%/năm, 12 tháng
+
+reducing = monthly_payment(loan, rate, term)
+flat = flat_rate_payment(loan, rate, term)
+print(f"Khoản vay: {loan:,.0f}đ | Lãi suất: {rate:.0%}/năm | Kỳ hạn: {term} tháng")
+print(f"Dư nợ giảm dần: {reducing:>12,.0f}đ/tháng → tổng lãi {reducing * term - loan:>10,.0f}đ")
+print(f"Lãi phẳng:      {flat:>12,.0f}đ/tháng → tổng lãi {flat * term - loan:>10,.0f}đ")
+print(f"👉 Cùng '12%/năm' nhưng lãi phẳng đắt hơn {(flat - reducing) * term:,.0f}đ!")
+
+print(f"{'Tháng':>5} {'Trả gốc':>12} {'Trả lãi':>10} {'Còn nợ':>12}")
+for month, principal_part, interest, balance in schedule(loan, rate, term):
+    print(f"{month:>5} {principal_part:>12,.0f} {interest:>10,.0f} {balance:>12,.0f}")
+
+# Output:
+# Khoản vay: 60,000,000đ | Lãi suất: 12%/năm | Kỳ hạn: 12 tháng
+# Dư nợ giảm dần:    5,330,927đ/tháng → tổng lãi  3,971,128đ
+# Lãi phẳng:         5,600,000đ/tháng → tổng lãi  7,200,000đ
+# 👉 Cùng '12%/năm' nhưng lãi phẳng đắt hơn 3,228,872đ!
+# Tháng      Trả gốc    Trả lãi       Còn nợ
+#     1    4,730,927    600,000   55,269,073
+#     2    4,778,237    552,691   50,490,836
+#     3    4,826,019    504,908   45,664,817
+#    12    5,278,146     52,781            0
+```
+
+> 🧠 **Công thức niên kim** `P × r / (1 - (1 + r)^-n)` cho số tiền trả **đều** mỗi tháng: tháng đầu trả lãi nhiều, gốc ít; càng về sau lãi càng giảm vì dư nợ đã giảm. Trước khi ký hợp đồng vay, hãy hỏi rõ lãi tính theo **dư nợ giảm dần** hay **lãi phẳng**!
+
 ## ⚠️ Lỗi thường gặp
 
 ### 1. Quên gọi hàm (thiếu dấu ngoặc)
@@ -1125,6 +1267,7 @@ print(count_files(tree))
 - [ ] Giải thích quy tắc LEGB, biết khi nào cần `global`/`nonlocal`
 - [ ] Viết docstring và type hints cho hàm
 - [ ] Viết hàm đệ quy có base case đúng
+- [ ] Viết được hàm kiểm tra dữ liệu trả về danh sách lỗi và hàm tính trả góp (phần 🌍 Ứng dụng thực tế)
 - [ ] Hoàn thành ít nhất 3 bài tập
 
 ## 🚀 Tiếp theo

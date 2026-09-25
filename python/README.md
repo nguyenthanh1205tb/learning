@@ -2,7 +2,12 @@
 
 ## 📋 Tổng quan
 
-Chào mừng bạn đến với khóa học Python! Đây là tài liệu hướng dẫn đầy đủ để học Python từ con số 0 đến mức có thể tự viết một ứng dụng hoàn chỉnh. Khóa học tập trung vào những kiến thức **quan trọng nhất**, được giải thích **thật chi tiết và dễ hiểu**, kèm rất nhiều ví dụ có thể chạy ngay.
+Chào mừng bạn đến với khóa học Python! Đây là tài liệu hướng dẫn đầy đủ để học Python từ con số 0 đến mức có thể **tự viết và đưa vào sử dụng** một ứng dụng thực tế. Khóa học tập trung vào những kiến thức **quan trọng nhất**, được giải thích **thật chi tiết và dễ hiểu**, kèm rất nhiều ví dụ có thể chạy ngay.
+
+Khóa học gồm **2 phần**:
+
+- **Phần 1: Cơ bản → Trung cấp** (Bài 1-10): nền tảng ngôn ngữ, OOP, xử lý lỗi, file, module, tính năng nâng cao và dự án tổng hợp Todo CLI
+- **Phần 2: Nâng cao & Thực tế** (Bài 11-16): những công cụ dùng hằng ngày khi đi làm - thư viện chuẩn, Web API, database, concurrency, xử lý dữ liệu, đưa ứng dụng lên production
 
 Python là một trong những ngôn ngữ lập trình phổ biến nhất thế giới vì cú pháp gần với tiếng Anh, dễ đọc, dễ viết và dùng được cho rất nhiều lĩnh vực: web, tự động hóa, phân tích dữ liệu, AI/Machine Learning, viết script, làm tool...
 
@@ -17,12 +22,19 @@ Python là một trong những ngôn ngữ lập trình phổ biến nhất th�
 - Tổ chức code thành module, package; dùng standard library hiệu quả
 - Làm quen với các tính năng nâng cao: generator, decorator, context manager, asyncio
 - Tự xây dựng một ứng dụng CLI hoàn chỉnh có test
+- Dùng thành thạo thư viện chuẩn trong công việc: regex, datetime, logging, enum...
+- Gọi và xây dựng Web API (requests/httpx, FastAPI), làm việc với database (sqlite3, SQLAlchemy)
+- Tăng tốc chương trình với concurrency & parallelism (threading, multiprocessing, asyncio)
+- Xử lý dữ liệu và tự động hóa công việc với pandas, Excel, web scraping
+- Đưa ứng dụng Python lên production qua dự án tổng kết Expense Tracker API
 
 ### ⏱️ Thời gian học tập
 
-- **Tổng thời gian**: 5-6 tuần (1-2 giờ/ngày)
+- **Tổng thời gian**: 7-8 tuần (1-2 giờ/ngày)
+  - Phần 1 (Bài 1-10): khoảng 5 tuần
+  - Phần 2 (Bài 11-16): khoảng 3 tuần
 - **Cấp độ**: Người mới bắt đầu (không cần biết lập trình trước)
-- **Kết quả**: Có thể tự viết script, tool dòng lệnh và đọc hiểu code Python của người khác
+- **Kết quả**: Có thể tự viết script, tool dòng lệnh, Web API có database, script xử lý dữ liệu/tự động hóa và đọc hiểu code Python của người khác
 
 ## 🛠️ Yêu cầu hệ thống
 
@@ -32,6 +44,7 @@ Python là một trong những ngôn ngữ lập trình phổ biến nhất th�
 2. **Visual Studio Code** - Editor miễn phí, nhẹ, rất phổ biến
 3. **Python extension** cho VS Code (của Microsoft) - hỗ trợ gợi ý code, debug, chọn interpreter
 4. **Terminal** - Command Prompt/PowerShell (Windows), Terminal (macOS/Linux)
+5. **Thư viện bên ngoài cho Phần 2** (cài bằng `pip` trong venv khi tới bài tương ứng): requests/httpx, FastAPI, SQLAlchemy, pandas... - mỗi bài sẽ hướng dẫn cài đặt cụ thể
 
 ### Tài nguyên học tập
 
@@ -41,30 +54,49 @@ Python là một trong những ngôn ngữ lập trình phổ biến nhất th�
 
 ## 📚 Cấu trúc khóa học
 
-### Tuần 1: Nền tảng
+### 🟢 Phần 1: Cơ bản → Trung cấp (Bài 1-10)
+
+#### Tuần 1: Nền tảng
 
 - [x] **Bài 1**: [Giới thiệu & Cài đặt môi trường](./01-introduction-setup.md) (Python là gì, REPL, venv, pip, PEP 8)
 - [x] **Bài 2**: [Biến & Kiểu dữ liệu](./02-variables-types.md) (int, float, str, bool, None, f-strings, slicing)
 - [x] **Bài 3**: [Cấu trúc điều khiển](./03-control-flow.md) (if/elif/else, for, while, match-case)
 
-### Tuần 2: Hàm & Cấu trúc dữ liệu
+#### Tuần 2: Hàm & Cấu trúc dữ liệu
 
 - [x] **Bài 4**: [Hàm (Functions)](./04-functions.md) (tham số, *args/**kwargs, lambda, scope, type hints, đệ quy)
 - [x] **Bài 5**: [Cấu trúc dữ liệu](./05-data-structures.md) (list, tuple, dict, set, comprehensions, collections)
 
-### Tuần 3: Lập trình hướng đối tượng & Xử lý lỗi
+#### Tuần 3: Lập trình hướng đối tượng & Xử lý lỗi
 
 - [x] **Bài 6**: [Lập trình hướng đối tượng (OOP)](./06-oop.md) (class, kế thừa, dunder methods, dataclass, abc)
 - [x] **Bài 7**: [Exceptions & Làm việc với File](./07-exceptions-files.md) (try/except, with, pathlib, json, csv)
 
-### Tuần 4: Tổ chức code & Python nâng cao
+#### Tuần 4: Tổ chức code & Python nâng cao
 
 - [x] **Bài 8**: [Modules & Packages](./08-modules-packages.md) (import, package, standard library, requirements.txt, typing, mypy)
 - [x] **Bài 9**: [Python nâng cao](./09-advanced-python.md) (iterator, generator, decorator, context manager, closure, asyncio)
 
-### Tuần 5: Dự án cuối khóa
+#### Tuần 5: Dự án tổng hợp Phần 1
 
-- [x] **Bài 10**: [Dự án cuối khóa - Ứng dụng Todo CLI](./10-final-project.md) (argparse, dataclass, JSON, module, pytest)
+- [x] **Bài 10**: [Dự án tổng hợp phần cơ bản - Ứng dụng Todo CLI](./10-final-project.md) (argparse, dataclass, JSON, module, pytest)
+
+### 🔵 Phần 2: Nâng cao & Thực tế (Bài 11-16)
+
+#### Tuần 6: Thư viện chuẩn & Web API
+
+- [x] **Bài 11**: [Thư viện chuẩn thực chiến](./11-stdlib-practical.md) (regex, datetime, logging, enum...)
+- [x] **Bài 12**: [HTTP & Web API](./12-http-web-apis.md) (requests/httpx, FastAPI)
+
+#### Tuần 7: Database & Concurrency
+
+- [x] **Bài 13**: [Làm việc với Database](./13-databases.md) (sqlite3, SQLAlchemy)
+- [x] **Bài 14**: [Concurrency & Parallelism](./14-concurrency-parallelism.md) (threading, multiprocessing, asyncio)
+
+#### Tuần 8: Dữ liệu, Tự động hóa & Production
+
+- [x] **Bài 15**: [Xử lý dữ liệu & Tự động hóa](./15-data-processing.md) (pandas, Excel, scraping)
+- [x] **Bài 16**: [Python trong Production](./16-production-ready.md) (dự án tổng kết: Expense Tracker API)
 
 ## 🚀 Bắt đầu học
 
@@ -121,42 +153,65 @@ python3 hello.py    # macOS / Linux
 1. **Đọc tuần tự**: Các bài học được sắp xếp theo độ khó tăng dần, bài sau dùng kiến thức bài trước
 2. **Gõ lại code**: Đừng copy-paste! Tự gõ giúp bạn nhớ cú pháp nhanh hơn rất nhiều
 3. **So sánh output**: Mỗi ví dụ đều có `# Output:` - chạy thử và so sánh kết quả
-4. **Đọc phần "⚠️ Lỗi thường gặp"**: Giúp bạn tránh những bẫy mà người mới hay mắc
-5. **Làm bài tập**: Mỗi bài có phần "🏋️ Bài tập" - hãy tự làm trước khi tìm lời giải
-6. **Đánh dấu checklist**: Cuối mỗi bài có "✅ Checklist" để tự kiểm tra
+4. **Xem phần "🌍 Ứng dụng thực tế"**: Mỗi bài có các chương trình hoàn chỉnh cho tình huống thật (tính tiền, xử lý dữ liệu, gọi API...) - chỉ dùng kiến thức đã học tới bài đó
+5. **Đọc phần "⚠️ Lỗi thường gặp"**: Giúp bạn tránh những bẫy mà người mới hay mắc
+6. **Làm bài tập**: Mỗi bài có phần "🏋️ Bài tập" - hãy tự làm trước khi tìm lời giải
+7. **Đánh dấu checklist**: Cuối mỗi bài có "✅ Checklist" để tự kiểm tra
 
 ## ✅ Checklist theo dõi tiến độ
 
-### Tuần 1
+### Phần 1: Cơ bản → Trung cấp
+
+#### Tuần 1
 
 - [ ] Hoàn thành Bài 1: Cài đặt Python, VS Code, tạo được venv
 - [ ] Hoàn thành Bài 2: Biến & Kiểu dữ liệu
 - [ ] Hoàn thành Bài 3: Cấu trúc điều khiển
 - [ ] Viết được chương trình "Đoán số" đơn giản
 
-### Tuần 2
+#### Tuần 2
 
 - [ ] Hoàn thành Bài 4: Hàm
 - [ ] Hoàn thành Bài 5: Cấu trúc dữ liệu
 - [ ] Viết được chương trình quản lý danh bạ bằng dict
 
-### Tuần 3
+#### Tuần 3
 
 - [ ] Hoàn thành Bài 6: OOP
 - [ ] Hoàn thành Bài 7: Exceptions & File
 - [ ] Viết được chương trình đọc/ghi dữ liệu JSON có xử lý lỗi
 
-### Tuần 4
+#### Tuần 4
 
 - [ ] Hoàn thành Bài 8: Modules & Packages
 - [ ] Hoàn thành Bài 9: Python nâng cao
 - [ ] Tự viết được một decorator và một generator
 
-### Tuần 5
+#### Tuần 5
 
 - [ ] Hoàn thành Bài 10: Dự án Todo CLI
 - [ ] Tất cả test đều pass ✅
 - [ ] Đưa code lên GitHub để làm portfolio
+
+### Phần 2: Nâng cao & Thực tế
+
+#### Tuần 6
+
+- [ ] Hoàn thành Bài 11: Thư viện chuẩn thực chiến
+- [ ] Hoàn thành Bài 12: HTTP & Web API
+- [ ] Gọi được một API thật và viết được một API nhỏ bằng FastAPI
+
+#### Tuần 7
+
+- [ ] Hoàn thành Bài 13: Làm việc với Database
+- [ ] Hoàn thành Bài 14: Concurrency & Parallelism
+- [ ] Chuyển Todo CLI sang lưu bằng database
+
+#### Tuần 8
+
+- [ ] Hoàn thành Bài 15: Xử lý dữ liệu & Tự động hóa
+- [ ] Hoàn thành Bài 16: Python trong Production
+- [ ] Hoàn thiện và triển khai dự án Expense Tracker API 🚀
 
 ## 🎯 Tips học hiệu quả
 
@@ -179,4 +234,4 @@ python3 hello.py    # macOS / Linux
 
 **Chúc bạn học tập vui vẻ và thành công! 🐍✨**
 
-> 💡 **Lưu ý**: Tài liệu này dùng **Python 3.11**. Hầu hết ví dụ chạy được từ Python 3.8 trở lên, riêng `match-case` cần 3.10+ và một số cú pháp type hints như `list[int]` cần 3.9+. Khi cần tra cứu chi tiết, hãy mở [docs.python.org](https://docs.python.org/3/).
+> 💡 **Lưu ý**: Tài liệu này dùng **Python 3.11**. Hầu hết ví dụ Phần 1 chạy được từ Python 3.8 trở lên, riêng `match-case` cần 3.10+ và một số cú pháp type hints như `list[int]` cần 3.9+. Phần 2 dùng thêm một số thư viện bên ngoài - hãy luôn cài chúng trong venv của project. Khi cần tra cứu chi tiết, hãy mở [docs.python.org](https://docs.python.org/3/).
