@@ -1020,6 +1020,211 @@ func main() {
 
 > 💡 **`iter` (Go 1.23)**: `maps.Keys` và `maps.Values` trả về một **iterator** (`iter.Seq`) chứ không phải slice. Bạn có thể `for k := range maps.Keys(m)` trực tiếp, hoặc gom thành slice bằng `slices.Collect(...)` / `slices.Sorted(...)`.
 
+## 🌍 Ứng dụng thực tế
+
+Slice và map là "xương sống" của gần như mọi chương trình xử lý dữ liệu. Ba ví dụ dưới đây mô phỏng các tính năng bạn thấy hằng ngày trên các trang thương mại điện tử.
+
+### Ví dụ 1: Giỏ hàng với kiểm tra tồn kho
+
+Giỏ hàng là một `map[string]int` (mã sản phẩm → số lượng). Chú ý cách dùng **comma-ok**, **zero value** của map và **sắp xếp key** để in ổn định:
+
+```go
+package main
+
+import (
+	"fmt"
+	"maps"
+	"slices"
+)
+
+// Danh mục sản phẩm: mã SKU → giá (đồng) và tồn kho
+var prices = map[string]int{"AO-01": 199_000, "QUAN-02": 349_000, "NON-03": 89_000}
+var stock = map[string]int{"AO-01": 10, "QUAN-02": 1, "NON-03": 5}
+
+// addToCart thêm sản phẩm vào giỏ (map SKU → số lượng), kiểm tra tồn tại và tồn kho
+func addToCart(cart map[string]int, sku string, qty int) error {
+	if _, ok := prices[sku]; !ok { // comma-ok: SKU có tồn tại không?
+		return fmt.Errorf("sản phẩm %s không tồn tại", sku)
+	}
+	if cart[sku]+qty > stock[sku] { // Key chưa có → cart[sku] = 0 (zero value)
+		return fmt.Errorf("%s chỉ còn %d sản phẩm", sku, stock[sku])
+	}
+	cart[sku] += qty
+	return nil
+}
+
+func main() {
+	cart := make(map[string]int) // ⚠️ Phải make trước khi ghi, nil map sẽ panic
+
+	actions := []struct { // struct ẩn danh gom 2 giá trị (struct: Bài 6)
+		sku string
+		qty int
+	}{
+		{"AO-01", 2}, {"QUAN-02", 1}, {"QUAN-02", 1}, {"NON-03", 1}, {"GIAY-99", 1}, {"AO-01", 1},
+	}
+	for _, a := range actions {
+		if err := addToCart(cart, a.sku, a.qty); err != nil {
+			fmt.Println("⚠️", err)
+		}
+	}
+
+	delete(cart, "QUAN-02") // Khách đổi ý, bỏ quần khỏi giỏ
+
+	// Map không có thứ tự → sắp xếp key để hóa đơn luôn in giống nhau
+	total := 0
+	fmt.Println("--- Giỏ hàng ---")
+	for _, sku := range slices.Sorted(maps.Keys(cart)) {
+		line := prices[sku] * cart[sku]
+		total += line
+		fmt.Printf("%-8s x%d = %7d đ\n", sku, cart[sku], line)
+	}
+	fmt.Printf("Tổng: %d mặt hàng, %d đ\n", len(cart), total)
+}
+
+// Output:
+// ⚠️ QUAN-02 chỉ còn 1 sản phẩm
+// ⚠️ sản phẩm GIAY-99 không tồn tại
+// --- Giỏ hàng ---
+// AO-01    x3 =  597000 đ
+// NON-03   x1 =   89000 đ
+// Tổng: 2 mặt hàng, 686000 đ
+```
+
+> 💡 `addToCart` nhận `cart` là map và **sửa trực tiếp** được, vì map (giống slice) chứa tham chiếu tới dữ liệu bên dưới - không cần trả map về như với `append`.
+
+### Ví dụ 2: Thống kê từ khóa tìm kiếm phổ biến
+
+Mục "Tìm kiếm phổ biến" trên các trang bán hàng được tính đúng theo cách này: **chuẩn hóa** từ khóa → **đếm** bằng map → **sắp xếp** theo số lượt → lấy top N:
+
+```go
+package main
+
+import (
+	"cmp"
+	"fmt"
+	"maps"
+	"slices"
+	"strings"
+)
+
+// normalize chuẩn hóa từ khóa: chữ thường, bỏ khoảng trắng thừa
+// "  iPhone   15 " và "iphone 15" phải được đếm là MỘT từ khóa
+func normalize(query string) string {
+	return strings.Join(strings.Fields(strings.ToLower(query)), " ")
+}
+
+func main() {
+	// Log tìm kiếm của người dùng trong 1 giờ (thực tế: hàng triệu dòng)
+	searchLog := []string{
+		"iPhone 15", "tai nghe", "  iphone   15 ", "ốp lưng", "Tai Nghe",
+		"sạc dự phòng", "IPHONE 15", "tai nghe", "", "ốp lưng", "laptop",
+	}
+
+	counts := make(map[string]int)
+	for _, q := range searchLog {
+		key := normalize(q)
+		if key == "" {
+			continue // Bỏ qua tìm kiếm rỗng
+		}
+		counts[key]++ // Key chưa có → bắt đầu từ zero value 0
+	}
+
+	// Lấy danh sách từ khóa rồi sắp xếp: lượt tìm GIẢM dần,
+	// bằng nhau thì theo bảng chữ cái để kết quả ổn định
+	keywords := slices.Collect(maps.Keys(counts))
+	slices.SortFunc(keywords, func(a, b string) int {
+		if c := cmp.Compare(counts[b], counts[a]); c != 0 {
+			return c
+		}
+		return strings.Compare(a, b)
+	})
+
+	top := keywords[:min(3, len(keywords))] // Không bao giờ cắt quá độ dài
+	fmt.Printf("%d lượt tìm, %d từ khóa khác nhau\n", len(searchLog), len(counts))
+	fmt.Println("🔥 Top tìm kiếm:")
+	for i, k := range top {
+		fmt.Printf("%d. %-10s %d lượt\n", i+1, k, counts[k])
+	}
+}
+
+// Output:
+// 11 lượt tìm, 5 từ khóa khác nhau
+// 🔥 Top tìm kiếm:
+// 1. iphone 15  3 lượt
+// 2. tai nghe   3 lượt
+// 3. ốp lưng    2 lượt
+```
+
+> 💡 Hàm so sánh có **tiêu chí phụ** (bằng lượt thì xếp theo chữ cái) giúp kết quả **luôn giống nhau** giữa các lần chạy. Không có nó, "iphone 15" và "tai nghe" (cùng 3 lượt) có thể đổi chỗ ngẫu nhiên vì thứ tự map là ngẫu nhiên.
+
+### Ví dụ 3: Gom nhóm đơn hàng theo khách hàng
+
+Báo cáo "khách hàng chi tiêu nhiều nhất" dùng mẫu **group by** với `map[string][]string` và `map[string]int`:
+
+```go
+package main
+
+import (
+	"cmp"
+	"fmt"
+	"maps"
+	"slices"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	// Dữ liệu xuất từ hệ thống (dạng CSV): mã khách, mã đơn, giá trị đơn
+	rows := []string{
+		"KH01,DH1001,250000",
+		"KH02,DH1002,1200000",
+		"KH01,DH1003,480000",
+		"KH03,DH1004,99000",
+		"KH02,DH1005,350000",
+		"KH01,DH1006,120000",
+	}
+
+	ordersByCustomer := make(map[string][]string) // Khách → danh sách mã đơn
+	totalByCustomer := make(map[string]int)       // Khách → tổng chi tiêu
+
+	for _, row := range rows {
+		parts := strings.Split(row, ",")
+		customer, orderID := parts[0], parts[1]
+		amount, err := strconv.Atoi(parts[2])
+		if err != nil {
+			fmt.Println("Bỏ qua dòng lỗi:", row)
+			continue
+		}
+		// append vào slice nil vẫn chạy tốt → không cần khởi tạo trước
+		ordersByCustomer[customer] = append(ordersByCustomer[customer], orderID)
+		totalByCustomer[customer] += amount
+	}
+
+	// Xếp hạng khách hàng theo tổng chi tiêu giảm dần
+	customers := slices.Collect(maps.Keys(totalByCustomer))
+	slices.SortFunc(customers, func(a, b string) int {
+		return cmp.Compare(totalByCustomer[b], totalByCustomer[a])
+	})
+
+	for rank, c := range customers {
+		orders := ordersByCustomer[c]
+		tier := "Thường"
+		if totalByCustomer[c] >= 1_000_000 {
+			tier = "VIP"
+		}
+		fmt.Printf("#%d %s %8d đ  %-7s %d đơn: %s\n",
+			rank+1, c, totalByCustomer[c], tier, len(orders), strings.Join(orders, ", "))
+	}
+}
+
+// Output:
+// #1 KH02  1550000 đ  VIP     2 đơn: DH1002, DH1005
+// #2 KH01   850000 đ  Thường  3 đơn: DH1001, DH1003, DH1006
+// #3 KH03    99000 đ  Thường  1 đơn: DH1004
+```
+
+> 💡 Mẫu `m[key] = append(m[key], value)` là cách "group by" chuẩn trong Go: nếu key chưa có, `m[key]` trả về slice `nil` và `append` vào `nil` vẫn hoạt động bình thường.
+
 ## ⚠️ Lỗi thường gặp
 
 ### Lỗi 1: Ghi vào nil map → panic
@@ -1172,6 +1377,7 @@ fmt.Println(a, b)
 - [ ] Duyệt map theo thứ tự bằng cách sắp xếp key
 - [ ] Duyệt chuỗi theo byte và theo rune
 - [ ] Sử dụng các hàm trong package `slices` và `maps`
+- [ ] Dùng slice/map giải bài toán thực tế: giỏ hàng, top từ khóa tìm kiếm, gom nhóm đơn hàng theo khách
 - [ ] Hoàn thành ít nhất 4 bài tập
 
 ## 🚀 Tiếp theo

@@ -1021,6 +1021,216 @@ func main() {
 
 Ví dụ này kết hợp **tất cả** những gì bạn đã học: goroutine, WaitGroup, Mutex, channel làm semaphore, context timeout, closure.
 
+## 🌍 Ứng dụng thực tế
+
+Concurrency tỏa sáng khi chương trình phải **chờ** nhiều thứ bên ngoài: mạng, database, dịch vụ email... Dưới đây là 2 tình huống kinh điển (dùng `time.Sleep`/`time.After` để giả lập độ trễ mạng, nên chạy được mà không cần internet).
+
+### Ví dụ 1: Tải nhiều trang song song, có timeout cho cả lô
+
+Một crawler giá sản phẩm (hoặc trang chủ gọi nhiều API) cần tải nhiều trang. Tải tuần tự thì tổng thời gian = **tổng** độ trễ; tải song song thì ≈ trang **chậm nhất**; thêm `context.WithTimeout` để một trang "treo" không kéo cả hệ thống chờ theo:
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"sync"
+	"time"
+)
+
+// Page: kết quả tải một trang
+type Page struct {
+	URL  string
+	Size int // KB
+	Err  error
+}
+
+// Thời gian phản hồi giả lập của từng trang (thay cho mạng thật)
+var latency = map[string]time.Duration{
+	"shop.vn/dien-thoai": 200 * time.Millisecond,
+	"shop.vn/laptop":     80 * time.Millisecond,
+	"shop.vn/tai-nghe":   120 * time.Millisecond,
+	"shop.vn/phu-kien":   100 * time.Millisecond,
+	"shop.vn/khuyen-mai": 900 * time.Millisecond, // Trang này rất chậm
+}
+
+// fetch giả lập tải một trang, biết dừng khi context bị hủy/hết giờ
+func fetch(ctx context.Context, url string) Page {
+	select {
+	case <-time.After(latency[url]):
+		return Page{URL: url, Size: len(url) * 10}
+	case <-ctx.Done():
+		return Page{URL: url, Err: ctx.Err()}
+	}
+}
+
+// fetchAll tải song song tất cả URL, kết quả giữ ĐÚNG THỨ TỰ đầu vào
+func fetchAll(ctx context.Context, urls []string) []Page {
+	pages := make([]Page, len(urls))
+	var wg sync.WaitGroup
+	for i, url := range urls {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			pages[i] = fetch(ctx, url) // Mỗi goroutine ghi vào ô RIÊNG → không cần mutex
+		}()
+	}
+	wg.Wait()
+	return pages
+}
+
+func main() {
+	urls := []string{"shop.vn/dien-thoai", "shop.vn/laptop", "shop.vn/tai-nghe", "shop.vn/phu-kien"}
+
+	// Cách 1: tuần tự - lần lượt từng trang
+	start := time.Now()
+	for _, u := range urls {
+		fetch(context.Background(), u)
+	}
+	fmt.Println("Tuần tự: ", time.Since(start).Round(100*time.Millisecond))
+
+	// Cách 2: song song - thời gian ≈ trang chậm nhất
+	start = time.Now()
+	fetchAll(context.Background(), urls)
+	fmt.Println("Song song:", time.Since(start).Round(100*time.Millisecond))
+
+	// Cách 3: song song + timeout 300ms cho cả lô (có trang rất chậm)
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	defer cancel()
+	start = time.Now()
+	for _, p := range fetchAll(ctx, append(urls, "shop.vn/khuyen-mai")) {
+		if p.Err != nil {
+			fmt.Printf("  ❌ %-20s %v\n", p.URL, p.Err)
+			continue
+		}
+		fmt.Printf("  ✅ %-20s %d KB\n", p.URL, p.Size)
+	}
+	fmt.Println("Có timeout:", time.Since(start).Round(100*time.Millisecond))
+}
+
+// Output (thời gian đã làm tròn đến 100ms):
+// Tuần tự:  500ms
+// Song song: 200ms
+//   ✅ shop.vn/dien-thoai   180 KB
+//   ✅ shop.vn/laptop       140 KB
+//   ✅ shop.vn/tai-nghe     160 KB
+//   ✅ shop.vn/phu-kien     160 KB
+//   ❌ shop.vn/khuyen-mai   context deadline exceeded
+// Có timeout: 300ms
+```
+
+> 💡 **Mẹo giữ thứ tự kết quả**: tạo sẵn `pages := make([]Page, len(urls))` rồi cho goroutine thứ `i` ghi vào `pages[i]`. Các goroutine ghi vào **các ô khác nhau** nên không có data race, không cần mutex hay channel, và kết quả luôn đúng thứ tự đầu vào. (Từ Go 1.22, mỗi vòng lặp có biến `i`, `url` riêng nên closure dùng trực tiếp được.)
+
+### Ví dụ 2: Worker pool gửi email hàng loạt
+
+Gửi email khuyến mãi cho hàng nghìn khách: mở hàng nghìn kết nối SMTP cùng lúc sẽ bị nhà cung cấp chặn, còn gửi tuần tự thì quá chậm. Worker pool với **số worker cố định** là lời giải:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+	"slices"
+	"strings"
+	"sync"
+	"time"
+)
+
+type Email struct {
+	To      string
+	Subject string
+}
+
+type SendResult struct {
+	To     string
+	Worker int
+	Err    error
+}
+
+// sendEmail giả lập gửi email qua SMTP (mất 50ms), lỗi nếu địa chỉ sai
+func sendEmail(e Email) error {
+	time.Sleep(50 * time.Millisecond)
+	if !strings.Contains(e.To, "@") {
+		return errors.New("địa chỉ email không hợp lệ")
+	}
+	return nil
+}
+
+func worker(id int, jobs <-chan Email, results chan<- SendResult, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for e := range jobs {
+		results <- SendResult{To: e.To, Worker: id, Err: sendEmail(e)}
+	}
+}
+
+func main() {
+	// Danh sách khách nhận email khuyến mãi (thực tế: hàng chục nghìn địa chỉ)
+	recipients := []string{
+		"an@mail.vn", "binh@mail.vn", "chi-mail.vn", "dung@mail.vn", "em@mail.vn",
+		"giang@mail.vn", "hoa.mail.vn", "khoa@mail.vn", "lan@mail.vn", "minh@mail.vn",
+		"nam@mail.vn", "oanh@mail.vn",
+	}
+	const numWorkers = 4 // Giới hạn 4 kết nối SMTP cùng lúc, tránh bị nhà cung cấp chặn
+
+	jobs := make(chan Email)
+	results := make(chan SendResult)
+	var wg sync.WaitGroup
+
+	for w := 1; w <= numWorkers; w++ {
+		wg.Add(1)
+		go worker(w, jobs, results, &wg)
+	}
+
+	// Producer: đẩy email vào hàng đợi rồi đóng channel
+	go func() {
+		for _, to := range recipients {
+			jobs <- Email{To: to, Subject: "🔥 Flash sale 12.12"}
+		}
+		close(jobs)
+	}()
+
+	// Đóng results khi tất cả worker đã xong
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	start := time.Now()
+	sent := 0
+	perWorker := make(map[int]int)
+	var failed []string
+	for r := range results {
+		perWorker[r.Worker]++
+		if r.Err != nil {
+			failed = append(failed, r.To+" ("+r.Err.Error()+")")
+			continue
+		}
+		sent++
+	}
+	slices.Sort(failed) // Thứ tự hoàn thành là ngẫu nhiên → sắp xếp để báo cáo ổn định
+
+	fmt.Printf("Đã gửi: %d/%d email\n", sent, len(recipients))
+	fmt.Println("Thất bại:")
+	for _, f := range failed {
+		fmt.Println("  -", f)
+	}
+	fmt.Println("Số worker đã làm việc:", len(perWorker))
+	fmt.Println("Thời gian:", time.Since(start).Round(50*time.Millisecond), "(tuần tự sẽ mất 600ms)")
+}
+
+// Output (thời gian đã làm tròn):
+// Đã gửi: 10/12 email
+// Thất bại:
+//   - chi-mail.vn (địa chỉ email không hợp lệ)
+//   - hoa.mail.vn (địa chỉ email không hợp lệ)
+// Số worker đã làm việc: 4
+// Thời gian: 150ms (tuần tự sẽ mất 600ms)
+```
+
+> 💡 So với ví dụ worker pool ở mục 9, ở đây **producer** (đẩy việc) chạy trong goroutine riêng và các channel **không có buffer**. Đây là cách làm phổ biến khi danh sách việc rất lớn hoặc đọc dần từ database/file: không cần giữ toàn bộ việc trong bộ nhớ cùng lúc.
+
 ## ⚠️ Lỗi thường gặp
 
 ### Lỗi 1: Deadlock - "Tất cả goroutine đều đang ngủ"
@@ -1206,6 +1416,7 @@ func main() {
 - [ ] Tự viết được worker pool
 - [ ] Dùng `context.WithTimeout` và `context.WithCancel`
 - [ ] Nhận biết và tránh deadlock, goroutine leak
+- [ ] Tải dữ liệu song song có timeout và viết worker pool gửi email (mục Ứng dụng thực tế)
 - [ ] Hoàn thành ít nhất 4 bài tập
 
 ## 🚀 Tiếp theo

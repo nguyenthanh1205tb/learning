@@ -881,7 +881,7 @@ print(restored)
 # Output: [Task(title='Viết code', done=False), Task(title='Test', done=True)]
 ```
 
-Bạn sẽ dùng chính kỹ thuật này trong [dự án cuối khóa](./10-final-project.md)!
+Bạn sẽ dùng chính kỹ thuật này trong [dự án Todo CLI ở Bài 10](./10-final-project.md)!
 
 ## 📖 11. CSV
 
@@ -962,6 +962,169 @@ print(f"Tổng giá trị kho: {total_value:,}đ")
 ```
 
 > 💡 Muốn Excel trên Windows mở file CSV tiếng Việt không bị lỗi font, hãy ghi với `encoding="utf-8-sig"`.
+
+## 🌍 Ứng dụng thực tế
+
+Dữ liệu thực tế **luôn có lỗi**: file thiếu, dòng hỏng, người dùng gõ nhầm. Chương trình tốt không "chết" vì một dòng sai, mà **ghi nhận lỗi, bỏ qua và báo cáo rõ ràng**.
+
+### 1. Đọc bảng điểm CSV → báo cáo JSON
+
+Giáo viên xuất bảng điểm từ Excel/Google Sheets ra CSV; script đọc, kiểm tra từng dòng, rồi xuất báo cáo JSON cho hệ thống khác dùng:
+
+```python
+# grades_report.py - Đọc bảng điểm CSV (xuất từ Excel/Google Sheets) → báo cáo JSON theo lớp
+import csv
+import json
+from pathlib import Path
+
+
+class InvalidRowError(ValueError):
+    """Một dòng trong file CSV có dữ liệu sai."""
+
+
+# Tạo file CSV mẫu - dữ liệu thật thường có dòng lỗi như thế này
+Path("grades.csv").write_text(
+    "student_id,name,class,score\n"
+    "HS01,Nguyễn An,10A1,8.5\n"
+    "HS02,Trần Bình,10A1,\n"          # Thiếu điểm
+    "HS03,Lê Chi,10A2,9.25\n"
+    "HS04,Phạm Dũng,10A1,abc\n"       # Điểm không phải số
+    "HS05,Võ Em,10A2,4.5\n"
+    "HS06,Đỗ Giang,10A2,11\n"         # Điểm ngoài thang 0-10
+    "HS07,Hồ Hà,10A1,6\n",
+    encoding="utf-8",
+)
+
+
+def parse_row(row: dict) -> dict:
+    """Kiểm tra & chuyển kiểu một dòng. Sai thì raise InvalidRowError."""
+    raw = row["score"].strip()
+    if not raw:
+        raise InvalidRowError("thiếu điểm")
+    try:
+        score = float(raw)
+    except ValueError as error:
+        raise InvalidRowError(f"điểm '{raw}' không phải số") from error
+    if not 0 <= score <= 10:
+        raise InvalidRowError(f"điểm {score} ngoài thang 0-10")
+    return {"id": row["student_id"], "name": row["name"], "class": row["class"], "score": score}
+
+
+classes: dict[str, list[dict]] = {}
+errors = []
+with open("grades.csv", newline="", encoding="utf-8-sig") as f:   # utf-8-sig: an toàn với BOM từ Excel
+    # start=2 vì dòng 1 là tiêu đề → số dòng khớp khi mở file bằng Excel
+    for line_no, row in enumerate(csv.DictReader(f), start=2):
+        try:
+            student = parse_row(row)
+        except InvalidRowError as error:
+            errors.append({"line": line_no, "id": row["student_id"], "error": str(error)})
+            continue
+        classes.setdefault(student["class"], []).append(student)
+
+report = {
+    "classes": {
+        name: {
+            "count": len(students),
+            "average": round(sum(s["score"] for s in students) / len(students), 2),
+            "top": max(students, key=lambda s: s["score"])["name"],
+            "failed": [s["name"] for s in students if s["score"] < 5],
+        }
+        for name, students in sorted(classes.items())
+    },
+    "errors": errors,
+}
+Path("report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+print(f"Đã xử lý {sum(len(s) for s in classes.values())} dòng hợp lệ, {len(errors)} dòng lỗi")
+for err in errors:
+    print(f"  ⚠️ Dòng {err['line']} ({err['id']}): {err['error']}")
+saved = json.loads(Path("report.json").read_text(encoding="utf-8"))   # Đọc lại để kiểm tra
+for name, info in saved["classes"].items():
+    print(f"📊 {name}: {info}")
+
+# Output:
+# Đã xử lý 4 dòng hợp lệ, 3 dòng lỗi
+#   ⚠️ Dòng 3 (HS02): thiếu điểm
+#   ⚠️ Dòng 5 (HS04): điểm 'abc' không phải số
+#   ⚠️ Dòng 7 (HS06): điểm 11.0 ngoài thang 0-10
+# 📊 10A1: {'count': 2, 'average': 7.25, 'top': 'Nguyễn An', 'failed': []}
+# 📊 10A2: {'count': 2, 'average': 6.88, 'top': 'Lê Chi', 'failed': ['Võ Em']}
+```
+
+> 💡 **Mẫu "collect errors"**: thay vì dừng ở dòng lỗi đầu tiên, ta gom tất cả lỗi kèm **số dòng** - người dùng sửa một lần là xong, không phải chạy đi chạy lại. Encoding `utf-8-sig` đọc được cả file có BOM do Excel tạo ra (xem phần 8).
+
+### 2. Đọc file cấu hình an toàn
+
+Gần như ứng dụng nào cũng có file cấu hình. Hàm `load_config` dưới đây xử lý đủ các tình huống: chưa có file, JSON sai cú pháp, sai kiểu dữ liệu, gõ nhầm tên khóa:
+
+```python
+# config_loader.py - Đọc file cấu hình JSON an toàn: thiếu file, hỏng file, sai giá trị
+import json
+from pathlib import Path
+
+DEFAULT_CONFIG = {"app_name": "Shop Online", "port": 8000, "debug": False, "currency": "VND"}
+
+
+class ConfigError(Exception):
+    """Lỗi cấu hình - thông báo rõ ràng cho người vận hành."""
+
+
+def load_config(path: Path) -> dict:
+    try:
+        with open(path, encoding="utf-8") as f:
+            user_config = json.load(f)
+    except FileNotFoundError:
+        # Lần chạy đầu tiên: tạo file mẫu để người dùng chỉnh sửa, rồi dùng cấu hình mặc định
+        path.write_text(json.dumps(DEFAULT_CONFIG, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"ℹ️  Chưa có {path.name}, đã tạo file mặc định")
+        return dict(DEFAULT_CONFIG)
+    except json.JSONDecodeError as error:
+        raise ConfigError(f"{path.name} sai cú pháp JSON ở dòng {error.lineno}, cột {error.colno}") from error
+
+    if not isinstance(user_config, dict):
+        raise ConfigError(f"{path.name} phải là một object JSON {{...}}")
+    unknown = set(user_config) - set(DEFAULT_CONFIG)
+    if unknown:
+        raise ConfigError(f"Khóa không hợp lệ: {sorted(unknown)} (gõ nhầm tên?)")
+
+    config = {**DEFAULT_CONFIG, **user_config}        # Giá trị của người dùng ghi đè mặc định
+    port = config["port"]
+    if not isinstance(port, int) or not 1024 <= port <= 65535:
+        raise ConfigError(f"port phải là số nguyên 1024-65535, nhận được {port!r}")
+    return config
+
+
+config_file = Path("config.json")
+config_file.unlink(missing_ok=True)                   # Dọn file cũ để demo chạy lại được
+
+scenarios = [
+    None,                                             # 1. File chưa tồn tại
+    '{"port": 9000, "debug": true}',                  # 2. File hợp lệ, ghi đè 2 giá trị
+    '{"port": 9000, "debug": true,}',                 # 3. Dấu phẩy thừa → JSON hỏng
+    '{"port": "80"}',                                 # 4. Sai kiểu dữ liệu
+    '{"prot": 9000}',                                 # 5. Gõ nhầm tên khóa
+]
+for number, content in enumerate(scenarios, start=1):
+    if content is not None:
+        config_file.write_text(content, encoding="utf-8")
+    try:
+        config = load_config(config_file)
+    except ConfigError as error:
+        print(f"{number}. ❌ Lỗi cấu hình: {error}")
+    else:
+        print(f"{number}. ✅ port={config['port']}, debug={config['debug']}")
+
+# Output:
+# ℹ️  Chưa có config.json, đã tạo file mặc định
+# 1. ✅ port=8000, debug=False
+# 2. ✅ port=9000, debug=True
+# 3. ❌ Lỗi cấu hình: config.json sai cú pháp JSON ở dòng 1, cột 30
+# 4. ❌ Lỗi cấu hình: port phải là số nguyên 1024-65535, nhận được '80'
+# 5. ❌ Lỗi cấu hình: Khóa không hợp lệ: ['prot'] (gõ nhầm tên?)
+```
+
+> 🧠 **Fail fast**: báo lỗi cấu hình **ngay khi khởi động** với thông báo chỉ rõ dòng/cột/khóa sai, tốt hơn nhiều so với để ứng dụng chạy rồi mới hỏng lúc nửa đêm vì `port = "80"` là chuỗi.
 
 ## ⚠️ Lỗi thường gặp
 
@@ -1142,6 +1305,7 @@ for folder in sorted(p for p in downloads.iterdir() if p.is_dir()):
 - [ ] Dùng `pathlib`: `/`, `exists()`, `mkdir()`, `read_text()`, `glob()`
 - [ ] Đọc/ghi JSON với `json.dump/load` và `dumps/loads`
 - [ ] Đọc/ghi CSV với `DictReader`/`DictWriter`
+- [ ] Xử lý được dữ liệu "bẩn": gom lỗi theo số dòng, đọc file cấu hình an toàn (phần 🌍 Ứng dụng thực tế)
 - [ ] Hoàn thành ít nhất 3 bài tập
 
 ## 🚀 Tiếp theo

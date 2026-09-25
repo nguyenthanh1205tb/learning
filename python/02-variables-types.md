@@ -1152,6 +1152,131 @@ except IndexError as error:
 # Output: IndexError: string index out of range
 ```
 
+## 🌍 Ứng dụng thực tế
+
+Kết hợp biến, toán tử, string methods và f-string, bạn đã giải được những bài toán "đời thường" mà dân văn phòng hay làm bằng Excel.
+
+### 1. Hóa đơn tiền điện bậc thang + thuế GTGT
+
+Giá điện sinh hoạt tính **lũy tiến theo bậc**: 50 kWh đầu giá rẻ nhất, dùng càng nhiều thì phần vượt càng đắt. Ví dụ này cũng cho thấy cách dùng `Decimal` với `ROUND_HALF_UP` (đã nhắc ở phần 4) để làm tròn tiền thuế **đúng kiểu kế toán**:
+
+```python
+# electric_bill.py - Tính hóa đơn tiền điện sinh hoạt theo bậc thang + VAT
+from decimal import Decimal, ROUND_HALF_UP
+
+# Đơn giá từng bậc (đồng/kWh) - số liệu minh họa, hãy tra biểu giá EVN hiện hành
+PRICE_1, PRICE_2, PRICE_3 = 1984, 2050, 2380    # Bậc 1: 0-50, bậc 2: 51-100, bậc 3: 101-200
+PRICE_4, PRICE_5, PRICE_6 = 2998, 3350, 3460    # Bậc 4: 201-300, bậc 5: 301-400, bậc 6: >400
+VAT_RATE = Decimal("0.08")                       # Thuế GTGT 8% (minh họa)
+
+old_index, new_index = 12450, 12735             # Chỉ số công tơ đầu kỳ / cuối kỳ
+kwh = new_index - old_index
+
+# Số kWh rơi vào từng bậc: max(..., 0) để không bị âm, min(..., 50/100) để không vượt độ rộng bậc
+# (min/max là hàm có sẵn: trả về giá trị nhỏ nhất / lớn nhất - chưa cần học if!)
+kwh_1 = min(kwh, 50)
+kwh_2 = min(max(kwh - 50, 0), 50)
+kwh_3 = min(max(kwh - 100, 0), 100)
+kwh_4 = min(max(kwh - 200, 0), 100)
+kwh_5 = min(max(kwh - 300, 0), 100)
+kwh_6 = max(kwh - 400, 0)
+
+subtotal = (kwh_1 * PRICE_1 + kwh_2 * PRICE_2 + kwh_3 * PRICE_3
+            + kwh_4 * PRICE_4 + kwh_5 * PRICE_5 + kwh_6 * PRICE_6)
+
+# Tiền: dùng Decimal + ROUND_HALF_UP để làm tròn "kiểu kế toán" (.5 luôn làm tròn lên)
+vat = (Decimal(subtotal) * VAT_RATE).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+total = subtotal + int(vat)
+
+
+def vnd(amount):
+    """Định dạng tiền kiểu Việt Nam: 1234567 → '1.234.567'. (Hàm - học kỹ ở Bài 4)"""
+    return f"{amount:,}".replace(",", ".")
+
+
+print(f"{' HÓA ĐƠN TIỀN ĐIỆN ':=^40}")
+print(f"Chỉ số: {old_index} → {new_index}  |  Tiêu thụ: {kwh} kWh")
+print("-" * 40)
+print(f"{'Bậc':<5}{'kWh':>6}{'Đơn giá (đ)':>13}{'Thành tiền (đ)':>16}")
+print(f"{1:<5}{kwh_1:>6}{vnd(PRICE_1):>13}{vnd(kwh_1 * PRICE_1):>16}")
+print(f"{2:<5}{kwh_2:>6}{vnd(PRICE_2):>13}{vnd(kwh_2 * PRICE_2):>16}")
+print(f"{3:<5}{kwh_3:>6}{vnd(PRICE_3):>13}{vnd(kwh_3 * PRICE_3):>16}")
+print(f"{4:<5}{kwh_4:>6}{vnd(PRICE_4):>13}{vnd(kwh_4 * PRICE_4):>16}")
+# Bậc 5, 6 đều 0 kWh nên không in (Bài 3 sẽ dùng vòng lặp + if để in tự động)
+print("-" * 40)
+print(f"{'Tiền điện:':<24}{vnd(subtotal):>14} đ")
+print(f"{'Thuế GTGT (8%):':<24}{vnd(int(vat)):>14} đ")
+print(f"{'TỔNG THANH TOÁN:':<24}{vnd(total):>14} đ")
+
+# Output:
+# ========== HÓA ĐƠN TIỀN ĐIỆN ===========
+# Chỉ số: 12450 → 12735  |  Tiêu thụ: 285 kWh
+# ----------------------------------------
+# Bậc     kWh  Đơn giá (đ)  Thành tiền (đ)
+# 1        50        1.984          99.200
+# 2        50        2.050         102.500
+# 3       100        2.380         238.000
+# 4        85        2.998         254.830
+# ----------------------------------------
+# Tiền điện:                     694.530 đ
+# Thuế GTGT (8%):                 55.562 đ
+# TỔNG THANH TOÁN:               750.092 đ
+```
+
+> 💡 **Tiền tệ**: lưu bằng **số nguyên đồng** (`int`) và dùng `Decimal` ở bước nhân tỷ lệ (thuế, chiết khấu). Với `float` + `round()`: `round(1005 * 0.1)` cho `100` (banker's rounding) trong khi kế toán cần `101`, còn `1001 * 1.1` ra `1101.1000000000001`. Lệch 1 đồng thôi nhưng đối soát hàng nghìn hóa đơn là lộ ngay!
+
+### 2. Chuẩn hóa dữ liệu khách hàng từ form đăng ký
+
+Người dùng gõ tên thừa khoảng trắng, viết hoa lộn xộn, email có chữ HOA... Trước khi lưu vào hệ thống, ta luôn **làm sạch** dữ liệu:
+
+```python
+# customer_card.py - Chuẩn hóa dữ liệu khách hàng nhập từ form đăng ký
+# Dữ liệu thật từ người dùng thường "bẩn": thừa khoảng trắng, viết hoa lộn xộn...
+raw_name = "  trần   THỊ  thu   hà "
+raw_phone = " 0912 345 678 "
+raw_email = "  ThuHa.Tran@Gmail.COM "
+raw_birthday = "05/09/1998"            # dd/mm/yyyy
+current_year = 2026
+
+# 1. Họ tên: gộp khoảng trắng thừa + viết hoa chữ cái đầu mỗi từ
+name = " ".join(raw_name.split()).title()
+first_name = name.split()[-1]           # Tên = từ cuối cùng
+
+# 2. Số điện thoại: bỏ mọi khoảng trắng, che bớt số ở giữa khi hiển thị
+phone = raw_phone.replace(" ", "")
+masked_phone = phone[:4] + "***" + phone[-3:]
+phone_ok = phone.isdigit() and len(phone) == 10 and phone.startswith("0")
+
+# 3. Email: bỏ khoảng trắng, viết thường; tách tên đăng nhập và tên miền
+email = raw_email.strip().lower()
+username, domain = email.split("@")
+
+# 4. Ngày sinh: cắt chuỗi (slicing) lấy ngày/tháng/năm rồi ép kiểu
+day, month, year = int(raw_birthday[:2]), int(raw_birthday[3:5]), int(raw_birthday[6:])
+age = current_year - year               # Tuổi tính theo năm
+
+# 5. Mã khách hàng: chữ cái đầu của họ + tên đệm đầu + tên, 2 số cuối năm sinh, 3 số cuối SĐT
+initials = name[0] + name.split()[1][0] + first_name[0]
+customer_id = f"KH-{initials}{year % 100:02d}{phone[-3:]}"
+
+print(f"{'Mã KH:':<12}{customer_id}")
+print(f"{'Họ tên:':<12}{name} (gọi là: chị {first_name})")
+print(f"{'Điện thoại:':<12}{masked_phone} - hợp lệ: {phone_ok}")
+print(f"{'Email:':<12}{email} (nhà cung cấp: {domain.split('.')[0].upper()})")
+print(f"{'Ngày sinh:':<12}{day:02d}-{month:02d}-{year} ({age} tuổi)")
+print(f"Lời chào SMS: Chào {first_name}, cảm ơn bạn đã đăng ký! Mã của bạn: {customer_id}")
+
+# Output:
+# Mã KH:      KH-TTH98678
+# Họ tên:     Trần Thị Thu Hà (gọi là: chị Hà)
+# Điện thoại: 0912***678 - hợp lệ: True
+# Email:      thuha.tran@gmail.com (nhà cung cấp: GMAIL)
+# Ngày sinh:  05-09-1998 (28 tuổi)
+# Lời chào SMS: Chào Hà, cảm ơn bạn đã đăng ký! Mã của bạn: KH-TTH98678
+```
+
+> 🧠 **Che thông tin nhạy cảm** (`0912***678`) khi hiển thị/ghi log là thói quen bắt buộc ở các hệ thống thật (ngân hàng, thương mại điện tử) - chỉ cần slicing là làm được!
+
 ## ⚠️ Lỗi thường gặp
 
 ### 1. Quên chuyển kiểu sau input()
@@ -1344,6 +1469,7 @@ print(len(normalized.replace(" ", "")))
 - [ ] Viết f-string với định dạng số (`:.2f`, `:,`, `:>10`)
 - [ ] Nhớ rằng `input()` luôn trả về `str`
 - [ ] Slicing thành thạo, đảo ngược chuỗi với `[::-1]`
+- [ ] Tính được hóa đơn bậc thang, làm tròn tiền bằng `Decimal` + `ROUND_HALF_UP` và chuẩn hóa dữ liệu nhập (phần 🌍 Ứng dụng thực tế)
 - [ ] Hoàn thành ít nhất 3 bài tập
 
 ## 🚀 Tiếp theo

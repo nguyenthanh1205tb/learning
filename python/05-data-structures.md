@@ -1007,6 +1007,188 @@ print(s._asdict())
 
 > 💡 Phiên bản hiện đại hơn của namedtuple là `typing.NamedTuple` và `dataclass` - bạn sẽ học `dataclass` ở [Bài 6](./06-oop.md).
 
+## 🌍 Ứng dụng thực tế
+
+Chọn đúng cấu trúc dữ liệu là một nửa lời giải: **dict** để tra cứu theo mã, **set** để kiểm tra "đã có chưa" và loại trùng, **list** để giữ thứ tự, **Counter/defaultdict** để thống kê.
+
+### 1. Giỏ hàng có kiểm tra tồn kho và mã giảm giá
+
+```python
+# cart.py - Giỏ hàng: dict lưu sản phẩm, set lưu mã giảm giá đã dùng
+CATALOG = {                                     # mã SP → (tên, giá, tồn kho)
+    "SP01": ("Tai nghe Bluetooth", 450_000, 10),
+    "SP02": ("Ốp lưng", 90_000, 3),
+    "SP03": ("Sạc nhanh 20W", 250_000, 0),
+}
+COUPONS = {"GIAM10": 0.10, "FREESHIP": 0.0}     # mã → % giảm
+cart = {}                                       # mã SP → số lượng (sửa dict bên trong hàm
+                                                # không cần global vì không gán lại biến - Bài 4)
+used_coupons = set()
+
+
+def add_to_cart(sku, qty=1):
+    if sku not in CATALOG:
+        return f"❌ Không có sản phẩm {sku}"
+    name, _, stock = CATALOG[sku]
+    new_qty = cart.get(sku, 0) + qty            # get() với mặc định 0
+    if stock == 0:
+        return f"❌ {name}: đã hết hàng"
+    if new_qty > stock:
+        return f"❌ {name}: chỉ còn {stock} sản phẩm"
+    cart[sku] = new_qty
+    return f"🛒 {name} x{new_qty}"
+
+
+def apply_coupon(code):
+    code = code.strip().upper()
+    if code not in COUPONS:
+        return f"❌ Mã {code} không tồn tại"
+    if code in used_coupons:                    # Kiểm tra trong set: O(1)
+        return f"❌ Mã {code} đã được dùng"
+    used_coupons.add(code)
+    return f"🎟️ Áp dụng mã {code}"
+
+
+print(add_to_cart("SP01"))
+print(add_to_cart("SP02", 2))
+print(add_to_cart("SP02", 2))                   # Vượt tồn kho
+print(add_to_cart("SP03"))                      # Hết hàng
+print(apply_coupon(" giam10 "))
+print(apply_coupon("GIAM10"))                   # Dùng lại
+
+# Dict comprehension: thành tiền từng dòng
+line_totals = {sku: CATALOG[sku][1] * qty for sku, qty in cart.items()}
+subtotal = sum(line_totals.values())
+discount = int(subtotal * sum(COUPONS[c] for c in used_coupons))
+
+print("-" * 38)
+for sku, qty in cart.items():
+    name, price, _ = CATALOG[sku]               # Unpacking tuple
+    print(f"{name:<20} {qty:>2} x {price:>8,}")
+print(f"{'Tạm tính:':<24}{subtotal:>14,}")
+print(f"{'Giảm giá:':<24}{-discount:>14,}")
+print(f"{'Thanh toán:':<24}{subtotal - discount:>14,}")
+
+# Output:
+# 🛒 Tai nghe Bluetooth x1
+# 🛒 Ốp lưng x2
+# ❌ Ốp lưng: chỉ còn 3 sản phẩm
+# ❌ Sạc nhanh 20W: đã hết hàng
+# 🎟️ Áp dụng mã GIAM10
+# ❌ Mã GIAM10 đã được dùng
+# --------------------------------------
+# Tai nghe Bluetooth    1 x  450,000
+# Ốp lưng               2 x   90,000
+# Tạm tính:                      630,000
+# Giảm giá:                      -63,000
+# Thanh toán:                    567,000
+```
+
+### 2. Thống kê từ khóa tìm kiếm
+
+Bộ phận marketing muốn biết khách tìm gì nhiều nhất và tìm gì mà **shop không có** để nhập thêm hàng:
+
+```python
+# search_stats.py - Thống kê từ khóa tìm kiếm trên website bán hàng
+from collections import Counter, defaultdict
+
+search_log = [                                  # (user_id, từ khóa người dùng gõ)
+    ("u1", "iPhone 15"), ("u2", "iphone  15 "), ("u3", "tai nghe"),
+    ("u1", "iphone 15"), ("u4", "Tai Nghe"), ("u2", "sạc dự phòng"),
+    ("u5", "IPHONE 15"), ("u3", "ốp lưng"), ("u5", "tai nghe"), ("u6", "loa"),
+]
+products = ["iPhone 15 Pro", "Tai nghe AirPods", "Ốp lưng iPhone", "Sạc 20W"]
+
+# 1. Chuẩn hóa: viết thường + gộp khoảng trắng → "iPhone 15" và "iphone  15 " là một
+normalized = [(user, " ".join(kw.lower().split())) for user, kw in search_log]
+
+# 2. Top từ khóa (Counter) và số người dùng KHÁC NHAU tìm mỗi từ (defaultdict(set))
+counts = Counter(kw for _, kw in normalized)
+users_by_keyword = defaultdict(set)
+for user, kw in normalized:
+    users_by_keyword[kw].add(user)              # set tự bỏ trùng: u1 tìm 2 lần vẫn tính 1
+
+print("🔥 Top 3 từ khóa:")
+for rank, (kw, n) in enumerate(counts.most_common(3), start=1):
+    print(f"  {rank}. {kw:<14} {n} lượt / {len(users_by_keyword[kw])} người")
+
+# 3. Từ khóa KHÔNG khớp sản phẩm nào → gợi ý nhập thêm hàng
+catalog_text = " ".join(products).lower()
+no_result = sorted({kw for kw in counts if kw not in catalog_text})
+print("📦 Không có kết quả, nên nhập thêm:", no_result)
+
+# 4. Người dùng tìm cả "iphone 15" lẫn "tai nghe" → gợi ý combo (phép giao của set)
+combo_users = users_by_keyword["iphone 15"] & users_by_keyword["tai nghe"]
+print("🎯 Gợi ý combo iPhone + tai nghe cho:", sorted(combo_users))
+
+# Output:
+# 🔥 Top 3 từ khóa:
+#   1. iphone 15      4 lượt / 3 người
+#   2. tai nghe       3 lượt / 3 người
+#   3. sạc dự phòng   1 lượt / 1 người
+# 📦 Không có kết quả, nên nhập thêm: ['loa', 'sạc dự phòng']
+# 🎯 Gợi ý combo iPhone + tai nghe cho: ['u5']
+```
+
+> 💡 Bước **chuẩn hóa** (viết thường, gộp khoảng trắng) luôn đi trước bước thống kê - nếu không, `"iPhone 15"`, `"iphone  15 "` và `"IPHONE 15"` sẽ bị đếm thành 3 từ khóa khác nhau.
+
+### 3. Gom nhóm đơn hàng theo khách, tìm khách VIP
+
+Bài toán "group by" kinh điển (giống `GROUP BY` trong SQL hay Pivot Table trong Excel):
+
+```python
+# orders_report.py - Gom nhóm đơn hàng theo khách, tìm khách VIP
+from collections import defaultdict, namedtuple
+
+orders = [
+    {"id": 101, "customer": "Lan", "total": 350_000, "status": "done"},
+    {"id": 102, "customer": "Minh", "total": 1_200_000, "status": "done"},
+    {"id": 103, "customer": "Lan", "total": 780_000, "status": "done"},
+    {"id": 104, "customer": "Hùng", "total": 90_000, "status": "cancelled"},
+    {"id": 105, "customer": "Minh", "total": 450_000, "status": "done"},
+    {"id": 106, "customer": "Hùng", "total": 150_000, "status": "done"},
+    {"id": 107, "customer": "Lan", "total": 60_000, "status": "done"},
+]
+VIP_THRESHOLD = 1_000_000
+
+Summary = namedtuple("Summary", "customer orders revenue")
+
+# 1. Gom nhóm: khách → list đơn (bỏ đơn đã hủy)
+by_customer = defaultdict(list)
+for order in orders:
+    if order["status"] != "cancelled":
+        by_customer[order["customer"]].append(order)
+
+# 2. Tổng hợp từng khách, sắp xếp theo doanh thu giảm dần
+summaries = [
+    Summary(name, len(items), sum(o["total"] for o in items))
+    for name, items in by_customer.items()
+]
+summaries.sort(key=lambda s: s.revenue, reverse=True)
+
+print(f"{'Khách':<8}{'Số đơn':>7}{'Doanh thu':>14}")
+for s in summaries:
+    badge = " ⭐ VIP" if s.revenue >= VIP_THRESHOLD else ""
+    print(f"{s.customer:<8}{s.orders:>7}{s.revenue:>14,}{badge}")
+
+# 3. Các con số tổng quan
+revenue_total = sum(s.revenue for s in summaries)
+vip_names = {s.customer for s in summaries if s.revenue >= VIP_THRESHOLD}
+biggest = max(orders, key=lambda o: o["total"])
+print(f"Tổng doanh thu: {revenue_total:,}đ | Khách VIP: {sorted(vip_names)}")
+print(f"Đơn lớn nhất: #{biggest['id']} của {biggest['customer']} ({biggest['total']:,}đ)")
+print("Mã đơn theo khách:", {name: [o["id"] for o in items] for name, items in by_customer.items()})
+
+# Output:
+# Khách    Số đơn     Doanh thu
+# Minh          2     1,650,000 ⭐ VIP
+# Lan           3     1,190,000 ⭐ VIP
+# Hùng          1       150,000
+# Tổng doanh thu: 2,990,000đ | Khách VIP: ['Lan', 'Minh']
+# Đơn lớn nhất: #102 của Minh (1,200,000đ)
+# Mã đơn theo khách: {'Lan': [101, 103, 107], 'Minh': [102, 105], 'Hùng': [106]}
+```
+
 ## ⚠️ Lỗi thường gặp
 
 ### 1. Nhầm `{}` là set rỗng
@@ -1170,6 +1352,7 @@ print(triples)
 - [ ] Viết list/dict/set comprehension có điều kiện
 - [ ] Giải thích được shallow copy vs deep copy
 - [ ] Dùng `Counter`, `defaultdict`, `deque`, `namedtuple`
+- [ ] Dùng dict/set/`Counter`/`defaultdict` cho giỏ hàng, thống kê từ khóa, gom nhóm đơn hàng (phần 🌍 Ứng dụng thực tế)
 - [ ] Hoàn thành ít nhất 3 bài tập
 
 ## 🚀 Tiếp theo

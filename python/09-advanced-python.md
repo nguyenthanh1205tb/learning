@@ -10,7 +10,7 @@
 - Tự viết **context manager** bằng class (`__enter__`/`__exit__`) và bằng `contextlib`
 - Làm quen **lập trình bất đồng bộ** với `asyncio`: `async`/`await`, `asyncio.gather`; biết khi nào dùng thread/process thay thế (GIL)
 
-> 💡 Đây là bài khó nhất khóa học. Đừng lo nếu chưa hiểu hết ngay lần đầu - hãy chạy thử từng ví dụ, thay đổi code và quan sát kết quả. Những khái niệm này sẽ "thấm" dần khi bạn dùng chúng trong thực tế.
+> 💡 Đây là bài khó nhất Phần 1 của khóa học. Đừng lo nếu chưa hiểu hết ngay lần đầu - hãy chạy thử từng ví dụ, thay đổi code và quan sát kết quả. Những khái niệm này sẽ "thấm" dần khi bạn dùng chúng trong thực tế.
 
 ## 📖 1. Iterable và Iterator
 
@@ -1132,6 +1132,186 @@ print(f"3 file trong ~{elapsed:.1f}s (tuần tự sẽ mất ~0.3s)")
 
 > ⚠️ **Một hàm chặn (blocking) làm "đóng băng" cả event loop**: trong `async def`, **không dùng** `time.sleep()`, `requests.get()`... Hãy dùng phiên bản async: `await asyncio.sleep()`, thư viện `httpx`/`aiohttp`. Nếu buộc phải gọi hàm chặn, dùng `await asyncio.to_thread(func, ...)`.
 
+> 📌 Thread, process và asyncio sẽ được học sâu hơn ở [Bài 14: Concurrency & Parallelism](./14-concurrency-parallelism.md).
+
+## 🌍 Ứng dụng thực tế
+
+Decorator và generator không chỉ là "phép thuật" cho vui - chúng là công cụ hằng ngày khi làm việc với **API chậm/không ổn định** và **dữ liệu lớn**.
+
+### 1. Bọc API chậm bằng decorator: đo thời gian, retry, cache
+
+Gọi API bên ngoài (tỷ giá, thời tiết, cổng thanh toán) luôn có rủi ro: chậm, lỗi mạng tạm thời, bị giới hạn số lần gọi. Thay vì nhét `try/except`, `time.sleep` và dict cache vào **mọi** hàm gọi API, ta viết một lần dưới dạng decorator và "gắn" vào bất kỳ hàm nào:
+
+```python
+# rate_client.py - Bọc một API tỷ giá chậm & hay lỗi bằng các decorator: đo thời gian, retry, cache
+import time
+from functools import wraps
+
+
+def timer(func):
+    """In thời gian chạy của hàm - giúp phát hiện chỗ chậm."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        try:
+            return func(*args, **kwargs)
+        finally:                                   # In ra kể cả khi hàm ném lỗi
+            params = ", ".join(repr(a) for a in args)
+            print(f"  ⏱️ {func.__name__}({params}): {time.perf_counter() - start:.1f}s")
+    return wrapper
+
+
+def retry(times=3, delay=0.1, backoff=2, exceptions=(ConnectionError, TimeoutError)):
+    """Thử lại khi lỗi mạng, thời gian chờ tăng dần: 0.1s → 0.2s → 0.4s (exponential backoff)."""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            wait = delay
+            for attempt in range(1, times + 1):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as error:
+                    if attempt == times:
+                        raise                      # Hết lượt → ném lỗi gốc cho nơi gọi xử lý
+                    print(f"  🔁 Lần {attempt} lỗi ({error}), thử lại sau {wait}s")
+                    time.sleep(wait)
+                    wait *= backoff
+        return wrapper
+    return decorator
+
+
+def ttl_cache(seconds):
+    """Cache kết quả trong `seconds` giây - tỷ giá không đổi từng mili giây, không cần gọi lại API."""
+    def decorator(func):
+        store = {}                                 # Closure: dict này "sống" cùng wrapper
+
+        @wraps(func)
+        def wrapper(*args):
+            now = time.monotonic()
+            if args in store and now - store[args][1] < seconds:
+                print(f"  💾 Lấy từ cache: {func.__name__}({args[0]!r})")
+                return store[args][0]
+            result = func(*args)
+            store[args] = (result, now)
+            return result
+        return wrapper
+    return decorator
+
+
+# ----- Giả lập API bên ngoài: chậm 0.2s, lần gọi đầu tiên bị mất kết nối -----
+calls = {"count": 0}
+RATES = {"USD": 25_400, "EUR": 27_600}
+
+
+@ttl_cache(seconds=60)          # Ngoài cùng: cache hit thì không tốn thời gian, không retry
+@timer
+@retry(times=3)
+def get_rate(currency):
+    calls["count"] += 1
+    time.sleep(0.2)
+    if calls["count"] == 1:
+        raise ConnectionError("mất kết nối")
+    return RATES[currency]
+
+
+for currency in ["USD", "USD", "EUR"]:
+    print(f"1 {currency} = {get_rate(currency):,}đ")
+print(f"Số lần thật sự gọi API: {calls['count']}")
+
+# Output:
+#   🔁 Lần 1 lỗi (mất kết nối), thử lại sau 0.1s
+#   ⏱️ get_rate('USD'): 0.5s
+# 1 USD = 25,400đ
+#   💾 Lấy từ cache: get_rate('USD')
+# 1 USD = 25,400đ
+#   ⏱️ get_rate('EUR'): 0.2s
+# 1 EUR = 27,600đ
+# Số lần thật sự gọi API: 3
+```
+
+> 💡 **Thứ tự decorator có ý nghĩa**: `ttl_cache` ở ngoài cùng nên lần gọi thứ 2 lấy ngay từ cache - không đo giờ, không retry. `retry` ở trong cùng nên `timer` đo **tổng** thời gian kể cả các lần thử lại (0.2s lỗi + 0.1s chờ + 0.2s thành công ≈ 0.5s). Trong thực tế, thời gian chờ retry thường cộng thêm một chút ngẫu nhiên (**jitter**) để hàng nghìn client không cùng thử lại một lúc.
+
+### 2. Phân tích file access log lớn bằng pipeline generator
+
+Ví dụ ở phần 2 chỉ lọc dòng `ERROR`. Còn đây là một pipeline hoàn chỉnh hơn: đọc → parse (bỏ qua dòng hỏng) → gom **lô (batch)** để xử lý → thống kê status code và request chậm:
+
+```python
+# log_analyzer.py - Phân tích file access log của web server bằng pipeline generator
+from collections import Counter
+from itertools import islice
+from pathlib import Path
+
+# Tạo file log mẫu (thực tế có thể nặng vài GB - vẫn chỉ tốn vài KB RAM)
+Path("access.log").write_text(
+    "2026-09-25 10:00:01 GET /api/products 200 120ms\n"
+    "2026-09-25 10:00:02 POST /api/orders 201 340ms\n"
+    "dòng log bị hỏng\n"
+    "2026-09-25 10:00:03 GET /api/products 200 95ms\n"
+    "2026-09-25 10:00:05 GET /api/orders/99 404 15ms\n"
+    "2026-09-25 10:00:06 POST /api/payments 500 2300ms\n"
+    "2026-09-25 10:00:07 GET /api/products 200 1800ms\n"
+    "2026-09-25 10:00:09 POST /api/payments 502 3100ms\n",
+    encoding="utf-8",
+)
+
+
+stats = {"skipped": 0}          # Đếm số dòng hỏng
+
+
+def read_lines(path):
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            yield line.rstrip("\n")
+
+
+def parse(lines):
+    """Chuyển mỗi dòng thành dict; bỏ qua (và đếm) dòng sai định dạng."""
+    for line in lines:
+        parts = line.split()
+        if len(parts) != 6 or not parts[5].endswith("ms"):
+            stats["skipped"] += 1
+            continue
+        date, time_, method, path, status, duration = parts
+        yield {"time": time_, "method": method, "path": path,
+               "status": int(status), "ms": int(duration[:-2])}
+
+
+def batched(items, size):
+    """Gom thành từng lô `size` phần tử - ví dụ để ghi vào database mỗi lần 3 bản ghi.
+    (Python 3.12+ có sẵn itertools.batched làm việc này.)"""
+    iterator = iter(items)
+    while batch := list(islice(iterator, size)):
+        yield batch
+
+
+# Pipeline: đọc → parse → xử lý từng lô. Không có list chứa toàn bộ file!
+status_count = Counter()
+slow_requests = []
+for batch_no, batch in enumerate(batched(parse(read_lines("access.log")), 3), start=1):
+    print(f"📦 Lô {batch_no}: {len(batch)} bản ghi")
+    for req in batch:
+        status_count[req["status"] // 100 * 100] += 1      # 200, 404 → nhóm 2xx, 4xx...
+        if req["ms"] >= 1000:
+            slow_requests.append(f"{req['time']} {req['method']} {req['path']} ({req['ms']}ms)")
+
+print("Theo nhóm status:", {f"{code // 100}xx": n for code, n in sorted(status_count.items())})
+print(f"Bỏ qua {stats['skipped']} dòng hỏng. Request chậm (>= 1s):")
+for item in slow_requests:
+    print("  🐢", item)
+
+# Output:
+# 📦 Lô 1: 3 bản ghi
+# 📦 Lô 2: 3 bản ghi
+# 📦 Lô 3: 1 bản ghi
+# Theo nhóm status: {'2xx': 4, '4xx': 1, '5xx': 2}
+# Bỏ qua 1 dòng hỏng. Request chậm (>= 1s):
+#   🐢 10:00:06 POST /api/payments (2300ms)
+#   🐢 10:00:07 GET /api/products (1800ms)
+#   🐢 10:00:09 POST /api/payments (3100ms)
+```
+
+> 🧠 Gom theo lô (`batched`) là kỹ thuật chuẩn khi ghi dữ liệu lớn vào database hoặc gọi API hàng loạt: ghi 1.000 bản ghi/lần nhanh hơn rất nhiều so với 1.000 lần ghi 1 bản ghi, mà vẫn không phải nạp cả file vào RAM.
+
 ## ⚠️ Lỗi thường gặp
 
 ### 1. Dùng lại iterator/generator đã cạn
@@ -1345,13 +1525,14 @@ print(fib(80))
 - [ ] Viết context manager bằng class và bằng `@contextmanager`
 - [ ] Dùng `async`/`await`, `asyncio.run`, `asyncio.gather`
 - [ ] Biết khi nào nên và không nên dùng asyncio (so với thread, process)
+- [ ] Viết được decorator timer/retry/cache cho API chậm và pipeline generator xử lý log lớn (phần 🌍 Ứng dụng thực tế)
 - [ ] Hoàn thành ít nhất 3 bài tập
 
 ## 🚀 Tiếp theo
 
 Chúc mừng! 🎉 Bạn đã đi qua toàn bộ kiến thức cốt lõi của Python - từ biến đầu tiên đến decorator và asyncio. Đã đến lúc **kết hợp tất cả** vào một dự án thực tế hoàn chỉnh, có cấu trúc chuyên nghiệp và có test.
 
-**Bài tiếp theo**: [Dự án cuối khóa - Ứng dụng Todo CLI](./10-final-project.md)
+**Bài tiếp theo**: [Dự án tổng hợp phần cơ bản - Ứng dụng Todo CLI](./10-final-project.md)
 
 ---
 

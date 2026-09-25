@@ -989,6 +989,174 @@ print(describe(None))
 - **if/elif**: điều kiện so sánh đơn giản, khoảng giá trị (`score >= 8`)
 - **match**: so khớp nhiều giá trị cố định, hoặc **tách cấu trúc dữ liệu** (lệnh, JSON, event)
 
+## 🌍 Ứng dụng thực tế
+
+`if/elif/else`, vòng lặp và `match-case` là "bộ não" ra quyết định của mọi phần mềm nghiệp vụ. Dưới đây là 3 tình huống bạn sẽ gặp khi đi làm.
+
+### 1. Xếp loại học lực cả lớp
+
+Quy tắc thực tế thường có **nhiều điều kiện kết hợp**: không chỉ xét điểm trung bình mà còn xét môn thấp nhất.
+
+```python
+# ranking.py - Xếp loại học lực cả lớp
+# Quy tắc (minh họa, giống cách nhiều trường áp dụng):
+#   Giỏi:       ĐTB >= 8.0 và không môn nào dưới 6.5
+#   Khá:        ĐTB >= 6.5 và không môn nào dưới 5.0
+#   Trung bình: ĐTB >= 5.0 và không môn nào dưới 3.5
+#   Yếu:        còn lại
+students = [
+    ("An", [9.0, 8.5, 7.0]),
+    ("Bình", [9.5, 9.0, 6.0]),      # ĐTB cao nhưng có môn 6.0 → bị kéo xuống Khá
+    ("Chi", [6.5, 7.0, 5.5]),
+    ("Dũng", [4.0, 6.0, 5.5]),
+    ("Em", [3.0, 5.0, 4.0]),
+]
+
+count_gioi = count_kha = count_tb = count_yeu = 0
+
+for rank, (name, scores) in enumerate(students, start=1):
+    average = sum(scores) / len(scores)
+    lowest = min(scores)
+
+    if average >= 8 and lowest >= 6.5:
+        grade = "Giỏi"
+        count_gioi += 1
+    elif average >= 6.5 and lowest >= 5:
+        grade = "Khá"
+        count_kha += 1
+    elif average >= 5 and lowest >= 3.5:
+        grade = "Trung bình"
+        count_tb += 1
+    else:
+        grade = "Yếu"
+        count_yeu += 1
+
+    note = f"(môn thấp nhất {lowest})" if lowest < 5 else ""
+    print(f"{rank}. {name:<6} ĐTB {average:.2f} → {grade} {note}".rstrip())
+
+print(f"Tổng kết: Giỏi {count_gioi} | Khá {count_kha} | TB {count_tb} | Yếu {count_yeu}")
+
+# Output:
+# 1. An     ĐTB 8.17 → Giỏi
+# 2. Bình   ĐTB 8.17 → Khá
+# 3. Chi    ĐTB 6.33 → Trung bình
+# 4. Dũng   ĐTB 5.17 → Trung bình (môn thấp nhất 4.0)
+# 5. Em     ĐTB 4.00 → Yếu (môn thấp nhất 3.0)
+# Tổng kết: Giỏi 1 | Khá 1 | TB 2 | Yếu 1
+```
+
+> 💡 Nhờ đặt điều kiện **chặt nhất lên trước** (Giỏi → Khá → TB → Yếu), mỗi nhánh `elif` chỉ cần kiểm tra ngưỡng của chính nó.
+
+### 2. Tính phí giao hàng cho shop online
+
+`match-case` chọn phí theo khu vực, `if` xử lý phụ phí cân nặng và freeship, `continue` bỏ qua đơn không hợp lệ mà không dừng cả chương trình:
+
+```python
+# shipping.py - Tính phí giao hàng cho các đơn của shop online
+# Mỗi đơn: (mã đơn, khu vực, cân nặng kg, giá trị đơn, giao nhanh?)
+orders = [
+    ("DH001", "noi_thanh", 0.8, 250_000, False),
+    ("DH002", "ngoai_thanh", 2.5, 180_000, True),
+    ("DH003", "tinh", 4.2, 620_000, False),
+    ("DH004", "quoc_te", 1.0, 900_000, False),
+    ("DH005", "noi_thanh", 1.5, 520_000, True),
+]
+FREESHIP_FROM = 500_000     # Đơn từ 500k được miễn phí ship cơ bản
+
+total_fee = 0
+for order_id, zone, weight, value, express in orders:
+    # 1. Phí cơ bản theo khu vực (match-case)
+    match zone:
+        case "noi_thanh":
+            base = 15_000
+        case "ngoai_thanh":
+            base = 25_000
+        case "tinh":
+            base = 35_000
+        case _:
+            print(f"{order_id}: ❌ Chưa hỗ trợ giao tới khu vực '{zone}'")
+            continue                        # Bỏ qua đơn này, xử lý đơn tiếp theo
+
+    # 2. Phụ phí cân nặng: mỗi 0.5kg vượt quá 1kg tính thêm 5.000đ
+    if weight > 1:
+        extra_steps = -(-(weight - 1) // 0.5)   # Làm tròn lên (mẹo ở Bài 2)
+        base += int(extra_steps) * 5_000
+
+    # 3. Miễn phí ship cơ bản cho đơn lớn, nhưng giao nhanh vẫn tính phụ phí
+    fee = 0 if value >= FREESHIP_FROM else base
+    if express:
+        fee += 20_000
+
+    total_fee += fee
+    label = "🎁 Freeship" if value >= FREESHIP_FROM else ""
+    speed = "⚡ nhanh" if express else "thường"
+    print(f"{order_id}: {zone:<12} {weight:>4}kg {speed:<8} → {fee:>7,}đ {label}".rstrip())
+
+print(f"Tổng phí ship thu của khách: {total_fee:,}đ")
+
+# Output:
+# DH001: noi_thanh     0.8kg thường   →  15,000đ
+# DH002: ngoai_thanh   2.5kg ⚡ nhanh  →  60,000đ
+# DH003: tinh          4.2kg thường   →       0đ 🎁 Freeship
+# DH004: ❌ Chưa hỗ trợ giao tới khu vực 'quoc_te'
+# DH005: noi_thanh     1.5kg ⚡ nhanh  →  20,000đ 🎁 Freeship
+# Tổng phí ship thu của khách: 95,000đ
+```
+
+### 3. Mô phỏng máy ATM
+
+`for ... else` cho giới hạn số lần nhập PIN, `continue` bỏ qua yêu cầu sai, `//` và `%=` để chia tiền thành các tờ mệnh giá:
+
+```python
+# atm.py - Mô phỏng máy ATM: nhập PIN (tối đa 3 lần) và rút tiền
+# Trong thực tế dữ liệu lấy từ input(); ở đây giả lập bằng list để chạy ra kết quả cố định
+CORRECT_PIN = "2468"
+pin_attempts = ["1234", "2468"]          # Lần 1 sai, lần 2 đúng
+withdraw_requests = [730_000, 5_000_000, 1_850_000]
+balance = 3_000_000
+
+# --- Bước 1: Xác thực PIN với for ... else ---
+MAX_ATTEMPTS = 3
+for attempt, pin in enumerate(pin_attempts[:MAX_ATTEMPTS], start=1):
+    if pin == CORRECT_PIN:
+        print(f"🔓 Đăng nhập thành công (lần thử {attempt})")
+        break
+    print(f"❌ Sai PIN, còn {MAX_ATTEMPTS - attempt} lần thử")
+else:
+    # Chỉ chạy khi vòng for KHÔNG bị break → đã dùng hết lượt thử mà vẫn sai
+    print("🔒 Thẻ bị khóa!")
+    balance = 0
+
+# --- Bước 2: Xử lý từng yêu cầu rút tiền ---
+for amount in withdraw_requests:
+    if amount % 50_000 != 0:
+        print(f"⚠️  {amount:,}đ: số tiền phải là bội số của 50.000đ")
+        continue
+    if amount > balance:
+        print(f"⚠️  {amount:,}đ: số dư không đủ (còn {balance:,}đ)")
+        continue
+
+    # Chia tiền thành các tờ mệnh giá lớn nhất có thể
+    remaining = amount
+    notes = ""
+    for note in (500_000, 200_000, 100_000, 50_000):
+        count = remaining // note
+        if count:
+            notes += f"{count}×{note // 1000}k "
+            remaining %= note
+    balance -= amount
+    print(f"💵 Rút {amount:,}đ → {notes.strip()} | Số dư: {balance:,}đ")
+
+# Output:
+# ❌ Sai PIN, còn 2 lần thử
+# 🔓 Đăng nhập thành công (lần thử 2)
+# ⚠️  730,000đ: số tiền phải là bội số của 50.000đ
+# ⚠️  5,000,000đ: số dư không đủ (còn 3,000,000đ)
+# 💵 Rút 1,850,000đ → 3×500k 1×200k 1×100k 1×50k | Số dư: 1,150,000đ
+```
+
+> 🧠 Thuật toán "lấy mệnh giá lớn nhất trước" gọi là **thuật toán tham lam (greedy)** - dùng để trả tiền thừa, chia hàng vào thùng, xếp lịch...
+
 ## ⚠️ Lỗi thường gặp
 
 ### 1. Quên dấu `:` hoặc thụt lề sai
@@ -1178,6 +1346,7 @@ for n in range(1, 16):        # In 1-15 cho gọn; đề bài dùng range(1, 31)
 - [ ] Phân biệt `break`, `continue`, `pass`
 - [ ] Hiểu `for...else` ("nobreak")
 - [ ] Viết `match-case` với literal, `|`, guard, sequence, dict
+- [ ] Tự viết lại được ví dụ xếp loại học lực, phí ship, ATM trong phần 🌍 Ứng dụng thực tế
 - [ ] Hoàn thành ít nhất 3 bài tập
 
 ## 🚀 Tiếp theo

@@ -599,6 +599,135 @@ Truy cập [go.dev/play](https://go.dev/play/) để:
 
 ⚠️ Hạn chế: không đọc được bàn phím, không truy cập mạng, thời gian luôn bắt đầu từ `2009-11-10 23:00:00 UTC` (ngày Go ra mắt 😄).
 
+## 🌍 Ứng dụng thực tế
+
+Mới Bài 1 nhưng bạn đã viết được những chương trình nhỏ **có ích thật sự**. Dưới đây là 3 tình huống bạn sẽ gặp khi làm việc.
+
+### Ví dụ 1: Lệnh `version` cho công cụ dòng lệnh
+
+Gần như mọi công cụ CLI (`go version`, `git --version`, `docker version`...) đều có lệnh in thông tin phiên bản. Khi người dùng báo lỗi, thông tin này giúp bạn biết họ đang chạy bản nào, trên hệ điều hành nào.
+
+```go
+package main
+
+import (
+	"fmt"
+	"runtime"
+)
+
+// Thông tin ứng dụng - thường được in ra khi gõ lệnh "shopcli version"
+const (
+	appName    = "ShopCLI"
+	appVersion = "1.0.0"
+)
+
+func main() {
+	fmt.Println("=====", appName, "=====")
+	fmt.Printf("Phiên bản:    %s\n", appVersion)
+	fmt.Printf("Go:           %s\n", runtime.Version()) // Phiên bản Go đã dùng để build
+	fmt.Printf("Hệ điều hành: %s\n", runtime.GOOS)      // linux, windows, darwin (macOS)...
+	fmt.Printf("Kiến trúc:    %s\n", runtime.GOARCH)    // amd64, arm64...
+}
+
+// Output (trên Linux 64-bit với Go 1.24.7 - máy bạn có thể khác):
+// ===== ShopCLI =====
+// Phiên bản:    1.0.0
+// Go:           go1.24.7
+// Hệ điều hành: linux
+// Kiến trúc:    amd64
+```
+
+> 💡 Package `runtime` cho biết chương trình **đang chạy** trên hệ điều hành/kiến trúc nào. Nếu bạn cross-compile bằng `GOOS=windows GOARCH=amd64 go build -o shopcli.exe` rồi chạy file `.exe` trên Windows, dòng "Hệ điều hành" sẽ in ra `windows`.
+
+### Ví dụ 2: In phiếu giao hàng
+
+Các shop online hằng ngày in hàng trăm phiếu giao hàng dán lên kiện hàng. Với `Println` và `Printf` bạn đã in được một phiếu gọn gàng:
+
+```go
+package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+// Tên cửa hàng dùng chung cho mọi phiếu
+const shopName = "Gopher Shop"
+
+func main() {
+	line := strings.Repeat("=", 34) // Tạo chuỗi 34 dấu "=" (strings: Bài 2)
+
+	fmt.Println(line)
+	fmt.Println(strings.ToUpper("phiếu giao hàng -"), shopName)
+	fmt.Println(line)
+	fmt.Printf("Mã đơn:     %s\n", "DH2024-0001")
+	fmt.Printf("Người nhận: %s\n", "Nguyễn Văn An")
+	fmt.Printf("SĐT:        %s\n", "0901 234 567")
+	fmt.Printf("Địa chỉ:    %s\n", "12 Lê Lợi, Quận 1, TP.HCM")
+	fmt.Printf("Số kiện:    %d\n", 2)
+	fmt.Printf("Thu hộ COD: %d đ\n", 350000)
+	fmt.Println(line)
+}
+
+// Output:
+// ==================================
+// PHIẾU GIAO HÀNG - Gopher Shop
+// ==================================
+// Mã đơn:     DH2024-0001
+// Người nhận: Nguyễn Văn An
+// SĐT:        0901 234 567
+// Địa chỉ:    12 Lê Lợi, Quận 1, TP.HCM
+// Số kiện:    2
+// Thu hộ COD: 350000 đ
+// ==================================
+```
+
+> 💡 Hiện tại dữ liệu đang "viết cứng" trong code. Ở các bài sau bạn sẽ lưu chúng vào biến ([Bài 2](./02-variables-types.md)), in hàng loạt bằng vòng lặp ([Bài 3](./03-control-flow.md)) và đọc từ file JSON ([Bài 11](./11-files-json-cli.md)).
+
+### Ví dụ 3: Công cụ nhận tham số dòng lệnh
+
+Script tự động hóa (backup, deploy, gửi báo cáo...) thường nhận tham số khi chạy thay vì hỏi người dùng. `os.Args` chứa danh sách tham số đó:
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	// os.Args chứa các tham số dòng lệnh:
+	// os.Args[0] là tên chương trình, os.Args[1] là tham số đầu tiên
+	if len(os.Args) < 2 {
+		fmt.Println("Cách dùng: greet <tên>")
+		os.Exit(1) // Thoát với mã lỗi 1 - script/CI sẽ biết là chạy thất bại
+	}
+
+	name := os.Args[1]
+	fmt.Printf("Xin chào %s! Chúc bạn một ngày code vui vẻ 🐹\n", name)
+}
+```
+
+Build rồi chạy thử:
+
+```bash
+go build -o greet .
+./greet Lan
+./greet "Minh Anh"
+./greet
+echo $?          # Xem mã thoát của lệnh vừa chạy (Windows PowerShell: $LASTEXITCODE)
+```
+
+```text
+Xin chào Lan! Chúc bạn một ngày code vui vẻ 🐹
+Xin chào Minh Anh! Chúc bạn một ngày code vui vẻ 🐹
+Cách dùng: greet <tên>
+1
+```
+
+> 💡 **Mã thoát (exit code)**: `0` = thành công, khác `0` = thất bại. Các công cụ như CI/CD, Makefile, script shell dựa vào mã này để quyết định có chạy bước tiếp theo hay không. Vì vậy chương trình Go nghiêm túc nên gọi `os.Exit(1)` khi gặp lỗi. (Nếu dùng `go run`, bạn sẽ thấy thêm dòng `exit status 1` do lệnh `go` in ra.)
+
 ## ⚠️ Lỗi thường gặp
 
 ### Lỗi 1: `go: command not found` / `'go' is not recognized`
@@ -747,6 +876,7 @@ Mở rộng ví dụ ở mục 7: hỏi thêm **năm sinh** của người dùng
 - [ ] Giải thích được ý nghĩa của `package main`, `import`, `func main`
 - [ ] Biết quy tắc chữ hoa = exported, chữ thường = unexported
 - [ ] Dùng được `go build`, `go fmt`, `go vet`
+- [ ] Chạy được các ví dụ ứng dụng thực tế: lệnh `version`, phiếu giao hàng, CLI nhận tham số qua `os.Args`
 - [ ] Hoàn thành ít nhất 3 bài tập
 
 ## 🚀 Tiếp theo

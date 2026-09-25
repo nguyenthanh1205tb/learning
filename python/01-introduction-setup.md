@@ -925,6 +925,109 @@ Readability counts.                     (Code dễ đọc rất quan trọng)
 ...
 ```
 
+## 🌍 Ứng dụng thực tế
+
+Chỉ với `print()`, phép tính và vài dòng code, bạn đã viết được những script nhỏ có ích ngay. Hãy tạo từng file, gõ lại và chạy bằng `python3 ten_file.py` (Windows: `python ten_file.py`).
+
+### 1. Thẻ chào mừng thành viên & tính tuổi
+
+Script "đầu tiên" của rất nhiều người: in lời chào đẹp mắt và tự tính tuổi thay vì tính nhẩm.
+
+```python
+# welcome.py - In thẻ chào mừng thành viên mới và tính tuổi
+# (Dòng "name = ..." là tạo BIẾN - đặt tên cho một giá trị để dùng lại.
+#  Bạn sẽ học kỹ về biến ở Bài 2, giờ chỉ cần hiểu vậy là đủ.)
+
+name = "Nguyễn Minh Anh"
+birth_year = 2004
+current_year = 2026
+
+print("=" * 36)
+print("   CHÀO MỪNG ĐẾN VỚI CLB PYTHON 🐍")
+print("=" * 36)
+print("Thành viên:", name)
+print("Năm sinh:", birth_year)
+print("Tuổi năm nay:", current_year - birth_year)
+print("Còn", 30 - (current_year - birth_year), "năm nữa là tròn 30 tuổi")
+print("Đã sống khoảng", (current_year - birth_year) * 365, "ngày")
+print("=" * 36)
+print("Ngày tham gia: ", end="")        # end="" → không xuống dòng
+print("25", "09", "2026", sep="/")      # sep="/" → nối bằng dấu /
+
+# Output:
+# ====================================
+#    CHÀO MỪNG ĐẾN VỚI CLB PYTHON 🐍
+# ====================================
+# Thành viên: Nguyễn Minh Anh
+# Năm sinh: 2004
+# Tuổi năm nay: 22
+# Còn 8 năm nữa là tròn 30 tuổi
+# Đã sống khoảng 8030 ngày
+# ====================================
+# Ngày tham gia: 25/09/2026
+```
+
+> 💡 Muốn đổi sang tên của bạn? Chỉ sửa **một dòng** `name = ...` ở đầu file - mọi chỗ in ra đều tự cập nhật. Đây chính là lý do chúng ta dùng biến thay vì gõ thẳng giá trị.
+
+### 2. Chia tiền sau buổi đi ăn
+
+`//` (chia lấy phần nguyên) và `%` (chia lấy dư) cực kỳ hữu ích khi chia tiền, chia trang, đổi đơn vị:
+
+```python
+# split_bill.py - Chia tiền sau buổi đi ăn cùng bạn bè
+# Chỉ dùng print() và các phép tính: +, *, // (chia lấy nguyên), % (chia lấy dư)
+
+food = 1250000          # Tiền đồ ăn (đồng)
+drinks = 320000         # Tiền nước
+tip = 55000             # Tiền tip cho nhân viên
+people = 3              # Số người
+
+total = food + drinks + tip
+print("Tổng hóa đơn:", total, "đồng")
+
+# // cho phần nguyên, % cho phần dư → không bị lẻ đồng nào
+print("Mỗi người trả:", total // people, "đồng")
+print("Còn dư:", total % people, "đồng (người đặt bàn trả thêm)")
+
+# In "thanh tiến trình" góp tiền: 2/3 người đã chuyển khoản
+print("Đã góp: ", end="")
+print("■" * 2, end="")
+print("□" * 1, end=" ")
+print("2/3 người")
+
+# Output:
+# Tổng hóa đơn: 1625000 đồng
+# Mỗi người trả: 541666 đồng
+# Còn dư: 2 đồng (người đặt bàn trả thêm)
+# Đã góp: ■■□ 2/3 người
+```
+
+### 3. Ước tính thời gian học xong khóa Python
+
+```python
+# study_plan.py - Ước tính thời gian học xong khóa Python
+
+lessons = 16                # Số bài học của khóa
+minutes_per_lesson = 150    # Mỗi bài cần ~150 phút (đọc + gõ code + bài tập)
+minutes_per_day = 60        # Mỗi ngày học 60 phút
+
+total_minutes = lessons * minutes_per_lesson
+days = total_minutes // minutes_per_day
+
+print("Tổng thời gian:", total_minutes, "phút ≈", total_minutes // 60, "giờ")
+print("Số ngày cần học:", days, "ngày")
+print("Tương đương:", days // 7, "tuần và", days % 7, "ngày")
+print("Nếu học 2 buổi/ngày:", days // 2, "ngày")
+
+# Output:
+# Tổng thời gian: 2400 phút ≈ 40 giờ
+# Số ngày cần học: 40 ngày
+# Tương đương: 5 tuần và 5 ngày
+# Nếu học 2 buổi/ngày: 20 ngày
+```
+
+> 🧠 Để ý cặp `days // 7` và `days % 7`: đây là "công thức" đổi đơn vị dùng khắp nơi - đổi giây ra phút/giây, đổi tháng ra năm/tháng, chia sản phẩm vào thùng...
+
 ## ⚠️ Lỗi thường gặp
 
 ### 1. `'python' is not recognized...` / `command not found: python`
@@ -1083,6 +1186,7 @@ print(tinh_tong(3, 4))
 - [ ] Cài thư viện bằng `pip`, tạo và dùng `requirements.txt`
 - [ ] Hiểu quy tắc thụt lề 4 dấu cách
 - [ ] Biết quy tắc đặt tên PEP 8: `snake_case`, `PascalCase`, `UPPER_CASE`
+- [ ] Chạy được các script trong phần 🌍 Ứng dụng thực tế (thẻ chào mừng, chia tiền, kế hoạch học)
 - [ ] Hoàn thành ít nhất 3 bài tập
 
 ## 🚀 Tiếp theo

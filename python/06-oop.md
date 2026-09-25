@@ -895,7 +895,7 @@ print(asdict(u))                # Chuyển sang dict - tiện để lưu JSON
 # Output: {'username': 'annguyen', 'email': 'an@mail.com', 'password': 'secret123', 'is_admin': False}
 ```
 
-> ✅ **Khi nào dùng dataclass?** Khi class **chủ yếu chứa dữ liệu** (model, config, DTO). Bạn sẽ dùng dataclass trong [dự án cuối khóa](./10-final-project.md).
+> ✅ **Khi nào dùng dataclass?** Khi class **chủ yếu chứa dữ liệu** (model, config, DTO). Bạn sẽ dùng dataclass trong [dự án Todo CLI ở Bài 10](./10-final-project.md).
 
 ## 📖 10. Abstract Class (abc)
 
@@ -963,6 +963,212 @@ for method in [CreditCard("4111222233334444"), MoMo("0901234567")]:
 # 🧾 Hóa đơn: Thanh toán 150,000đ bằng thẻ ****4444
 # 🧾 Hóa đơn: Thanh toán 150,000đ qua ví 0901234567
 ```
+
+## 🌍 Ứng dụng thực tế
+
+OOP phát huy sức mạnh khi hệ thống có **nhiều loại đối tượng cùng làm một việc theo cách khác nhau** (thanh toán, thông báo, vận chuyển...) hoặc cần **gói dữ liệu cùng quy tắc nghiệp vụ** (nhân viên, đơn hàng, tài khoản).
+
+### 1. Hệ thống thanh toán đa phương thức
+
+`Checkout` không cần biết có bao nhiêu phương thức thanh toán. Thêm "Chuyển khoản QR" vào ngày mai? Chỉ cần viết **một class mới** kế thừa `PaymentMethod` - không sửa một dòng nào của `Checkout` (nguyên tắc **Open/Closed**):
+
+```python
+# checkout.py - Hệ thống thanh toán đa phương thức cho cửa hàng online
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+
+
+@dataclass
+class Order:
+    order_id: str
+    amount: int                                  # Số tiền hàng (đồng)
+
+
+class PaymentMethod(ABC):
+    """'Hợp đồng' chung: mọi phương thức phải biết tính phí và kiểm tra khả năng thanh toán."""
+
+    name = "Chung"                               # Class attribute - class con ghi đè
+
+    @abstractmethod
+    def fee(self, amount: int) -> int: ...
+
+    @abstractmethod
+    def can_pay(self, amount: int) -> bool: ...
+
+    def process(self, amount: int) -> None:     # Hook cho class con (vd: trừ tiền trong ví)
+        pass
+
+
+class COD(PaymentMethod):
+    name = "Tiền mặt (COD)"
+    LIMIT = 5_000_000                            # Không nhận COD cho đơn quá lớn
+
+    def fee(self, amount: int) -> int:
+        return 15_000                            # Phí thu hộ cố định
+
+    def can_pay(self, amount: int) -> bool:
+        return amount <= self.LIMIT
+
+
+class CreditCard(PaymentMethod):
+    name = "Thẻ tín dụng"
+
+    def __init__(self, number: str):
+        self.last4 = number[-4:]                 # Chỉ giữ 4 số cuối - không lưu số thẻ đầy đủ!
+
+    def fee(self, amount: int) -> int:
+        return round(amount * 0.015)             # Phí cổng thanh toán 1.5%
+
+    def can_pay(self, amount: int) -> bool:
+        return True
+
+
+class EWallet(PaymentMethod):
+    name = "Ví điện tử"
+
+    def __init__(self, balance: int):
+        self._balance = balance
+
+    @property
+    def balance(self) -> int:                    # Chỉ đọc - không cho gán số dư từ bên ngoài
+        return self._balance
+
+    def fee(self, amount: int) -> int:
+        return 0
+
+    def can_pay(self, amount: int) -> bool:
+        return amount <= self._balance
+
+    def process(self, amount: int) -> None:
+        self._balance -= amount
+
+
+@dataclass
+class Checkout:
+    history: list[str] = field(default_factory=list)
+
+    def pay(self, order: Order, method: PaymentMethod) -> bool:
+        total = order.amount + method.fee(order.amount)   # Đa hình: mỗi method tự tính phí
+        if not method.can_pay(total):
+            self.history.append(f"❌ {order.order_id}: {method.name} từ chối {total:,}đ")
+            return False
+        method.process(total)
+        self.history.append(f"✅ {order.order_id}: {total:,}đ qua {method.name}")
+        return True
+
+
+wallet = EWallet(balance=1_000_000)
+checkout = Checkout()
+checkout.pay(Order("DH01", 800_000), COD())
+checkout.pay(Order("DH02", 6_000_000), COD())                    # Vượt hạn mức COD
+checkout.pay(Order("DH03", 6_000_000), CreditCard("4111222233334444"))
+checkout.pay(Order("DH04", 700_000), wallet)
+checkout.pay(Order("DH05", 400_000), wallet)                     # Ví không đủ tiền
+
+print("\n".join(checkout.history))
+print(f"Số dư ví còn lại: {wallet.balance:,}đ")
+
+# Output:
+# ✅ DH01: 815,000đ qua Tiền mặt (COD)
+# ❌ DH02: Tiền mặt (COD) từ chối 6,015,000đ
+# ✅ DH03: 6,090,000đ qua Thẻ tín dụng
+# ✅ DH04: 700,000đ qua Ví điện tử
+# ❌ DH05: Ví điện tử từ chối 400,000đ
+# Số dư ví còn lại: 300,000đ
+```
+
+> 💡 `CreditCard` chỉ lưu **4 số cuối** của thẻ - hệ thống thật không bao giờ lưu số thẻ đầy đủ. `EWallet.balance` là `@property` chỉ đọc nên không ai "lỡ tay" gán `wallet.balance = 10**9`.
+
+### 2. Quản lý nhân viên và bảng lương
+
+`@dataclass` giữ dữ liệu, `@property` tính các giá trị phát sinh (lương làm thêm, bảo hiểm, thực nhận) nên **không bao giờ bị lệch** khi dữ liệu gốc thay đổi, `@classmethod` tạo nhân viên từ dữ liệu thô, còn dunder methods giúp `Department` dùng tự nhiên như một list:
+
+```python
+# payroll.py - Quản lý nhân viên theo phòng ban và tính bảng lương tháng
+from dataclasses import dataclass
+
+INSURANCE_RATE = 0.105          # BHXH 8% + BHYT 1.5% + BHTN 1% người lao động đóng (minh họa)
+
+
+@dataclass
+class Employee:
+    name: str
+    base_salary: int                                    # Lương cơ bản (đóng bảo hiểm)
+    allowance: int = 0                                  # Phụ cấp (ăn trưa, xăng xe...)
+    overtime_hours: float = 0
+
+    def __post_init__(self):                            # Kiểm tra dữ liệu ngay khi tạo
+        if self.base_salary <= 0:
+            raise ValueError(f"Lương của {self.name} phải > 0")
+
+    @property
+    def overtime_pay(self) -> int:
+        hourly = self.base_salary / 26 / 8              # 26 ngày công, 8 giờ/ngày
+        return round(hourly * 1.5 * self.overtime_hours)  # Làm thêm ngày thường: 150%
+
+    @property
+    def insurance(self) -> int:
+        return round(self.base_salary * INSURANCE_RATE)
+
+    @property
+    def net_salary(self) -> int:
+        return self.base_salary + self.allowance + self.overtime_pay - self.insurance
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Employee":       # Tạo từ dữ liệu JSON/CSV/form
+        return cls(data["name"], int(data["base"]), int(data.get("allowance", 0)),
+                   float(data.get("ot", 0)))
+
+
+class Department:
+    def __init__(self, name: str):
+        self.name = name
+        self._members: list[Employee] = []
+
+    def hire(self, *employees: Employee) -> None:
+        self._members.extend(employees)
+
+    def __len__(self) -> int:                           # len(phòng_ban)
+        return len(self._members)
+
+    def __iter__(self):                                 # for nv in phòng_ban
+        ranked = sorted(self._members, key=lambda e: e.net_salary, reverse=True)
+        return iter(ranked)                             # Lương thực nhận cao trước
+
+    @property
+    def total_payroll(self) -> int:
+        return sum(e.net_salary for e in self._members)
+
+
+it = Department("Công nghệ")
+it.hire(
+    Employee("Lan", 25_000_000, allowance=2_000_000, overtime_hours=10),
+    Employee.from_dict({"name": "Minh", "base": "18000000", "allowance": "1500000"}),
+    Employee("Tú", 12_000_000, overtime_hours=20),
+)
+
+print(f"Phòng {it.name} - {len(it)} nhân viên")
+print(f"{'Tên':<6}{'Lương CB':>12}{'Làm thêm':>11}{'Bảo hiểm':>11}{'Thực nhận':>13}")
+for e in it:
+    print(f"{e.name:<6}{e.base_salary:>12,}{e.overtime_pay:>11,}{-e.insurance:>11,}{e.net_salary:>13,}")
+print(f"Tổng quỹ lương thực trả: {it.total_payroll:,}đ")
+
+try:
+    Employee("Lỗi", 0)
+except ValueError as error:
+    print("⚠️", error)
+
+# Output:
+# Phòng Công nghệ - 3 nhân viên
+# Tên       Lương CB   Làm thêm   Bảo hiểm    Thực nhận
+# Lan     25,000,000  1,802,885 -2,625,000   26,177,885
+# Minh    18,000,000          0 -1,890,000   17,610,000
+# Tú      12,000,000  1,730,769 -1,260,000   12,470,769
+# Tổng quỹ lương thực trả: 56,258,654đ
+# ⚠️ Lương của Lỗi phải > 0
+```
+
+> 🧠 Vì sao `net_salary` là `@property` chứ không phải attribute lưu sẵn? Nếu lưu sẵn, khi tăng `base_salary` bạn phải nhớ cập nhật lại lương thực nhận - quên một lần là sai bảng lương. Tính từ dữ liệu gốc mỗi lần đọc thì luôn đúng.
 
 ## ⚠️ Lỗi thường gặp
 
@@ -1153,6 +1359,7 @@ print(v1 == Vector(3, 4))
 - [ ] Viết `__str__`, `__repr__`, `__eq__`, `__len__`, `__add__`...
 - [ ] Dùng `@dataclass` với `field(default_factory=...)`, `frozen`, `order`
 - [ ] Tạo abstract class với `ABC` và `@abstractmethod`
+- [ ] Thiết kế được nhóm class dùng đa hình + `@property` như ví dụ thanh toán và bảng lương (phần 🌍 Ứng dụng thực tế)
 - [ ] Hoàn thành ít nhất 3 bài tập
 
 ## 🚀 Tiếp theo

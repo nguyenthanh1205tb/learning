@@ -843,6 +843,262 @@ BenchmarkBuilder-4      	 3701101	       309.6 ns/op	     248 B/op	       5 allo
 
 > 💡 `go test` **cache** kết quả: nếu code không đổi, lần sau sẽ in `ok ... (cached)`. Dùng `-count=1` khi muốn chạy lại thật.
 
+## 🌍 Ứng dụng thực tế
+
+### Ví dụ: Tổ chức package cho một cửa hàng online nhỏ
+
+Hãy áp dụng mọi thứ trong bài vào một dự án có "hình hài" giống thực tế: một cửa hàng bán đồ lưu niệm Gopher. Package được chia **theo lĩnh vực nghiệp vụ** (catalog, cart, pricing) chứ không theo loại file (models, utils):
+
+```text
+shop/
+├── go.mod                        ← module github.com/ten-ban/shop
+├── cmd/
+│   └── shop/
+│       └── main.go               ← Chương trình chạy: ghép các package lại
+└── internal/
+    ├── catalog/
+    │   └── catalog.go            ← Danh mục sản phẩm
+    ├── cart/
+    │   └── cart.go               ← Giỏ hàng (dùng catalog)
+    └── pricing/
+        ├── discount.go           ← Quy tắc khuyến mãi (độc lập, không import ai)
+        └── discount_test.go      ← Test cho logic tính tiền
+```
+
+**Chiều phụ thuộc** chỉ đi một hướng: `cmd/shop` → `cart` → `catalog`, và `cmd/shop` → `pricing`. `pricing` không import package nào khác trong dự án nên rất dễ test - đây là nơi đặt **logic tính tiền quan trọng nhất**.
+
+📄 **`internal/catalog/catalog.go`**
+
+```go
+// Package catalog quản lý danh mục sản phẩm.
+package catalog
+
+// Product là một sản phẩm đang bán.
+type Product struct {
+	SKU   string
+	Name  string
+	Price int // Đơn vị: đồng
+}
+
+// products tạm lưu trong bộ nhớ; sau này thay bằng database (Bài 13).
+var products = map[string]Product{
+	"AO-01":   {SKU: "AO-01", Name: "Áo thun Gopher", Price: 199_000},
+	"COC-02":  {SKU: "COC-02", Name: "Cốc sứ Go", Price: 89_000},
+	"SACH-03": {SKU: "SACH-03", Name: "Sách Learning Go", Price: 450_000},
+}
+
+// Find tìm sản phẩm theo mã SKU.
+func Find(sku string) (Product, bool) {
+	p, ok := products[sku]
+	return p, ok
+}
+```
+
+📄 **`internal/cart/cart.go`**
+
+```go
+// Package cart xử lý giỏ hàng của khách.
+package cart
+
+import (
+	"fmt"
+
+	"github.com/ten-ban/shop/internal/catalog"
+)
+
+// Item là một dòng trong giỏ hàng.
+type Item struct {
+	Product catalog.Product
+	Qty     int
+}
+
+// Cart là giỏ hàng. Zero value (Cart{}) dùng được ngay.
+type Cart struct {
+	items []Item
+}
+
+// Add thêm sản phẩm vào giỏ, trả lỗi nếu mã không tồn tại hoặc số lượng sai.
+func (c *Cart) Add(sku string, qty int) error {
+	if qty <= 0 {
+		return fmt.Errorf("số lượng %d không hợp lệ", qty)
+	}
+	p, ok := catalog.Find(sku)
+	if !ok {
+		return fmt.Errorf("không có sản phẩm %q", sku)
+	}
+	c.items = append(c.items, Item{Product: p, Qty: qty})
+	return nil
+}
+
+// Items trả về các dòng trong giỏ.
+func (c *Cart) Items() []Item { return c.items }
+
+// Subtotal là tổng tiền hàng trước khuyến mãi.
+func (c *Cart) Subtotal() int {
+	total := 0
+	for _, it := range c.items {
+		total += it.Product.Price * it.Qty
+	}
+	return total
+}
+```
+
+📄 **`internal/pricing/discount.go`**
+
+```go
+// Package pricing chứa các quy tắc tính giá và khuyến mãi.
+package pricing
+
+import (
+	"errors"
+	"fmt"
+)
+
+// Các lỗi mà Discount có thể trả về (kiểm tra bằng errors.Is).
+var (
+	ErrInvalidVoucher = errors.New("voucher không hợp lệ")
+	ErrMinOrder       = errors.New("chưa đạt giá trị đơn tối thiểu")
+)
+
+// Voucher là mã giảm giá theo phần trăm.
+type Voucher struct {
+	Code     string
+	Percent  int // Phần trăm giảm, 1-100
+	MaxOff   int // Mức giảm tối đa (đồng), 0 = không giới hạn
+	MinOrder int // Giá trị đơn tối thiểu để được áp dụng
+}
+
+// Discount trả về số tiền được giảm khi áp dụng v cho đơn có giá trị subtotal.
+func Discount(subtotal int, v Voucher) (int, error) {
+	if v.Percent <= 0 || v.Percent > 100 {
+		return 0, fmt.Errorf("%s: %w", v.Code, ErrInvalidVoucher)
+	}
+	if subtotal < v.MinOrder {
+		return 0, fmt.Errorf("%s: %w (cần %d đ)", v.Code, ErrMinOrder, v.MinOrder)
+	}
+	off := subtotal * v.Percent / 100
+	if v.MaxOff > 0 && off > v.MaxOff {
+		off = v.MaxOff
+	}
+	return off, nil
+}
+```
+
+📄 **`cmd/shop/main.go`**
+
+```go
+// Command shop mô phỏng quy trình đặt hàng của cửa hàng Gopher.
+package main
+
+import (
+	"fmt"
+
+	"github.com/ten-ban/shop/internal/cart"
+	"github.com/ten-ban/shop/internal/pricing"
+)
+
+func main() {
+	var c cart.Cart
+	for _, sku := range []string{"AO-01", "SACH-03", "GIAY-99"} {
+		if err := c.Add(sku, 1); err != nil {
+			fmt.Println("⚠️", err)
+		}
+	}
+	for _, it := range c.Items() {
+		fmt.Printf("%-18s x%d %8d đ\n", it.Product.Name, it.Qty, it.Product.Price*it.Qty)
+	}
+
+	subtotal := c.Subtotal()
+	voucher := pricing.Voucher{Code: "GOPHER20", Percent: 20, MaxOff: 100_000, MinOrder: 300_000}
+	off, err := pricing.Discount(subtotal, voucher)
+	if err != nil {
+		fmt.Println("Không áp dụng được voucher:", err)
+	}
+	fmt.Printf("Tạm tính: %d đ | Giảm (%s): %d đ | Thanh toán: %d đ\n",
+		subtotal, voucher.Code, off, subtotal-off)
+}
+```
+
+```bash
+go run ./cmd/shop
+```
+
+```text
+⚠️ không có sản phẩm "GIAY-99"
+Áo thun Gopher     x1   199000 đ
+Sách Learning Go   x1   450000 đ
+Tạm tính: 649000 đ | Giảm (GOPHER20): 100000 đ | Thanh toán: 549000 đ
+```
+
+### Test hàm tính giảm giá
+
+Logic tính tiền là nơi **một con bug = mất tiền thật**, nên phải test kỹ các **trường hợp biên**: vừa đúng đơn tối thiểu, thiếu 1 đồng, chạm mức giảm tối đa, voucher cấu hình sai...
+
+📄 **`internal/pricing/discount_test.go`**
+
+```go
+package pricing
+
+import (
+	"errors"
+	"fmt"
+	"testing"
+)
+
+func TestDiscount(t *testing.T) {
+	sale20 := Voucher{Code: "SALE20", Percent: 20, MaxOff: 100_000, MinOrder: 200_000}
+
+	tests := []struct {
+		name     string
+		subtotal int
+		voucher  Voucher
+		want     int
+		wantErr  error // nil = không mong đợi lỗi
+	}{
+		{"giảm 20% bình thường", 300_000, sale20, 60_000, nil},
+		{"chạm mức giảm tối đa", 1_000_000, sale20, 100_000, nil},
+		{"vừa đúng đơn tối thiểu", 200_000, sale20, 40_000, nil},
+		{"thiếu 1 đồng so với đơn tối thiểu", 199_999, sale20, 0, ErrMinOrder},
+		{"không giới hạn mức giảm", 1_000_000, Voucher{Code: "VIP", Percent: 30}, 300_000, nil},
+		{"phần trăm bằng 0", 500_000, Voucher{Code: "ZERO"}, 0, ErrInvalidVoucher},
+		{"phần trăm quá 100", 500_000, Voucher{Code: "BUG", Percent: 150}, 0, ErrInvalidVoucher},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Discount(tt.subtotal, tt.voucher)
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("Discount() lỗi = %v, muốn %v", err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Errorf("Discount(%d, %s) = %d, muốn %d", tt.subtotal, tt.voucher.Code, got, tt.want)
+			}
+		})
+	}
+}
+
+// Example vừa là tài liệu (hiện trong go doc), vừa là test (so khớp Output).
+func ExampleDiscount() {
+	v := Voucher{Code: "GOPHER20", Percent: 20, MaxOff: 100_000, MinOrder: 300_000}
+	off, _ := Discount(649_000, v)
+	fmt.Println(off)
+	// Output: 100000
+}
+```
+
+```bash
+go test ./... -cover
+```
+
+```text
+	github.com/ten-ban/shop/cmd/shop		coverage: 0.0% of statements
+	github.com/ten-ban/shop/internal/cart		coverage: 0.0% of statements
+	github.com/ten-ban/shop/internal/catalog		coverage: 0.0% of statements
+ok  	github.com/ten-ban/shop/internal/pricing	0.003s	coverage: 100.0% of statements
+```
+
+> 💡 **Đọc kết quả**: `pricing` đạt 100% coverage - tuyệt vời cho phần quan trọng nhất. `cart` và `catalog` chưa có test (0%): hãy thử tự viết `cart_test.go` kiểm tra `Add` với SKU không tồn tại, số lượng âm và `Subtotal` của giỏ rỗng. Lưu ý: test so sánh lỗi bằng `errors.Is` ([Bài 7](./07-error-handling.md)) chứ không so sánh chuỗi thông báo, nên sửa câu chữ của lỗi cũng không làm test gãy.
+
 ## ⚠️ Lỗi thường gặp
 
 ### Lỗi 1: Gọi hàm unexported từ package khác
@@ -956,18 +1212,19 @@ Dùng `github.com/google/uuid` để tạo một chương trình in ra 5 UUID. M
 - [ ] Viết Example test với `// Output:`
 - [ ] Đo coverage với `go test -cover`
 - [ ] Viết và đọc hiểu kết quả benchmark
+- [ ] Tổ chức được dự án nhiều package theo lĩnh vực (catalog, cart, pricing) và test logic tính tiền đạt 100% coverage
 - [ ] Hoàn thành ít nhất 4 bài tập
 
 ## 🚀 Tiếp theo
 
-Chúc mừng! Bạn đã học xong **toàn bộ kiến thức nền tảng** của Go. Đã đến lúc kết hợp tất cả để xây dựng một ứng dụng thực tế:
+Chúc mừng! Bạn đã học xong **toàn bộ kiến thức nền tảng** của Go. Đã đến lúc kết hợp tất cả để xây dựng một ứng dụng thực tế - dự án tổng hợp của Phần 1:
 
 - REST API với `net/http` (routing mới của Go 1.22)
 - Xử lý JSON với `encoding/json`
 - Lưu trữ an toàn với `sync.Mutex`
 - Test HTTP handler với `httptest`
 
-**Bài tiếp theo**: [Dự án cuối khóa: Todo REST API](./10-final-project.md)
+**Bài tiếp theo**: [Bài 10: Dự án tổng hợp phần cơ bản - Todo REST API](./10-final-project.md)
 
 ---
 

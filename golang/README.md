@@ -2,7 +2,12 @@
 
 ## 📋 Tổng quan
 
-Chào mừng bạn đến với khóa học Golang (Go)! Đây là tài liệu hướng dẫn đầy đủ để học Go từ con số 0 đến khi tự viết được một REST API hoàn chỉnh. Khóa học tập trung vào những kiến thức quan trọng nhất mà bạn sẽ dùng hằng ngày khi làm việc với Go, được giải thích **thật chi tiết và dễ hiểu**, có ví dụ chạy được, kết quả mong đợi (Output) và bài tập cho từng bài.
+Chào mừng bạn đến với khóa học Golang (Go)! Đây là tài liệu hướng dẫn đầy đủ để học Go từ con số 0 đến khi tự viết được một REST API hoàn chỉnh, rồi tiếp tục nâng cao để làm việc với file, HTTP API, database và đưa ứng dụng lên production. Khóa học tập trung vào những kiến thức quan trọng nhất mà bạn sẽ dùng hằng ngày khi làm việc với Go, được giải thích **thật chi tiết và dễ hiểu**, có ví dụ chạy được, kết quả mong đợi (Output), mục **"🌍 Ứng dụng thực tế"** với các tình huống gần gũi (hóa đơn, giỏ hàng, thanh toán, gửi email...) và bài tập cho từng bài.
+
+Khóa học gồm **2 phần**:
+
+- **Phần 1: Cơ bản → Trung cấp** (Bài 1-10): cú pháp, cấu trúc dữ liệu, interface, xử lý lỗi, concurrency, testing và dự án tổng hợp Todo REST API
+- **Phần 2: Nâng cao & Thực tế** (Bài 11-16): file/JSON/CLI, HTTP client, database, concurrency patterns nâng cao, generics & reflection, và đưa Go lên production với dự án tổng kết Bookmark API
 
 > 💡 **Go là gì?** Go là ngôn ngữ lập trình do Google tạo ra năm 2009 (Robert Griesemer, Rob Pike, Ken Thompson). Go nổi tiếng vì **đơn giản**, **biên dịch nhanh**, **chạy nhanh** và **hỗ trợ lập trình đồng thời (concurrency) cực tốt**. Docker, Kubernetes, Terraform, Prometheus... đều được viết bằng Go.
 
@@ -16,12 +21,17 @@ Chào mừng bạn đến với khóa học Golang (Go)! Đây là tài liệu h
 - Viết chương trình đồng thời với goroutine, channel, `sync` và `context`
 - Tổ chức code thành package/module và viết unit test
 - Tự xây dựng một **Todo REST API** hoàn chỉnh chỉ với thư viện chuẩn
+- Đọc/ghi file, xử lý JSON và viết công cụ dòng lệnh (CLI)
+- Gọi Web API bên ngoài và xây dựng HTTP service thực tế
+- Làm việc với database bằng `database/sql`
+- Áp dụng các concurrency pattern nâng cao, generics nâng cao, reflection và thư viện chuẩn
+- Đưa ứng dụng Go lên **production** (logging, cấu hình, đóng gói, triển khai) qua dự án tổng kết **Bookmark API**
 
 ### ⏱️ Thời gian học tập
 
-- **Tổng thời gian**: 4-5 tuần (1-2 giờ/ngày)
+- **Tổng thời gian**: 7-8 tuần (1-2 giờ/ngày) - Phần 1 khoảng 5 tuần, Phần 2 khoảng 3 tuần
 - **Cấp độ**: Người mới bắt đầu (biết sơ qua một ngôn ngữ lập trình bất kỳ là lợi thế, nhưng không bắt buộc)
-- **Kết quả**: Có thể tự viết CLI tool, web API đơn giản và đọc hiểu code Go trong các dự án thực tế
+- **Kết quả**: Có thể tự viết CLI tool, web API có database, đọc hiểu code Go trong các dự án thực tế và triển khai ứng dụng lên server
 
 ## 🛠️ Yêu cầu hệ thống
 
@@ -31,7 +41,7 @@ Chào mừng bạn đến với khóa học Golang (Go)! Đây là tài liệu h
 2. **Visual Studio Code** + extension **Go** (của Go Team at Google) - hoặc GoLand nếu bạn thích JetBrains
 3. **Git** - Để quản lý code và tải package
 4. **Terminal** - PowerShell (Windows), Terminal (macOS/Linux)
-5. **curl** hoặc **Postman** - Để test REST API ở bài cuối
+5. **curl** hoặc **Postman** - Để test REST API ở Bài 10 và Phần 2
 
 ### Tài nguyên học tập
 
@@ -41,30 +51,51 @@ Chào mừng bạn đến với khóa học Golang (Go)! Đây là tài liệu h
 
 ## 📚 Cấu trúc khóa học
 
-### Tuần 1: Nền tảng
+### 🌱 Phần 1: Cơ bản → Trung cấp (Bài 1-10)
+
+#### Tuần 1: Nền tảng
 
 - [x] **Bài 1**: [Giới thiệu & Cài đặt](./01-introduction-setup.md) - Go là gì, cài đặt, Hello World, các lệnh `go`
 - [x] **Bài 2**: [Biến & Kiểu dữ liệu](./02-variables-types.md) - `var`, `:=`, zero value, `const`, `iota`, ép kiểu, `fmt`, `strings`, `strconv`
 - [x] **Bài 3**: [Cấu trúc điều khiển](./03-control-flow.md) - `if`, `for`, `switch`, `break`/`continue`, label, `defer`
 
-### Tuần 2: Hàm & Cấu trúc dữ liệu
+#### Tuần 2: Hàm & Cấu trúc dữ liệu
 
 - [x] **Bài 4**: [Hàm (Functions)](./04-functions.md) - nhiều giá trị trả về, variadic, closure, đệ quy
 - [x] **Bài 5**: [Array, Slice & Map](./05-arrays-slices-maps.md) - `len`/`cap`, `append`, `copy`, map, package `slices` & `maps`
 
-### Tuần 3: "Hướng đối tượng" kiểu Go & Xử lý lỗi
+#### Tuần 3: "Hướng đối tượng" kiểu Go & Xử lý lỗi
 
 - [x] **Bài 6**: [Struct, Method & Interface](./06-structs-methods-interfaces.md) - con trỏ, receiver, embedding, interface, generics
 - [x] **Bài 7**: [Xử lý lỗi (Error Handling)](./07-error-handling.md) - `error`, `%w`, `errors.Is/As`, `panic`/`recover`
 
-### Tuần 4: Concurrency & Tổ chức dự án
+#### Tuần 4: Concurrency & Tổ chức dự án
 
 - [x] **Bài 8**: [Concurrency](./08-concurrency.md) - goroutine, channel, `select`, `sync`, worker pool, `context`
 - [x] **Bài 9**: [Package, Module & Testing](./09-packages-modules-testing.md) - `go.mod`, cấu trúc dự án, `go test`, benchmark
 
-### Tuần 5: Dự án cuối khóa
+#### Tuần 5: Dự án tổng hợp Phần 1
 
-- [x] **Bài 10**: [Dự án cuối khóa: Todo REST API](./10-final-project.md) - `net/http`, JSON, `sync.Mutex`, `httptest`
+- [x] **Bài 10**: [Dự án tổng hợp phần cơ bản - Todo REST API](./10-final-project.md) - `net/http`, JSON, `sync.Mutex`, `httptest`
+
+### 🚀 Phần 2: Nâng cao & Thực tế (Bài 11-16)
+
+#### Tuần 6: Làm việc với dữ liệu và mạng
+
+- [x] **Bài 11**: [File, JSON & CLI](./11-files-json-cli.md)
+- [x] **Bài 12**: [HTTP Client & Web API thực tế](./12-http-apis.md)
+
+#### Tuần 7: Database & Concurrency nâng cao
+
+- [x] **Bài 13**: [Làm việc với Database](./13-database-sql.md)
+- [x] **Bài 14**: [Concurrency Patterns nâng cao](./14-advanced-concurrency.md)
+
+#### Tuần 8: Kỹ thuật nâng cao & Production
+
+- [x] **Bài 15**: [Generics nâng cao, Reflection & Thư viện chuẩn](./15-generics-reflection-stdlib.md)
+- [x] **Bài 16**: [Go trong Production](./16-production-ready.md) - dự án tổng kết **Bookmark API**
+
+> 💡 **Nên học Phần 2 khi nào?** Khi bạn đã hoàn thành Bài 10 và tự tin với interface, error handling, goroutine/channel và testing. Phần 2 dùng lại rất nhiều kiến thức của Phần 1.
 
 ## 🚀 Bắt đầu học
 
@@ -130,44 +161,70 @@ go run .
 1. **Đọc tuần tự**: Các bài học được sắp xếp theo độ khó tăng dần, bài sau dùng kiến thức bài trước
 2. **Gõ lại code**: Đừng copy-paste! Tự gõ lại từng ví dụ giúp bạn nhớ cú pháp lâu hơn rất nhiều
 3. **So sánh Output**: Mỗi ví dụ đều có `// Output:` - hãy chạy và so sánh với kết quả của bạn
-4. **Đọc phần "⚠️ Lỗi thường gặp"**: Đây là những lỗi mà gần như ai học Go cũng từng mắc
-5. **Làm bài tập**: Mỗi bài có phần "🏋️ Bài tập" - hãy làm trước khi sang bài mới
-6. **Thử nghiệm**: Sửa code, cố tình làm sai để xem compiler báo lỗi gì
+4. **Xem mục "🌍 Ứng dụng thực tế"**: Các bài có 2-3 chương trình hoàn chỉnh mô phỏng tình huống thật (hóa đơn, giỏ hàng, thanh toán, gửi email...) - giúp bạn thấy kiến thức vừa học được dùng vào đâu
+5. **Đọc phần "⚠️ Lỗi thường gặp"**: Đây là những lỗi mà gần như ai học Go cũng từng mắc
+6. **Làm bài tập**: Mỗi bài có phần "🏋️ Bài tập" - hãy làm trước khi sang bài mới
+7. **Thử nghiệm**: Sửa code, cố tình làm sai để xem compiler báo lỗi gì
 
 > 💡 Bạn cũng có thể chạy thử code ngay trên trình duyệt mà không cần cài đặt tại [go.dev/play](https://go.dev/play/).
 
 ## ✅ Checklist theo dõi tiến độ
 
-### Tuần 1
+### Phần 1: Cơ bản → Trung cấp
+
+#### Tuần 1
 
 - [ ] Hoàn thành Bài 1: Giới thiệu & Cài đặt
 - [ ] Hoàn thành Bài 2: Biến & Kiểu dữ liệu
 - [ ] Hoàn thành Bài 3: Cấu trúc điều khiển
 - [ ] Viết được chương trình tính điểm trung bình và xếp loại học sinh
 
-### Tuần 2
+#### Tuần 2
 
 - [ ] Hoàn thành Bài 4: Hàm
 - [ ] Hoàn thành Bài 5: Array, Slice & Map
 - [ ] Viết được chương trình đếm tần suất từ trong một đoạn văn
 
-### Tuần 3
+#### Tuần 3
 
 - [ ] Hoàn thành Bài 6: Struct, Method & Interface
 - [ ] Hoàn thành Bài 7: Xử lý lỗi
 - [ ] Viết được chương trình quản lý tài khoản ngân hàng có xử lý lỗi đầy đủ
 
-### Tuần 4
+#### Tuần 4
 
 - [ ] Hoàn thành Bài 8: Concurrency
 - [ ] Hoàn thành Bài 9: Package, Module & Testing
 - [ ] Viết được worker pool và unit test cho nó
 
-### Tuần 5
+#### Tuần 5
 
-- [ ] Hoàn thành Bài 10: Dự án Todo REST API
+- [ ] Hoàn thành Bài 10: Dự án tổng hợp Todo REST API
 - [ ] Test API bằng `curl` và `go test` thành công
 - [ ] Mở rộng dự án với ít nhất 1 tính năng mới và đẩy lên GitHub
+- [ ] Chạy lại toàn bộ ví dụ trong các mục "🌍 Ứng dụng thực tế" của Bài 1-10
+
+### Phần 2: Nâng cao & Thực tế
+
+#### Tuần 6
+
+- [ ] Hoàn thành Bài 11: File, JSON & CLI
+- [ ] Hoàn thành Bài 12: HTTP Client & Web API thực tế
+- [ ] Viết được một công cụ dòng lệnh đọc/ghi file JSON
+- [ ] Gọi được một Web API bên ngoài có xử lý timeout và lỗi
+
+#### Tuần 7
+
+- [ ] Hoàn thành Bài 13: Làm việc với Database
+- [ ] Hoàn thành Bài 14: Concurrency Patterns nâng cao
+- [ ] Thực hiện được CRUD với database thật
+- [ ] Áp dụng được ít nhất một concurrency pattern nâng cao vào bài toán thực tế
+
+#### Tuần 8
+
+- [ ] Hoàn thành Bài 15: Generics nâng cao, Reflection & Thư viện chuẩn
+- [ ] Hoàn thành Bài 16: Go trong Production
+- [ ] Hoàn thành dự án tổng kết Bookmark API và đẩy lên GitHub
 
 ## 🎯 Tips học hiệu quả
 
