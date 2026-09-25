@@ -24,7 +24,7 @@ python -m todo done 1
 python -m todo stats
 ```
 
-Kết quả:
+Kết quả (minh họa - chạy trước ngày 01/10/2026 nên việc 1 chưa bị đánh dấu quá hạn):
 
 ```text
 ➕ Đã thêm:   1. ⬜ 🔴 Học Python bài 10  📅 01/10/2026  #study
@@ -316,7 +316,7 @@ class Task:
 
 **Giải thích các quyết định thiết kế:**
 
-- **Tại sao không dùng `asdict()`?** Vì `Priority`, `date`, `datetime` **không phải kiểu JSON**. `json.dumps` sẽ báo `TypeError: Object of type date is not JSON serializable`. Ta tự viết `to_dict`/`from_dict` để chuyển đổi rõ ràng.
+- **Tại sao không dùng `asdict()`?** Vì `Priority`, `date`, `datetime` **không phải kiểu JSON**. `json.dumps(asdict(task))` sẽ báo `TypeError: Object of type Priority is not JSON serializable` (gặp `date`/`datetime` thì tương tự). Ta tự viết `to_dict`/`from_dict` để chuyển đổi rõ ràng.
 - **`__post_init__`**: kiểm tra dữ liệu **ngay khi tạo** object - không bao giờ tồn tại một `Task` có tiêu đề rỗng.
 - **`is_overdue(today=None)`**: cho phép truyền `today` vào để **test dễ dàng** (không phụ thuộc vào ngày chạy test).
 
@@ -798,7 +798,9 @@ python -m todo --file demo.json list
   4. ⬜ 🟢 Đọc sách
 ```
 
-Để ý thứ tự: ưu tiên **cao** trước, cùng mức ưu tiên thì **hạn gần hơn** trước. (Kết quả "quá hạn" phụ thuộc vào ngày bạn chạy - ví dụ trên chạy vào ngày 25/09/2026.)
+Để ý thứ tự: ưu tiên **cao** trước, cùng mức ưu tiên thì **hạn gần hơn** trước.
+
+> ⚠️ **Các ngày trong ví dụ chỉ để minh họa.** Dấu `⚠️ quá hạn` được tính bằng cách so hạn chót với **ngày hôm nay trên máy bạn** (`date.today()`), nên kết quả của bạn có thể khác. Output ở trên giả định hôm nay nằm **giữa** 15/01/2026 và 01/10/2026 (việc 3 đã quá hạn, việc 1 thì chưa). Muốn thấy đúng hai trường hợp đó, hãy đổi `-d` của việc 1 thành một ngày **sau** hôm nay và của việc 3 thành một ngày **trước** hôm nay. (Trong test, ta tránh hẳn vấn đề này bằng cách truyền `today=` cố định - xem phần 9.)
 
 ```bash
 python -m todo --file demo.json done 3
@@ -1548,7 +1550,7 @@ def test_overdue():
     assert not task.is_overdue(today=date(2026, 9, 1))   # ✅ Cố định "hôm nay"
 ```
 
-### 6. `TypeError: Object of type date is not JSON serializable`
+### 6. `TypeError: Object of type Priority is not JSON serializable` (hoặc `date`, `datetime`)
 
 **Nguyên nhân**: Dùng `json.dumps(asdict(task))` trực tiếp - `date`, `datetime`, `Enum` không phải kiểu JSON.
 

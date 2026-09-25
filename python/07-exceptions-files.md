@@ -586,7 +586,7 @@ print(data.decode("cp1252"))
 
 ### ⚠️ Mặc định của `open()` phụ thuộc hệ điều hành!
 
-Nếu không truyền `encoding`, `open()` dùng encoding mặc định **của hệ điều hành**: Linux/macOS thường là UTF-8, nhưng **Windows thường là cp1252** → khi đọc/ghi tiếng Việt sẽ gặp:
+Nếu không truyền `encoding`, `open()` dùng encoding mặc định **của hệ điều hành**: Linux/macOS thường là UTF-8, nhưng **Windows thường là một bảng mã cũ** (cp1252, cp1258... tùy ngôn ngữ hệ thống) → khi đọc/ghi tiếng Việt sẽ gặp:
 
 ```text
 UnicodeEncodeError: 'charmap' codec can't encode character '\u1ebf' in position 3
@@ -1071,26 +1071,26 @@ print(repr(first), repr(second))
 
 Viết chương trình nhận 2 số và phép toán từ người dùng. Xử lý: nhập không phải số (`ValueError`), chia cho 0 (`ZeroDivisionError`), phép toán không hợp lệ (tự `raise ValueError`). Chương trình không bao giờ bị crash.
 
-### Bài tập 2: Custom exception cho kho hàng
+### Bài tập 2: Nhật ký (Journal)
+
+Viết chương trình ghi nhật ký: mỗi lần chạy, cho người dùng nhập một dòng, ghi thêm vào `journal.txt` kèm ngày giờ (`from datetime import datetime` rồi dùng `datetime.now()` - module `datetime` sẽ học kỹ ở [Bài 8](./08-modules-packages.md)). Thêm lệnh `show` để in toàn bộ nhật ký.
+
+### Bài tập 3: Custom exception cho kho hàng
 
 Tạo `InventoryError` (gốc), `OutOfStockError`, `ProductNotFoundError`. Viết class `Inventory` với method `remove(product, qty)` raise lỗi phù hợp.
 
-### Bài tập 3: Nhật ký (Journal)
+### Bài tập 4: Dọn dẹp thư mục
 
-Viết chương trình ghi nhật ký: mỗi lần chạy, cho người dùng nhập một dòng, ghi thêm vào `journal.txt` kèm ngày giờ (`datetime.now()`). Thêm lệnh `show` để in toàn bộ nhật ký.
+Dùng `pathlib` viết script sắp xếp các file trong thư mục `Downloads` giả lập (tự tạo file mẫu) vào các thư mục con theo đuôi file: `images/` (.jpg, .png), `documents/` (.pdf, .docx, .txt), `others/`.
 
-### Bài tập 4: Sổ điểm JSON ↔ CSV
+### Bài tập 5: Sổ điểm JSON ↔ CSV
 
 1. Tạo list dict điểm học sinh, lưu ra `grades.json`
 2. Đọc `grades.json`, tính điểm trung bình, xuất ra `grades.csv` có thêm cột `average` và `rank`
 3. Xử lý trường hợp file JSON không tồn tại hoặc bị hỏng
 
-### Bài tập 5: Dọn dẹp thư mục
-
-Dùng `pathlib` viết script sắp xếp các file trong thư mục `Downloads` giả lập (tự tạo file mẫu) vào các thư mục con theo đuôi file: `images/` (.jpg, .png), `documents/` (.pdf, .docx, .txt), `others/`.
-
 <details>
-<summary>💡 Xem đáp án Bài tập 5</summary>
+<summary>💡 Xem đáp án Bài tập 4</summary>
 
 ```python
 from pathlib import Path

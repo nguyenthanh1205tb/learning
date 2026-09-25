@@ -64,7 +64,7 @@ Python là một trong những ngôn ngữ lập trình phổ biến nhất th�
 
 ### Tuần 5: Dự án cuối khóa
 
-- [ ] **Bài 10**: [Dự án cuối khóa - Ứng dụng Todo CLI](./10-final-project.md) (argparse, dataclass, JSON, module, pytest)
+- [x] **Bài 10**: [Dự án cuối khóa - Ứng dụng Todo CLI](./10-final-project.md) (argparse, dataclass, JSON, module, pytest)
 
 ## 🚀 Bắt đầu học
 

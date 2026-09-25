@@ -594,7 +594,7 @@ print(groups[frozenset([3, 2, 1])])     # Thứ tự không quan trọng
 | Kiểm tra `x in ...` | **O(n)** 🐢 | **O(1)** ⚡ | **O(1)** ⚡ |
 | Thêm vào cuối (`append`, `d[k]=v`, `add`) | O(1) | O(1) | O(1) |
 | Thêm/xóa ở đầu (`insert(0, x)`, `pop(0)`) | **O(n)** 🐢 | - | - |
-| Xóa phần tử cuối (`pop()`) | O(1) | O(1) | O(1) |
+| Xóa phần tử cuối (`pop()`) | O(1) | O(1) (`popitem()`) | O(1) (`pop()` lấy phần tử bất kỳ) |
 | Xóa theo giá trị (`remove`) | O(n) | O(1) (`del`) | O(1) |
 | Sắp xếp | O(n log n) | - | - |
 
@@ -1111,18 +1111,13 @@ print(99_999 in banned_ids)
 
 ## 🏋️ Bài tập
 
-### Bài tập 1: Quản lý danh bạ
+### Bài tập 1: So sánh lớp học
+
+Cho 2 set học sinh đăng ký CLB Toán và CLB Tin. Tìm: học sinh tham gia cả 2 CLB, chỉ tham gia CLB Toán, tổng số học sinh tham gia ít nhất 1 CLB.
+
+### Bài tập 2: Quản lý danh bạ
 
 Dùng dict để viết các hàm: `add_contact(book, name, phone)`, `find_contact(book, name)`, `delete_contact(book, name)`, `list_contacts(book)` (in theo alphabet). Xử lý trường hợp tên không tồn tại.
-
-### Bài tập 2: Phân tích văn bản
-
-Cho một đoạn văn bản, hãy:
-
-1. Đếm tổng số từ và số từ khác nhau
-2. Tìm 5 từ xuất hiện nhiều nhất (dùng `Counter`)
-3. Nhóm các từ theo chữ cái đầu (dùng `defaultdict`)
-4. Tìm các từ có độ dài > 5 (dùng set comprehension)
 
 ### Bài tập 3: Comprehensions
 
@@ -1132,13 +1127,18 @@ Viết bằng comprehension:
 2. Dict `{số: bình phương}` cho các số chẵn từ 1-10
 3. List các tuple `(a, b, c)` với `a < b < c <= 20` thỏa `a² + b² = c²` (bộ ba Pythagore)
 
-### Bài tập 4: So sánh lớp học
-
-Cho 2 set học sinh đăng ký CLB Toán và CLB Tin. Tìm: học sinh tham gia cả 2 CLB, chỉ tham gia CLB Toán, tổng số học sinh tham gia ít nhất 1 CLB.
-
-### Bài tập 5: Lịch sử lệnh
+### Bài tập 4: Lịch sử lệnh
 
 Dùng `deque(maxlen=5)` mô phỏng lịch sử 5 lệnh gần nhất của terminal. Viết hàm `run(cmd)` lưu lệnh vào lịch sử và `history()` in lịch sử có đánh số.
+
+### Bài tập 5: Phân tích văn bản
+
+Cho một đoạn văn bản, hãy:
+
+1. Đếm tổng số từ và số từ khác nhau
+2. Tìm 5 từ xuất hiện nhiều nhất (dùng `Counter`)
+3. Nhóm các từ theo chữ cái đầu (dùng `defaultdict`)
+4. Tìm các từ có độ dài > 5 (dùng set comprehension)
 
 <details>
 <summary>💡 Xem đáp án Bài tập 3.3</summary>

@@ -278,8 +278,8 @@ for path in sys.path[:3]:
 # /usr/lib/python3.11
 
 import json
-print(json.__file__.endswith("json/__init__.py"))   # Xem module được load từ đâu
-# Output: True
+print(json.__file__)                    # Xem module được load từ đâu
+# Output (ví dụ): /usr/lib/python3.11/json/__init__.py
 ```
 
 > ⚠️ Vì **thư mục hiện tại được tìm ĐẦU TIÊN**, nếu bạn đặt tên file là `random.py`, `json.py`, `math.py`... nó sẽ **che mất** module chuẩn! (Xem lại [Bài 1](./01-introduction-setup.md) - Lỗi thường gặp số 5.)
@@ -421,6 +421,14 @@ python -m pip install requests
 python -m http.server 8000      # Mở web server tĩnh ngay tại thư mục hiện tại!
 python -m json.tool data.json   # Format đẹp file JSON
 ```
+
+> ⚠️ Với package `shop` ở trên, `python -m shop.cart` chạy được (không còn `ImportError`) nhưng sẽ in thêm cảnh báo:
+>
+> ```text
+> RuntimeWarning: 'shop.cart' found in sys.modules after import of package 'shop', but prior to execution of 'shop.cart'; this may result in unpredictable behaviour
+> ```
+>
+> Lý do: `-m` phải import package `shop` trước, mà `shop/__init__.py` **đã import sẵn** `cart` → `cart.py` bị nạp **hai lần** (một lần là `shop.cart`, một lần là `__main__`). Ở đây vô hại vì `cart.py` không có code chạy ở cấp cao nhất. Bài học: module nào bạn định chạy bằng `python -m` (thường là điểm khởi động như `main.py`/`__main__.py`) thì **đừng import sẵn nó trong `__init__.py`**.
 
 ## 📖 6. Standard Library - "Batteries Included"
 
@@ -1069,11 +1077,19 @@ Luôn đọc tài liệu của thư viện để biết tên import chính xác.
 
 ## 🏋️ Bài tập
 
-### Bài tập 1: Module tiện ích
+### Bài tập 1: Đếm ngược sự kiện
+
+Dùng `datetime`, viết chương trình nhận ngày sự kiện (`dd/mm/yyyy`) và in: còn bao nhiêu ngày, sự kiện rơi vào thứ mấy, đã qua hay chưa.
+
+### Bài tập 2: Trò chơi xổ số
+
+Dùng `random`: sinh vé số 6 số không trùng từ 1-45, cho người chơi "mua" 10 vé ngẫu nhiên, đếm mỗi vé trùng bao nhiêu số với kết quả. Dùng `random.seed()` để kết quả lặp lại được.
+
+### Bài tập 3: Module tiện ích
 
 Tạo module `string_utils.py` gồm các hàm: `slugify(text)` (`"Xin Chào Python"` → `"xin-chao-python"`, gợi ý: `unicodedata`), `truncate(text, n)`, `count_vowels(text)`. Có phần test trong `if __name__ == "__main__":`. Import và dùng trong `main.py`.
 
-### Bài tập 2: Package calculator
+### Bài tập 4: Package calculator
 
 Tạo package:
 
@@ -1089,20 +1105,12 @@ calculator/
 
 Viết `main.py` dùng cả 3 kiểu import.
 
-### Bài tập 3: Đếm ngược sự kiện
-
-Dùng `datetime`, viết chương trình nhận ngày sự kiện (`dd/mm/yyyy`) và in: còn bao nhiêu ngày, sự kiện rơi vào thứ mấy, đã qua hay chưa.
-
-### Bài tập 4: Trò chơi xổ số
-
-Dùng `random`: sinh vé số 6 số không trùng từ 1-45, cho người chơi "mua" 10 vé ngẫu nhiên, đếm mỗi vé trùng bao nhiêu số với kết quả. Dùng `random.seed()` để kết quả lặp lại được.
-
 ### Bài tập 5: Thêm type hints và chạy mypy
 
 Lấy một bài tập bất kỳ từ [Bài 5](./05-data-structures.md) hoặc [Bài 6](./06-oop.md), thêm type hints đầy đủ, cài `mypy` trong venv và chạy `mypy --strict` cho đến khi không còn lỗi.
 
 <details>
-<summary>💡 Xem đáp án gợi ý Bài tập 1 (slugify)</summary>
+<summary>💡 Xem đáp án gợi ý Bài tập 3 (slugify)</summary>
 
 ```python
 import re

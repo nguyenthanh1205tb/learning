@@ -402,7 +402,7 @@ print(list(range(2, 11, 2)))
 
 > 💡 Giống slicing: `range(start, stop)` **lấy start, bỏ stop**. `range(1, 6)` cho 5 số: 1, 2, 3, 4, 5.
 
-> 🧠 **Tại sao range tiết kiệm bộ nhớ?** `range(1_000_000)` **không tạo** một triệu số trong bộ nhớ. Nó chỉ nhớ start, stop, step và tính ra từng số khi cần. Bạn sẽ hiểu sâu hơn cơ chế này (iterator) ở [Bài 9](./09-advanced-python.md).
+> 🧠 **Tại sao range tiết kiệm bộ nhớ?** `range(1_000_000)` **không tạo** một triệu số trong bộ nhớ. Nó chỉ nhớ start, stop, step và tính ra từng số khi cần ("lazy"). Bạn sẽ hiểu sâu hơn cơ chế duyệt lười này (iterable/iterator, generator) ở [Bài 9](./09-advanced-python.md).
 
 ### Ví dụ: tính tổng và bảng cửu chương
 
@@ -564,6 +564,8 @@ print(min(numbers), max(numbers), sum(numbers))
 # Output: 1 9 25
 
 # any(): có ít nhất 1 phần tử thỏa mãn?  all(): tất cả đều thỏa mãn?
+# (n > 8 for n in numbers) là "generator expression": tính n > 8 cho từng n.
+# Cú pháp này sẽ học kỹ ở Bài 5 (comprehension) - giờ chỉ cần đọc hiểu.
 print(any(n > 8 for n in numbers))
 # Output: True
 print(all(n > 0 for n in numbers))
@@ -830,6 +832,8 @@ print("Chạy bình thường")
 `match-case` (**structural pattern matching**) giống `switch-case` trong C#/Java nhưng **mạnh hơn nhiều**: có thể so khớp theo cấu trúc dữ liệu, không chỉ so sánh giá trị.
 
 > ⚠️ Cần **Python 3.10 trở lên**. Kiểm tra bằng `python --version`.
+
+> 💡 Các ví dụ bên dưới đặt `match` bên trong một **hàm** (`def ten_ham(tham_so):` ... `return giá_trị`) giống ví dụ guard clause ở phần 1 và `find_user` ở phần 6. Tạm hiểu: `return` trả kết quả về cho chỗ gọi hàm. Hàm sẽ được học kỹ ở [Bài 4](./04-functions.md).
 
 ### Match giá trị đơn giản
 
@@ -1104,11 +1108,7 @@ print(check("hello"))
 
 In các số từ 1 đến 30. Với số chia hết cho 3 in `Fizz`, chia hết cho 5 in `Buzz`, chia hết cho cả 3 và 5 in `FizzBuzz`.
 
-### Bài tập 2: Đoán số
-
-Chương trình chọn ngẫu nhiên một số từ 1-100 (`import random; secret = random.randint(1, 100)`). Người chơi đoán, chương trình gợi ý "Lớn hơn"/"Nhỏ hơn". Tối đa 7 lượt. Dùng `while` + `break` + `else` để báo thua khi hết lượt.
-
-### Bài tập 3: Tam giác số
+### Bài tập 2: Tam giác số
 
 Nhập `n`, in ra:
 
@@ -1119,19 +1119,23 @@ Nhập `n`, in ra:
 1 2 3 4
 ```
 
-### Bài tập 4: Máy tính với match-case
-
-Nhập một chuỗi như `"5 + 3"`, `"10 / 2"`, dùng `split()` và `match` để tính kết quả. Xử lý chia cho 0 và phép toán không hợp lệ.
-
-### Bài tập 5: Thống kê điểm
+### Bài tập 3: Thống kê điểm
 
 Cho `scores = [7.5, 9, 4, 6.5, 8, 3.5, 10]`. Dùng vòng lặp (không dùng `sum`, `max`, `min`) để tính: điểm trung bình, điểm cao nhất, số học sinh dưới 5 điểm.
+
+### Bài tập 4: Đoán số
+
+Chương trình chọn ngẫu nhiên một số từ 1-100 (`import random; secret = random.randint(1, 100)`). Người chơi đoán, chương trình gợi ý "Lớn hơn"/"Nhỏ hơn". Tối đa 7 lượt. Dùng `while` + `break` + `else` để báo thua khi hết lượt.
+
+### Bài tập 5: Máy tính với match-case
+
+Nhập một chuỗi như `"5 + 3"`, `"10 / 2"`, dùng `split()` và `match` để tính kết quả. Xử lý chia cho 0 và phép toán không hợp lệ.
 
 <details>
 <summary>💡 Xem đáp án Bài tập 1</summary>
 
 ```python
-for n in range(1, 16):
+for n in range(1, 16):        # In 1-15 cho gọn; đề bài dùng range(1, 31)
     if n % 15 == 0:           # Kiểm tra trường hợp chặt nhất trước!
         print("FizzBuzz")
     elif n % 3 == 0:

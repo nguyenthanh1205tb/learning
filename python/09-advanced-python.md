@@ -8,7 +8,7 @@
 - Hiểu **closure** - hàm "nhớ" môi trường nơi nó được tạo
 - Viết **decorator** từ cơ bản đến có tham số, dùng `functools.wraps`
 - Tự viết **context manager** bằng class (`__enter__`/`__exit__`) và bằng `contextlib`
-- Làm quen **lập trình bất đồng bộ** với `asyncio`: `async`/`await`, `asyncio.gather`
+- Làm quen **lập trình bất đồng bộ** với `asyncio`: `async`/`await`, `asyncio.gather`; biết khi nào dùng thread/process thay thế (GIL)
 
 > 💡 Đây là bài khó nhất khóa học. Đừng lo nếu chưa hiểu hết ngay lần đầu - hãy chạy thử từng ví dụ, thay đổi code và quan sát kết quả. Những khái niệm này sẽ "thấm" dần khi bạn dùng chúng trong thực tế.
 
@@ -1103,8 +1103,32 @@ asyncio.run(main())
 | Tình huống | Nên dùng |
 | --- | --- |
 | Gọi nhiều API/website, chat server, web server (FastAPI) - **chờ I/O** | ✅ `asyncio` |
-| Tính toán nặng (xử lý ảnh, tính toán số học) - **CPU-bound** | ❌ asyncio không giúp gì → dùng `multiprocessing` |
+| Chờ I/O nhưng thư viện chỉ có bản đồng bộ (`requests`, đọc nhiều file...) | ✅ Luồng (thread): `concurrent.futures.ThreadPoolExecutor` hoặc `asyncio.to_thread` |
+| Tính toán nặng (xử lý ảnh, tính toán số học) - **CPU-bound** | ❌ asyncio không giúp gì → dùng `multiprocessing` / `ProcessPoolExecutor` |
 | Script đơn giản, chạy một lần | ❌ Code đồng bộ bình thường là đủ |
+
+> 🧠 **Tại sao CPU-bound phải dùng process, không dùng thread?** Trong CPython (bản Python chuẩn), **GIL** (Global Interpreter Lock) chỉ cho **một luồng chạy bytecode Python tại một thời điểm**. Thread vẫn rất hữu ích khi **chờ I/O** (lúc chờ, GIL được nhả cho luồng khác), nhưng không giúp tính toán nhanh hơn trên nhiều lõi CPU. `multiprocessing` tạo nhiều **tiến trình** riêng, mỗi tiến trình có GIL riêng → chạy song song thật sự.
+
+```python
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+
+def download(name: str) -> str:        # Hàm ĐỒNG BỘ bình thường (giả lập chờ mạng)
+    time.sleep(0.1)
+    return f"{name} xong"
+
+
+start = time.perf_counter()
+with ThreadPoolExecutor(max_workers=3) as pool:
+    results = list(pool.map(download, ["a.txt", "b.txt", "c.txt"]))
+elapsed = time.perf_counter() - start
+print(results)
+print(f"3 file trong ~{elapsed:.1f}s (tuần tự sẽ mất ~0.3s)")
+# Output:
+# ['a.txt xong', 'b.txt xong', 'c.txt xong']
+# 3 file trong ~0.1s (tuần tự sẽ mất ~0.3s)
+```
 
 > ⚠️ **Một hàm chặn (blocking) làm "đóng băng" cả event loop**: trong `async def`, **không dùng** `time.sleep()`, `requests.get()`... Hãy dùng phiên bản async: `await asyncio.sleep()`, thư viện `httpx`/`aiohttp`. Nếu buộc phải gọi hàm chặn, dùng `await asyncio.to_thread(func, ...)`.
 
@@ -1244,15 +1268,15 @@ def opened(path):
 
 ## 🏋️ Bài tập
 
-### Bài tập 1: Generator
+### Bài tập 1: Iterator class
+
+Viết class `Range2D(rows, cols)` có thể dùng trong `for`, trả về các tuple `(r, c)`. Viết 2 phiên bản: dùng `__next__` và dùng `__iter__` là generator.
+
+### Bài tập 2: Generator
 
 1. Viết generator `primes()` sinh vô hạn số nguyên tố. Dùng `islice` lấy 20 số đầu tiên
 2. Viết generator `chunked(items, size)` chia list thành các nhóm: `chunked([1,2,3,4,5], 2)` → `[1,2]`, `[3,4]`, `[5]`
 3. Viết pipeline đọc file CSV lớn (tự tạo), lọc và tính tổng một cột mà không nạp cả file vào RAM
-
-### Bài tập 2: Iterator class
-
-Viết class `Range2D(rows, cols)` có thể dùng trong `for`, trả về các tuple `(r, c)`. Viết 2 phiên bản: dùng `__next__` và dùng `__iter__` là generator.
 
 ### Bài tập 3: Decorators
 
@@ -1271,7 +1295,7 @@ Viết class `Range2D(rows, cols)` có thể dùng trong `for`, trả về các 
 Viết chương trình giả lập tải 10 file, mỗi file mất ngẫu nhiên 0.1-0.5 giây (`asyncio.sleep`). So sánh thời gian tải tuần tự và đồng thời. Bonus: dùng `asyncio.Semaphore(3)` để giới hạn tối đa 3 file tải cùng lúc.
 
 <details>
-<summary>💡 Xem đáp án Bài tập 1.2 và 3.4</summary>
+<summary>💡 Xem đáp án Bài tập 2.2 và 3.4</summary>
 
 ```python
 from functools import wraps
@@ -1320,7 +1344,7 @@ print(fib(80))
 - [ ] Viết decorator có tham số (3 tầng hàm)
 - [ ] Viết context manager bằng class và bằng `@contextmanager`
 - [ ] Dùng `async`/`await`, `asyncio.run`, `asyncio.gather`
-- [ ] Biết khi nào nên và không nên dùng asyncio
+- [ ] Biết khi nào nên và không nên dùng asyncio (so với thread, process)
 - [ ] Hoàn thành ít nhất 3 bài tập
 
 ## 🚀 Tiếp theo

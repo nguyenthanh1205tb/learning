@@ -268,6 +268,8 @@ class TeamFixed:
 
 ## 📖 4. Instance method, Class method, Static method
 
+> 💡 Dòng bắt đầu bằng `@` đặt ngay trên `def` (như `@classmethod`, `@staticmethod`, và `@property`, `@dataclass` ở các phần sau) gọi là **decorator**. Tạm hiểu nó là một "nhãn" gắn thêm tính năng cho hàm/class bên dưới. Bạn chỉ cần biết **dùng** chúng ở bài này; cách decorator hoạt động và cách tự viết decorator sẽ học ở [Bài 9](./09-advanced-python.md).
+
 ```python
 from datetime import date
 
@@ -1084,20 +1086,20 @@ Tạo class `Rectangle` với `width`, `height` (dùng `@property` kiểm tra > 
 - `Intern`: lương = base_salary × 0.5
 - In bảng lương cho danh sách nhân viên hỗn hợp (đa hình)
 
-### Bài tập 3: Giỏ hàng với dunder methods
-
-Tạo `CartItem` (dataclass) và `ShoppingCart` hỗ trợ: `len(cart)`, `cart[0]`, `"Táo" in cart`, `for item in cart`, `cart + other_cart`, `print(cart)` in hóa đơn đẹp.
-
-### Bài tập 4: Abstract class Notifier
+### Bài tập 3: Abstract class Notifier
 
 Tạo abstract class `Notifier` với abstract method `send(message)`. Implement `EmailNotifier`, `SMSNotifier`, `SlackNotifier`. Viết hàm `broadcast(notifiers, message)` gửi qua tất cả kênh.
 
-### Bài tập 5: Vector 2D
+### Bài tập 4: Vector 2D
 
 Tạo class `Vector` hỗ trợ: `v1 + v2`, `v1 - v2`, `v * 3`, `abs(v)` (độ dài, dùng `__abs__`), `v1 == v2`, `repr(v)` → `Vector(3, 4)`.
 
+### Bài tập 5: Giỏ hàng với dunder methods
+
+Tạo `CartItem` (dataclass) và `ShoppingCart` hỗ trợ: `len(cart)`, `cart[0]`, `"Táo" in cart`, `for item in cart`, `cart + other_cart`, `print(cart)` in hóa đơn đẹp.
+
 <details>
-<summary>💡 Xem đáp án Bài tập 5</summary>
+<summary>💡 Xem đáp án Bài tập 4</summary>
 
 ```python
 import math
