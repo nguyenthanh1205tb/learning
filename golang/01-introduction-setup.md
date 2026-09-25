@@ -244,13 +244,13 @@ Lệnh này tạo ra file `go.mod`:
 ```text
 module hello-go
 
-go 1.24
+go 1.24.7
 ```
 
 **`go.mod` là gì?** Hãy tưởng tượng nó giống như **giấy khai sinh** của project:
 
 - `module hello-go`: **tên** (đường dẫn) của module. Các package khác trong project sẽ import theo tên này
-- `go 1.24`: phiên bản Go tối thiểu mà project yêu cầu
+- `go 1.24.7`: phiên bản Go tối thiểu mà project yêu cầu (lấy theo phiên bản Go bạn đang cài, nên con số của bạn có thể khác một chút)
 - Sau này khi bạn dùng thư viện bên ngoài, danh sách thư viện cũng được ghi ở đây
 
 > 💡 Nếu bạn so sánh với các ngôn ngữ khác: `go.mod` giống `package.json` (Node.js), `requirements.txt`/`pyproject.toml` (Python), `pom.xml` (Java Maven).
@@ -669,7 +669,7 @@ func main()
 
 **Cách sửa**: Luôn đặt `{` cùng dòng với `func`, `if`, `for`, `switch`.
 
-### Lỗi 7: `func main is undeclared in the main package` / chạy nhầm package
+### Lỗi 7: `function main is undeclared in the main package` / chạy nhầm package
 
 **Nguyên nhân**: File có `package main` nhưng không có `func main()`, hoặc đặt tên package khác `main` rồi chạy `go run`.
 

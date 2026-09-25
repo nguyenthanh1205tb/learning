@@ -163,6 +163,7 @@ func divmod(a, b int) (int, int) {
 }
 
 // Mẫu phổ biến nhất: (kết quả, lỗi)
+// error là kiểu có sẵn để báo lỗi, errors.New tạo một lỗi mới (học kỹ ở Bài 7)
 func divide(a, b float64) (float64, error) {
 	if b == 0 {
 		return 0, errors.New("không thể chia cho 0")
@@ -170,7 +171,9 @@ func divide(a, b float64) (float64, error) {
 	return a / b, nil // nil nghĩa là "không có lỗi"
 }
 
-// Trả về giá trị nhỏ nhất và lớn nhất
+// Trả về giá trị nhỏ nhất và lớn nhất (giả sử nums không rỗng)
+// []int là slice - danh sách số nguyên; nums[0] là phần tử đầu,
+// nums[1:] là các phần tử từ vị trí 1 trở đi (chi tiết ở Bài 5)
 func minMax(nums []int) (int, int) {
 	lo, hi := nums[0], nums[0]
 	for _, n := range nums[1:] {
@@ -241,7 +244,7 @@ package main
 
 import "fmt"
 
-// width, height là biến đã được khai báo sẵn, giá trị ban đầu = 0
+// area, perimeter là biến đã được khai báo sẵn, giá trị ban đầu = 0
 func rectangleInfo(w, h float64) (area, perimeter float64) {
 	area = w * h
 	perimeter = 2 * (w + h)
@@ -314,7 +317,7 @@ func main() {
 // Xin chào Chi
 ```
 
-> 💡 Bạn đã dùng variadic function từ Bài 1 rồi đấy! `fmt.Println(a ...any)` chính là variadic - đó là lý do nó nhận bao nhiêu tham số cũng được.
+> 💡 Bạn đã dùng variadic function từ Bài 1 rồi đấy! `fmt.Println(a ...any)` chính là variadic (`any` nghĩa là "kiểu bất kỳ" - Bài 6) - đó là lý do nó nhận bao nhiêu tham số cũng được.
 
 ### Nhớ phân biệt vị trí của `...`
 
@@ -349,6 +352,7 @@ func main() {
 	fmt.Printf("%T\n", op)
 
 	// Map chứa hàm - tạo "bảng tra cứu" phép tính
+	// (map là bảng key → value, sẽ học kỹ ở Bài 5)
 	operations := map[string]func(int, int) int{
 		"+": add,
 		"-": subtract,
@@ -387,6 +391,7 @@ import "fmt"
 type Predicate func(int) bool
 
 // filter giữ lại các phần tử thỏa mãn điều kiện keep
+// append(s, x) thêm x vào cuối slice; make([]int, n) tạo slice n phần tử - Bài 5
 func filter(nums []int, keep Predicate) []int {
 	var result []int
 	for _, n := range nums {
@@ -593,9 +598,9 @@ package main
 import "fmt"
 
 func memoize(f func(int) int) func(int) int {
-	cache := map[int]int{}
+	cache := map[int]int{} // map rỗng: key = n, value = kết quả (Bài 5)
 	return func(n int) int {
-		if v, ok := cache[n]; ok {
+		if v, ok := cache[n]; ok { // ok = true nếu key n đã có trong map
 			fmt.Printf("(cache hit %d) ", n)
 			return v
 		}
@@ -896,6 +901,8 @@ func evaluate(ops map[string]operation, a float64, op string, b float64) (string
 
 func main() {
 	ops := calculator()
+	// Slice các "struct ẩn danh": mỗi phần tử gom 3 giá trị a, op, b
+	// (struct sẽ học kỹ ở Bài 6; truy cập field bằng t.a, t.op, t.b)
 	tests := []struct {
 		a  float64
 		op string

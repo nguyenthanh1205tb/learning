@@ -1307,6 +1307,21 @@ func (c SafeCounter) Inc() { c.mu.Lock(); c.n++; c.mu.Unlock() } // ❌ Khóa b�
 
 ✅ Dùng pointer receiver. `go vet` sẽ cảnh báo: *"passes lock by value"*.
 
+### Lỗi 9: Sửa field của struct nằm trong map
+
+```go
+students := map[string]Student{"an": {Name: "An", Age: 20}}
+students["an"].Age = 21 // ❌ cannot assign to struct field students["an"].Age in map
+```
+
+Map lưu **bản sao** của struct, nên không sửa trực tiếp field được. ✅ Lấy ra, sửa, rồi gán lại (hoặc dùng `map[string]*Student`):
+
+```go
+s := students["an"]
+s.Age = 21
+students["an"] = s // ✅ Gán lại vào map
+```
+
 ## 🏋️ Bài tập
 
 ### Bài tập 1: Quản lý sách
