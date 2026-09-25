@@ -1,132 +1,27 @@
-# 🎮 Hướng dẫn học Unity từ đầu
+# 📚 Learning Hub - Unity, Golang & Python
 
-## 📋 Tổng quan
+Tài liệu tự học bằng tiếng Việt, đi từ cơ bản đến thực hành dự án.
 
-Chào mừng bạn đến với khóa học Unity! Đây là tài liệu hướng dẫn đầy đủ để học Unity từ cơ bản đến nâng cao, tập trung vào những kiến thức quan trọng nhất mà bạn sẽ sử dụng thường xuyên khi làm game.
+## 🗂️ Các khóa học
 
-### 🎯 Mục tiêu khóa học
+| Khóa học | Mô tả | Bắt đầu |
+| --- | --- | --- |
+| 🎮 **Unity** | C# cho Unity, GameObject, Physics, UI, Audio & Animation | [unity/README.md](./unity/README.md) |
+| 🐹 **Golang** | Cú pháp Go, struct & interface, error handling, concurrency, REST API | [golang/README.md](./golang/README.md) |
+| 🐍 **Python** | Cú pháp Python, cấu trúc dữ liệu, OOP, file, module, advanced Python | [python/README.md](./python/README.md) |
 
-- Học C# cơ bản cần thiết cho Unity
-- Hiểu các khái niệm cốt lõi của Unity
-- Thành thạo scripting và physics
-- Tạo được game đơn giản hoàn chỉnh
+## 📁 Cấu trúc thư mục
 
-### ⏱️ Thời gian học tập
+```
+.
+├── unity/    # Khóa học Unity (7 bài)
+├── golang/   # Khóa học Golang (10 bài)
+└── python/   # Khóa học Python (10 bài)
+```
 
-- **Tổng thời gian**: 4-6 tuần (2-3 giờ/ngày)
-- **Cấp độ**: Người mới bắt đầu
-- **Kết quả**: Có thể tạo game 2D/3D đơn giản
+## 🎯 Cách học
 
-## 🛠️ Yêu cầu hệ thống
-
-### Phần mềm cần cài đặt
-
-1. **Unity Hub** - Quản lý các phiên bản Unity
-2. **Unity Editor** - Phiên bản LTS (Long Term Support) mới nhất
-3. **Visual Studio** hoặc **Visual Studio Code** - IDE để code C#
-
-### Tài nguyên học tập
-
-- Máy tính Windows/Mac/Linux
-- Kết nối internet để tải Unity và tài nguyên
-- Chuột và bàn phím (gamepad tùy chọn)
-
-## 📚 Cấu trúc khóa học
-
-### Tuần 1: Nền tảng
-
-- [x] **Bài 1**: C# cơ bản cho Unity
-- [x] **Bài 2**: Unity Fundamentals (GameObject, Component, Transform)
-- [x] **Bài 3**: Physics System (Rigidbody, Collider)
-
-### Tuần 2: Scripting & Logic
-
-- [x] **Bài 4**: Scripting Essentials (MonoBehaviour, Input, Movement)
-- [x] **Bài 5**: UI System (Canvas, Button, Text)
-
-### Tuần 3: Audio & Animation
-
-- [x] **Bài 6**: Audio & Animation (Audio Source, Animator)
-
-### Tuần 4: Tổng hợp & Nâng cao
-
-- [x] **Bài 7**: Resources & Best Practices
-- [ ] **Dự án cuối khóa**: Tạo game hoàn chỉnh
-
-## 🚀 Bắt đầu học
-
-### Bước 1: Cài đặt Unity
-
-1. Tải Unity Hub từ [unity.com](https://unity.com)
-2. Tạo tài khoản Unity ID
-3. Cài đặt Unity Editor LTS mới nhất
-4. Cài đặt Visual Studio (Windows) hoặc VS Code
-
-### Bước 2: Tạo project đầu tiên
-
-1. Mở Unity Hub
-2. Click "New Project"
-3. Chọn template "3D" hoặc "2D"
-4. Đặt tên project và chọn thư mục lưu
-
-### Bước 3: Làm quen với giao diện
-
-- **Scene View**: Nơi bạn thiết kế level
-- **Game View**: Xem game khi chạy
-- **Hierarchy**: Danh sách tất cả objects trong scene
-- **Inspector**: Thuộc tính của object được chọn
-- **Project**: Tất cả assets của project
-
-## 📖 Cách sử dụng tài liệu
-
-1. **Đọc tuần tự**: Các bài học được sắp xếp theo độ khó tăng dần
-2. **Thực hành**: Mỗi bài có ví dụ code và bài tập
-3. **Ghi chú**: Viết lại những gì quan trọng
-4. **Hỏi đáp**: Tham gia cộng đồng Unity Việt Nam
-
-## ✅ Checklist theo dõi tiến độ
-
-### Tuần 1
-
-- [ ] Hoàn thành Bài 1: C# cơ bản
-- [ ] Hoàn thành Bài 2: Unity Fundamentals
-- [ ] Hoàn thành Bài 3: Physics System
-- [ ] Tạo được object di chuyển với physics
-
-### Tuần 2
-
-- [ ] Hoàn thành Bài 4: Scripting Essentials
-- [ ] Hoàn thành Bài 5: UI System
-- [ ] Tạo được game với UI hoàn chỉnh
-
-### Tuần 3
-
-- [ ] Hoàn thành Bài 6: Audio & Animation
-- [ ] Thêm âm thanh và animation vào game
-
-### Tuần 4
-
-- [ ] Hoàn thành Bài 7: Resources
-- [ ] Hoàn thành dự án cuối khóa
-- [ ] Upload game lên itch.io hoặc GameJolt
-
-## 🎯 Tips học hiệu quả
-
-1. **Code mỗi ngày**: Dù chỉ 30 phút cũng tốt hơn học 1 lần/tuần
-2. **Thực hành ngay**: Đừng chỉ đọc, hãy code theo ví dụ
-3. **Tự tạo project**: Sau mỗi bài, tạo project nhỏ để áp dụng
-4. **Tham gia cộng đồng**: Unity Việt Nam Facebook group
-5. **Đừng sợ lỗi**: Lỗi là cách học tốt nhất!
-
-## 📞 Hỗ trợ
-
-- **Unity Documentation**: [docs.unity3d.com](https://docs.unity3d.com)
-- **Unity Learn**: [learn.unity.com](https://learn.unity.com)
-- **Unity Forum**: [forum.unity.com](https://forum.unity.com)
-- **Cộng đồng Việt Nam**: Unity Việt Nam Facebook Group
-
----
-
-**Chúc bạn học tập vui vẻ và thành công! 🎮✨**
-
-> 💡 **Lưu ý**: Tài liệu này tập trung vào những kiến thức quan trọng nhất. Bạn có thể học thêm chi tiết từ Unity Documentation khi cần.
+1. Mở `README.md` của khóa học bạn chọn
+2. Học tuần tự từng bài, gõ lại code ví dụ
+3. Làm bài tập cuối mỗi bài và đánh dấu checklist
+4. Hoàn thành dự án cuối khóa
