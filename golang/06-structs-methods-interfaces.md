@@ -1216,6 +1216,243 @@ func main() {
 
 > 💡 Muốn thêm kênh Telegram, Slack? Chỉ cần viết struct mới có method `Notify` - **không cần sửa** `OrderService`. Đây là sức mạnh của interface!
 
+## 🌍 Ứng dụng thực tế
+
+Interface thể hiện sức mạnh rõ nhất khi hệ thống phải hỗ trợ **nhiều "nhà cung cấp"** cho cùng một việc: nhiều phương thức thanh toán, nhiều hãng vận chuyển, nhiều nơi lưu trữ... (Ví dụ hệ thống thông báo Email/SMS đã có ở mục 11.)
+
+### Ví dụ 1: Thanh toán với nhiều phương thức
+
+Hàm `Checkout` chỉ làm việc với interface `PaymentMethod`. Thêm phương thức mới (QR ngân hàng, trả sau...) chỉ cần viết một struct mới có đủ 3 method - **không phải sửa** `Checkout`:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+// PaymentMethod: bất cứ thứ gì tính được phí và thực hiện được thanh toán
+type PaymentMethod interface {
+	Name() string
+	Fee(amount int) int
+	Pay(amount int) error
+}
+
+// ===== COD - thanh toán khi nhận hàng =====
+type COD struct{}
+
+func (COD) Name() string       { return "COD" }
+func (COD) Fee(amount int) int { return 15_000 } // Phí thu hộ cố định
+func (COD) Pay(amount int) error {
+	if amount > 5_000_000 {
+		return errors.New("COD chỉ nhận đơn tối đa 5.000.000 đ")
+	}
+	return nil // Thu tiền khi giao, không cần làm gì thêm lúc đặt hàng
+}
+
+// ===== Thẻ tín dụng =====
+type CreditCard struct {
+	Number string
+	Limit  int // Hạn mức còn lại
+}
+
+func (c *CreditCard) Name() string       { return "Thẻ *" + c.Number[len(c.Number)-4:] }
+func (c *CreditCard) Fee(amount int) int { return amount * 2 / 100 } // Phí 2%
+func (c *CreditCard) Pay(amount int) error {
+	if amount > c.Limit {
+		return fmt.Errorf("vượt hạn mức thẻ (còn %d đ)", c.Limit)
+	}
+	c.Limit -= amount // Pointer receiver → sửa được hạn mức thật
+	return nil
+}
+
+// ===== Ví điện tử =====
+type EWallet struct {
+	Phone   string
+	Balance int
+}
+
+func (w *EWallet) Name() string       { return "Ví " + w.Phone }
+func (w *EWallet) Fee(amount int) int { return 0 }
+func (w *EWallet) Pay(amount int) error {
+	if amount > w.Balance {
+		return fmt.Errorf("số dư ví không đủ (còn %d đ)", w.Balance)
+	}
+	w.Balance -= amount
+	return nil
+}
+
+// Checkout không biết (và không cần biết) khách dùng phương thức nào
+func Checkout(orderID string, amount int, pm PaymentMethod) {
+	total := amount + pm.Fee(amount)
+	if err := pm.Pay(total); err != nil {
+		fmt.Printf("❌ %s | %-14s | %v\n", orderID, pm.Name(), err)
+		return
+	}
+	fmt.Printf("✅ %s | %-14s | trả %d đ (phí %d đ)\n", orderID, pm.Name(), total, pm.Fee(amount))
+
+	// Type switch: xử lý thêm cho từng loại cụ thể khi thật sự cần
+	switch m := pm.(type) {
+	case COD:
+		fmt.Println("   → Nhắc shipper thu tiền mặt khi giao")
+	case *EWallet:
+		fmt.Printf("   → Gửi thông báo tới %s, số dư mới %d đ\n", m.Phone, m.Balance)
+	}
+}
+
+func main() {
+	card := &CreditCard{Number: "4111222233334444", Limit: 3_000_000}
+	wallet := &EWallet{Phone: "0901234567", Balance: 500_000}
+
+	Checkout("DH01", 450_000, COD{})
+	Checkout("DH02", 2_000_000, card)
+	Checkout("DH03", 1_500_000, card) // Hạn mức chỉ còn 960.000 đ
+	Checkout("DH04", 320_000, wallet)
+	Checkout("DH05", 320_000, wallet) // Ví không đủ tiền
+	Checkout("DH06", 6_000_000, COD{})
+}
+
+// Output:
+// ✅ DH01 | COD            | trả 465000 đ (phí 15000 đ)
+//    → Nhắc shipper thu tiền mặt khi giao
+// ✅ DH02 | Thẻ *4444      | trả 2040000 đ (phí 40000 đ)
+// ❌ DH03 | Thẻ *4444      | vượt hạn mức thẻ (còn 960000 đ)
+// ✅ DH04 | Ví 0901234567  | trả 320000 đ (phí 0 đ)
+//    → Gửi thông báo tới 0901234567, số dư mới 180000 đ
+// ❌ DH05 | Ví 0901234567  | số dư ví không đủ (còn 180000 đ)
+// ❌ DH06 | COD            | COD chỉ nhận đơn tối đa 5.000.000 đ
+```
+
+> 💡 Để ý `CreditCard` và `EWallet` dùng **pointer receiver** vì `Pay` phải trừ hạn mức/số dư thật. Vì vậy ta truyền `card` (kiểu `*CreditCard`) chứ không phải `*card` vào `Checkout`. `COD` không có trạng thái nên dùng value receiver.
+
+### Ví dụ 2: So sánh báo giá nhiều hãng vận chuyển
+
+Trang thanh toán thường hiện "Giao tiết kiệm / Giao nhanh / Hỏa tốc" kèm giá. Ví dụ kết hợp **interface**, **embedding** (dùng chung method `Name`) và **generics** (`MinBy` chọn phương án tốt nhất theo tiêu chí bất kỳ):
+
+```go
+package main
+
+import "fmt"
+
+// Parcel: thông tin kiện hàng cần giao
+type Parcel struct {
+	WeightGram int
+	SameCity   bool // Người gửi và người nhận cùng thành phố?
+}
+
+// Carrier: hãng vận chuyển báo giá được cho một kiện hàng
+// ok = false nghĩa là hãng không nhận giao kiện này
+type Carrier interface {
+	Name() string
+	Quote(p Parcel) (price int, days int, ok bool)
+}
+
+// baseCarrier chứa phần dùng chung, được NHÚNG (embedding) vào từng hãng
+type baseCarrier struct{ name string }
+
+func (b baseCarrier) Name() string { return b.name }
+
+// Giao tiết kiệm: rẻ, chậm, nhận mọi kiện
+type EconomyCarrier struct{ baseCarrier }
+
+func (EconomyCarrier) Quote(p Parcel) (int, int, bool) {
+	return 16_000 + p.WeightGram/500*3_000, 4, true
+}
+
+// Giao nhanh: giá cao hơn, nhanh hơn, tối đa 20kg
+type ExpressCarrier struct{ baseCarrier }
+
+func (ExpressCarrier) Quote(p Parcel) (int, int, bool) {
+	if p.WeightGram > 20_000 {
+		return 0, 0, false
+	}
+	return 22_000 + p.WeightGram/500*4_000, 2, true
+}
+
+// Hỏa tốc: giao trong ngày, chỉ nội thành, tối đa 5kg
+type InstantCarrier struct{ baseCarrier }
+
+func (InstantCarrier) Quote(p Parcel) (int, int, bool) {
+	if !p.SameCity || p.WeightGram > 5_000 {
+		return 0, 0, false
+	}
+	return 30_000, 0, true
+}
+
+// MinBy là hàm GENERIC: tìm phần tử có "chi phí" nhỏ nhất theo hàm cost cho trước.
+// Dùng được cho carrier, sản phẩm, chuyến bay... bất kỳ kiểu T nào.
+func MinBy[T any](items []T, cost func(T) (int, bool)) (best T, found bool) {
+	bestCost := 0
+	for _, item := range items {
+		c, ok := cost(item)
+		if ok && (!found || c < bestCost) {
+			best, bestCost, found = item, c, true
+		}
+	}
+	return best, found
+}
+
+func main() {
+	carriers := []Carrier{
+		EconomyCarrier{baseCarrier{"Tiết Kiệm"}},
+		ExpressCarrier{baseCarrier{"Giao Nhanh"}},
+		InstantCarrier{baseCarrier{"Hỏa Tốc"}},
+	}
+	parcels := []Parcel{
+		{WeightGram: 800, SameCity: true},
+		{WeightGram: 3_000},
+		{WeightGram: 25_000},
+	}
+
+	for _, p := range parcels {
+		fmt.Printf("📦 Kiện %dg (nội thành: %t)\n", p.WeightGram, p.SameCity)
+		for _, c := range carriers {
+			price, days, ok := c.Quote(p)
+			switch {
+			case !ok:
+				fmt.Printf("   %-10s không nhận\n", c.Name())
+			case days == 0:
+				fmt.Printf("   %-10s %6d đ, trong ngày\n", c.Name(), price)
+			default:
+				fmt.Printf("   %-10s %6d đ, %d ngày\n", c.Name(), price, days)
+			}
+		}
+
+		// Tiêu chí 1: rẻ nhất
+		cheapest, _ := MinBy(carriers, func(c Carrier) (int, bool) {
+			price, _, ok := c.Quote(p)
+			return price, ok
+		})
+		// Tiêu chí 2: nhanh nhất - cùng hàm MinBy, chỉ đổi hàm cost
+		fastest, _ := MinBy(carriers, func(c Carrier) (int, bool) {
+			_, days, ok := c.Quote(p)
+			return days, ok
+		})
+		fmt.Printf("   👉 Rẻ nhất: %s | Nhanh nhất: %s\n", cheapest.Name(), fastest.Name())
+	}
+}
+
+// Output:
+// 📦 Kiện 800g (nội thành: true)
+//    Tiết Kiệm   19000 đ, 4 ngày
+//    Giao Nhanh  26000 đ, 2 ngày
+//    Hỏa Tốc     30000 đ, trong ngày
+//    👉 Rẻ nhất: Tiết Kiệm | Nhanh nhất: Hỏa Tốc
+// 📦 Kiện 3000g (nội thành: false)
+//    Tiết Kiệm   34000 đ, 4 ngày
+//    Giao Nhanh  46000 đ, 2 ngày
+//    Hỏa Tốc    không nhận
+//    👉 Rẻ nhất: Tiết Kiệm | Nhanh nhất: Giao Nhanh
+// 📦 Kiện 25000g (nội thành: false)
+//    Tiết Kiệm  166000 đ, 4 ngày
+//    Giao Nhanh không nhận
+//    Hỏa Tốc    không nhận
+//    👉 Rẻ nhất: Tiết Kiệm | Nhanh nhất: Tiết Kiệm
+```
+
+> 💡 `MinBy` không biết gì về vận chuyển - nó chỉ cần một slice và một hàm tính "chi phí". Bạn có thể dùng lại nó để tìm sản phẩm rẻ nhất, chuyến bay ngắn nhất... Đó là giá trị thật sự của generics: **thuật toán viết một lần, dùng cho mọi kiểu**.
+
 ## ⚠️ Lỗi thường gặp
 
 ### Lỗi 1: Dùng value receiver khi cần thay đổi dữ liệu
@@ -1375,6 +1612,7 @@ Tạo kiểu `Direction` với `North, East, South, West` bằng `iota`. Impleme
 - [ ] Dùng type assertion với comma-ok và type switch
 - [ ] Implement `String()` để tùy biến cách in
 - [ ] Viết hàm generic và kiểu generic với constraint
+- [ ] Thiết kế được interface cho nhiều "nhà cung cấp" (thanh toán, vận chuyển) và dùng generics để tái sử dụng thuật toán
 - [ ] Hoàn thành ít nhất 4 bài tập
 
 ## 🚀 Tiếp theo

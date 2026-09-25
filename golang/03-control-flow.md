@@ -833,6 +833,164 @@ func main() {
 // 👋 Cảm ơn quý khách!
 ```
 
+## 🌍 Ứng dụng thực tế
+
+`if`, `for`, `switch` là nơi **quy tắc nghiệp vụ** (business rules) được viết ra: tính phí, xếp loại, duyệt/từ chối... Hai ví dụ dưới đây mô phỏng những đoạn code có thật trong app giao hàng và phần mềm quản lý trường học.
+
+### Ví dụ 1: Tính phí ship theo vùng, cân nặng và khuyến mãi
+
+Quy tắc: phí cơ bản theo vùng (đã gồm 1kg đầu), mỗi 500g vượt thêm cộng 5.000 đ, đơn nội thành từ 500.000 đ được miễn phí ship, vùng chưa hỗ trợ thì bỏ qua. Ví dụ cũng có hàm `formatVND` **tổng quát** dùng vòng lặp (nâng cấp từ bản đơn giản ở Bài 2):
+
+```go
+package main
+
+import (
+	"fmt"
+	"strconv"
+)
+
+const freeShipThreshold = 500_000 // Đơn từ 500.000 đ được miễn phí ship nội thành
+
+// formatVND - phiên bản TỔNG QUÁT dùng vòng lặp: 1250000 → "1.250.000 đ"
+func formatVND(amount int) string {
+	s := strconv.Itoa(amount)
+	result := ""
+	for i, ch := range s {
+		// Chèn dấu chấm trước mỗi nhóm 3 chữ số tính từ bên phải
+		if i > 0 && (len(s)-i)%3 == 0 {
+			result += "."
+		}
+		result += string(ch)
+	}
+	return result + " đ"
+}
+
+func main() {
+	// Mỗi vị trí i là một đơn hàng: vùng giao, cân nặng (gram), giá trị đơn
+	regions := []string{"noi-thanh", "noi-thanh", "ngoai-thanh", "lien-tinh", "lien-tinh", "dao"}
+	weights := []int{800, 1200, 2500, 400, 3200, 1000}
+	orderValues := []int{650_000, 120_000, 300_000, 90_000, 1_250_000, 200_000}
+
+	totalShip := 0
+	for i, region := range regions {
+		weight, value := weights[i], orderValues[i]
+
+		// 1. Phí cơ bản theo vùng (bao gồm 1kg đầu tiên)
+		var baseFee int
+		switch region {
+		case "noi-thanh":
+			baseFee = 15_000
+		case "ngoai-thanh":
+			baseFee = 25_000
+		case "lien-tinh":
+			baseFee = 35_000
+		default:
+			fmt.Printf("Đơn %d: ❌ chưa hỗ trợ giao tới vùng %q\n", i+1, region)
+			continue // Bỏ qua đơn này, xét đơn tiếp theo
+		}
+
+		// 2. Phụ phí 5.000 đ cho mỗi 500g vượt quá 1kg (làm tròn lên)
+		extraFee := 0
+		if weight > 1000 {
+			extraSteps := (weight - 1000 + 499) / 500 // Chia làm tròn lên
+			extraFee = extraSteps * 5_000
+		}
+		fee := baseFee + extraFee
+
+		// 3. Miễn phí ship nội thành cho đơn lớn
+		note := ""
+		if region == "noi-thanh" && value >= freeShipThreshold {
+			fee, note = 0, " (miễn phí ship 🎉)"
+		}
+
+		totalShip += fee
+		fmt.Printf("Đơn %d: %-11s %5dg  giá trị %13s → ship %s%s\n",
+			i+1, region, weight, formatVND(value), formatVND(fee), note)
+	}
+	fmt.Println("Tổng phí ship:", formatVND(totalShip))
+}
+
+// Output:
+// Đơn 1: noi-thanh     800g  giá trị     650.000 đ → ship 0 đ (miễn phí ship 🎉)
+// Đơn 2: noi-thanh    1200g  giá trị     120.000 đ → ship 20.000 đ
+// Đơn 3: ngoai-thanh  2500g  giá trị     300.000 đ → ship 40.000 đ
+// Đơn 4: lien-tinh     400g  giá trị      90.000 đ → ship 35.000 đ
+// Đơn 5: lien-tinh    3200g  giá trị   1.250.000 đ → ship 60.000 đ
+// Đơn 6: ❌ chưa hỗ trợ giao tới vùng "dao"
+// Tổng phí ship: 155.000 đ
+```
+
+> 💡 **Chia làm tròn lên** với số nguyên: `(a + b - 1) / b`. Ở đây `(weight - 1000 + 499) / 500` nghĩa là "vượt 1g cũng tính thêm một nấc 500g" - đúng cách các hãng vận chuyển tính cước.
+
+### Ví dụ 2: Xếp loại học lực theo nhiều điều kiện
+
+Trong thực tế, xếp loại không chỉ dựa vào điểm trung bình mà còn yêu cầu **không có môn nào quá thấp**. Tagless `switch` giúp viết các điều kiện phức hợp này rất gọn:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	// Bảng điểm học kỳ: môn, hệ số, điểm (Toán và Văn tính hệ số 2)
+	subjects := []string{"Toán", "Văn", "Anh", "Lý", "Hóa", "Sử"}
+	weights := []int{2, 2, 1, 1, 1, 1}
+
+	students := []string{"An", "Bình", "Chi", "Dũng"}
+	scores := [][]float64{ // Mỗi dòng là điểm của một học sinh (slice lồng nhau: Bài 5)
+		{9.0, 8.5, 8.0, 8.5, 9.0, 7.0},
+		{9.5, 9.0, 9.0, 9.5, 9.0, 6.0}, // Rất giỏi nhưng Sử chỉ 6.0
+		{7.0, 6.5, 5.5, 6.0, 7.5, 6.5},
+		{4.0, 5.0, 3.0, 5.5, 4.5, 5.0},
+	}
+
+	for i, name := range students {
+		total, totalWeight := 0.0, 0
+		lowest := 10.0
+		weakest := ""
+
+		// Tính điểm trung bình có hệ số và tìm môn thấp nhất
+		for j, score := range scores[i] {
+			total += score * float64(weights[j])
+			totalWeight += weights[j]
+			if score < lowest {
+				lowest, weakest = score, subjects[j]
+			}
+		}
+		avg := total / float64(totalWeight)
+
+		// Xếp loại: phải đạt CẢ điểm trung bình VÀ điểm môn thấp nhất
+		var rank string
+		switch {
+		case avg >= 8.0 && lowest >= 6.5:
+			rank = "Giỏi"
+		case avg >= 6.5 && lowest >= 5.0:
+			rank = "Khá"
+		case avg >= 5.0 && lowest >= 3.5:
+			rank = "Trung bình"
+		default:
+			rank = "Yếu"
+		}
+
+		fmt.Printf("%-5s ĐTB %.2f | thấp nhất %-3s %.1f → %s\n", name, avg, weakest, lowest, rank)
+
+		// Gợi ý cho học sinh "hụt" loại Giỏi chỉ vì một môn
+		if avg >= 8.0 && rank != "Giỏi" {
+			fmt.Printf("      💡 Cần nâng %s lên 6.5 để đạt loại Giỏi\n", weakest)
+		}
+	}
+}
+
+// Output:
+// An    ĐTB 8.44 | thấp nhất Sử  7.0 → Giỏi
+// Bình  ĐTB 8.81 | thấp nhất Sử  6.0 → Khá
+//       💡 Cần nâng Sử lên 6.5 để đạt loại Giỏi
+// Chi   ĐTB 6.56 | thấp nhất Anh 5.5 → Khá
+// Dũng  ĐTB 4.50 | thấp nhất Anh 3.0 → Yếu
+```
+
+> 💡 Thứ tự các `case` rất quan trọng: `switch` dừng ở case **đầu tiên** đúng, nên phải xét từ loại cao xuống thấp. Bình có ĐTB 8.81 nhưng rơi xuống "Khá" vì môn Sử - đây chính là kiểu logic mà nếu viết bằng if-else lồng nhau sẽ rất dễ sai.
+
 ## ⚠️ Lỗi thường gặp
 
 ### Lỗi 1: Đặt `else` xuống dòng mới
@@ -977,6 +1135,7 @@ Số hoàn hảo là số bằng tổng các ước số của nó (không kể 
 - [ ] Dùng tagless `switch` thay cho chuỗi if-else dài
 - [ ] Biết `break` trong `switch` không thoát `for`
 - [ ] Hiểu `defer` chạy khi hàm kết thúc, theo thứ tự LIFO
+- [ ] Viết được quy tắc nghiệp vụ thực tế: phí ship theo vùng/cân nặng, xếp loại học lực nhiều điều kiện
 - [ ] Hoàn thành ít nhất 4 bài tập
 
 ## 🚀 Tiếp theo

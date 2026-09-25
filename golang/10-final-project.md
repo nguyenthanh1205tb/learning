@@ -1,8 +1,8 @@
-# 📚 Bài 10: Dự án cuối khóa - Todo REST API
+# 📚 Bài 10: Dự án tổng hợp phần cơ bản - Todo REST API
 
 ## 🎯 Mục tiêu bài học
 
-- Tổng hợp **toàn bộ kiến thức** của khóa học vào một dự án thực tế
+- Tổng hợp **toàn bộ kiến thức** của Phần 1 (Bài 1-9) vào một dự án thực tế
 - Hiểu **REST API** là gì và các HTTP method, status code phổ biến
 - Xây dựng web server **chỉ với thư viện chuẩn** `net/http`
 - Sử dụng **routing pattern mới của Go 1.22**: `"GET /todos/{id}"`
@@ -1187,6 +1187,229 @@ docker run -p 8080:8080 todo-api
 
 Image cuối cùng chỉ khoảng **10-20 MB** - so với hàng trăm MB của ứng dụng Node.js hay Java.
 
+## 🌍 Ứng dụng thực tế
+
+Todo API là "bộ khung" của hầu hết backend thực tế. Khi đưa lên production, hai tính năng gần như luôn được yêu cầu đầu tiên là **tìm kiếm + phân trang** và **xác thực client**. Hai ví dụ dưới đây là các chương trình độc lập (dùng `httptest` để gửi request thử, không cần mở cổng mạng), bạn có thể chạy ngay rồi ghép vào dự án Todo.
+
+### Ví dụ 1: Tìm kiếm và phân trang `GET /todos?q=&page=&limit=`
+
+Không API thật nào trả về **toàn bộ** dữ liệu trong một lần - với 1 triệu todo, response sẽ nặng hàng trăm MB. Phân trang cần: đọc và **kiểm tra** tham số query, chặn `limit` quá lớn, trả về `total` để frontend vẽ nút chuyển trang:
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"strings"
+)
+
+type Todo struct {
+	ID    int    `json:"id"`
+	Title string `json:"title"`
+	Done  bool   `json:"done"`
+}
+
+// pageResponse: định dạng trả về cho danh sách có phân trang
+type pageResponse struct {
+	Items []Todo `json:"items"`
+	Page  int    `json:"page"`
+	Limit int    `json:"limit"`
+	Total int    `json:"total"` // Tổng số kết quả (để frontend vẽ nút trang)
+}
+
+// queryInt đọc tham số số nguyên từ URL, dùng giá trị mặc định nếu không có
+func queryInt(r *http.Request, name string, def, lo, hi int) (int, error) {
+	raw := r.URL.Query().Get(name)
+	if raw == "" {
+		return def, nil
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < lo || n > hi {
+		return 0, fmt.Errorf("%s phải là số từ %d đến %d", name, lo, hi)
+	}
+	return n, nil
+}
+
+// paginate cắt slice theo trang - generic, dùng được cho mọi kiểu
+func paginate[T any](items []T, page, limit int) []T {
+	start := (page - 1) * limit
+	if start >= len(items) {
+		return []T{} // Trang vượt quá → mảng rỗng (JSON: [] chứ không phải null)
+	}
+	end := min(start+limit, len(items))
+	return items[start:end]
+}
+
+// writeJSON giống hàm cùng tên trong dự án Todo
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(v)
+}
+
+// GET /todos?q=<từ khóa>&page=<trang>&limit=<số mục mỗi trang>
+func listTodos(todos []Todo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		page, err := queryInt(r, "page", 1, 1, 1_000_000)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+		limit, err := queryInt(r, "limit", 10, 1, 50) // Chặn limit quá lớn làm nặng server
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Tìm kiếm không phân biệt hoa thường; q rỗng thì khớp tất cả
+		q := strings.ToLower(r.URL.Query().Get("q"))
+		var matched []Todo
+		for _, t := range todos {
+			if strings.Contains(strings.ToLower(t.Title), q) {
+				matched = append(matched, t)
+			}
+		}
+
+		writeJSON(w, http.StatusOK, pageResponse{
+			Items: paginate(matched, page, limit),
+			Page:  page,
+			Limit: limit,
+			Total: len(matched),
+		})
+	}
+}
+
+func main() {
+	todos := []Todo{
+		{1, "Học Go cơ bản", true}, {2, "Viết REST API bằng Go", false},
+		{3, "Đi chợ", false}, {4, "Đọc sách Learning Go", false}, {5, "Deploy Go lên server", false},
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /todos", listTodos(todos))
+
+	// Gửi thử vài request bằng httptest - không cần mở cổng mạng thật
+	for _, url := range []string{
+		"/todos?q=go&limit=2",
+		"/todos?q=go&limit=2&page=2",
+		"/todos?q=go&limit=2&page=9",
+		"/todos?limit=500",
+	} {
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest("GET", url, nil))
+		fmt.Printf("GET %s → %d\n  %s", url, rec.Code, rec.Body.String())
+	}
+}
+
+// Output:
+// GET /todos?q=go&limit=2 → 200
+//   {"items":[{"id":1,"title":"Học Go cơ bản","done":true},{"id":2,"title":"Viết REST API bằng Go","done":false}],"page":1,"limit":2,"total":4}
+// GET /todos?q=go&limit=2&page=2 → 200
+//   {"items":[{"id":4,"title":"Đọc sách Learning Go","done":false},{"id":5,"title":"Deploy Go lên server","done":false}],"page":2,"limit":2,"total":4}
+// GET /todos?q=go&limit=2&page=9 → 200
+//   {"items":[],"page":9,"limit":2,"total":4}
+// GET /todos?limit=500 → 400
+//   {"error":"limit phải là số từ 1 đến 50"}
+```
+
+> 💡 Trả về `[]T{}` thay vì slice `nil` khi trang trống, để JSON là `"items":[]` chứ không phải `"items":null` - frontend JavaScript sẽ không bị lỗi khi gọi `.map()`. Khi chuyển sang database ([Bài 13](./13-database-sql.md)), phân trang sẽ được làm ngay trong câu SQL bằng `LIMIT ... OFFSET ...` thay vì cắt slice.
+
+### Ví dụ 2: Middleware xác thực bằng API key
+
+API cho ứng dụng mobile hoặc đối tác thường yêu cầu header `X-API-Key`. Middleware kiểm tra key, rồi gắn **tên client** vào `context` của request để handler phía sau biết ai đang gọi (dùng cho log, giới hạn quota...):
+
+```go
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+// ctxKey là kiểu riêng (unexported) làm key cho context → không đụng key của package khác
+type ctxKey string
+
+const clientKey ctxKey = "client"
+
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(v)
+}
+
+// requireAPIKey là middleware: chỉ cho request có header X-API-Key hợp lệ đi qua.
+// apiKeys: API key → tên ứng dụng khách (thực tế đọc từ database/biến môi trường).
+func requireAPIKey(apiKeys map[string]string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		key := r.Header.Get("X-API-Key")
+		if key == "" {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "thiếu header X-API-Key"})
+			return
+		}
+		client, ok := apiKeys[key]
+		if !ok {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "API key không hợp lệ"})
+			return
+		}
+		// Gắn tên client vào context của request để handler phía sau dùng
+		ctx := context.WithValue(r.Context(), clientKey, client)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func handleListTodos(w http.ResponseWriter, r *http.Request) {
+	client, _ := r.Context().Value(clientKey).(string) // Type assertion (Bài 6)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"client": client,
+		"todos":  []string{"Học Go", "Viết API"},
+	})
+}
+
+func main() {
+	apiKeys := map[string]string{
+		"key-mobile-123": "app-mobile",
+		"key-web-456":    "web-admin",
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	})
+	// Chỉ bảo vệ nhóm route /todos, /health vẫn công khai cho hệ thống giám sát
+	mux.Handle("GET /todos", requireAPIKey(apiKeys, http.HandlerFunc(handleListTodos)))
+
+	tests := []struct{ path, key string }{
+		{"/health", ""},
+		{"/todos", ""},
+		{"/todos", "key-sai"},
+		{"/todos", "key-mobile-123"},
+	}
+	for _, tc := range tests {
+		req := httptest.NewRequest("GET", tc.path, nil)
+		if tc.key != "" {
+			req.Header.Set("X-API-Key", tc.key)
+		}
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		fmt.Printf("GET %-7s key=%-16q → %d %s", tc.path, tc.key, rec.Code, rec.Body.String())
+	}
+}
+
+// Output:
+// GET /health key=""               → 200 {"status":"ok"}
+// GET /todos  key=""               → 401 {"error":"thiếu header X-API-Key"}
+// GET /todos  key="key-sai"        → 401 {"error":"API key không hợp lệ"}
+// GET /todos  key="key-mobile-123" → 200 {"client":"app-mobile","todos":["Học Go","Viết API"]}
+```
+
+> ⚠️ Đây là bản tối giản để học. Trong production: lưu key dạng **hash** thay vì plaintext, so sánh bằng `crypto/subtle.ConstantTimeCompare` để tránh tấn công đo thời gian (timing attack), luôn dùng **HTTPS**, và cân nhắc thêm giới hạn tốc độ (rate limit). Phần 2 ([Bài 12](./12-http-apis.md), [Bài 16](./16-production-ready.md)) sẽ đi sâu hơn vào web API và vận hành ứng dụng Go trong production.
+
 ## ⚠️ Lỗi thường gặp
 
 ### Lỗi 1: Quên `return` sau khi ghi lỗi
@@ -1265,7 +1488,7 @@ Frontend thường mong đợi mảng, nhận `null` sẽ gây lỗi `Cannot rea
 2. **Thêm `PUT /todos/{id}`** thay thế toàn bộ todo (khác với `PATCH` chỉ sửa một phần)
 3. **Thêm field `updated_at`**, tự cập nhật mỗi khi PATCH
 4. **Tìm kiếm**: `GET /todos?q=go` trả về todo có title chứa từ khóa (không phân biệt hoa thường)
-5. **Phân trang**: `GET /todos?page=2&limit=10`
+5. **Phân trang**: `GET /todos?page=2&limit=10` (tham khảo ví dụ ở mục "🌍 Ứng dụng thực tế")
 
 ### ⭐⭐ Trung bình
 
@@ -1333,11 +1556,12 @@ Chọn ít nhất **một** tính năng ở mục "⭐⭐ Trung bình", cài đ�
 - [ ] Cấu hình `http.Server` với timeout và graceful shutdown
 - [ ] Kiểm thử API bằng `curl`
 - [ ] Viết test với `httptest`, chạy `go test -race -cover ./...` thành công
+- [ ] Thêm được tìm kiếm + phân trang và middleware xác thực API key (mục Ứng dụng thực tế)
 - [ ] Cài đặt ít nhất một ý tưởng mở rộng
 
-## 🎓 Tổng kết khóa học
+## 🎓 Tổng kết Phần 1
 
-🎉 **Chúc mừng bạn đã hoàn thành khóa học Golang!**
+🎉 **Chúc mừng bạn đã hoàn thành Phần 1: Cơ bản → Trung cấp!**
 
 Hãy nhìn lại hành trình của bạn:
 
@@ -1354,25 +1578,37 @@ Hãy nhìn lại hành trình của bạn:
 | [Bài 9](./09-packages-modules-testing.md) | Package, module, testing, benchmark |
 | **Bài 10** | **REST API hoàn chỉnh với test** |
 
-### 🚀 Học gì tiếp theo?
+Bạn đã có đủ nền tảng để đọc hiểu phần lớn code Go ngoài thực tế. **Phần 2: Nâng cao & Thực tế** sẽ đưa bạn từ "viết được" đến "viết như người làm Go chuyên nghiệp":
+
+| Bài | Nội dung |
+|-----|----------|
+| [Bài 11](./11-files-json-cli.md) | File, JSON & CLI |
+| [Bài 12](./12-http-apis.md) | HTTP Client & Web API thực tế |
+| [Bài 13](./13-database-sql.md) | Làm việc với Database |
+| [Bài 14](./14-advanced-concurrency.md) | Concurrency Patterns nâng cao |
+| [Bài 15](./15-generics-reflection-stdlib.md) | Generics nâng cao, Reflection & Thư viện chuẩn |
+| [Bài 16](./16-production-ready.md) | Go trong Production - dự án tổng kết Bookmark API |
+
+### 📚 Tài liệu đọc thêm
 
 - 📖 **Đọc sách**: *"The Go Programming Language"* (Donovan & Kernighan), *"Learning Go"* (Jon Bodner), *"Let's Go"* (Alex Edwards - chuyên về web)
 - 🌐 **Web framework** (sau khi đã vững `net/http`): Gin, Echo, Chi, Fiber
-- 🗄️ **Database**: `database/sql`, `sqlc`, `pgx`, GORM
 - 🔌 **gRPC & Protocol Buffers**: giao tiếp giữa các microservice
 - 🧰 **Công cụ**: `golangci-lint`, `pprof` (profiling), `delve` (debugger)
 - 🤝 **Đóng góp mã nguồn mở**: tìm các issue gắn nhãn "good first issue" trên các dự án Go
+
+**Bài tiếp theo**: [Bài 11: File, JSON & CLI](./11-files-json-cli.md)
 
 **Quay về trang chính**: [Tổng quan khóa học](./README.md)
 
 ---
 
-💡 **Lời khuyên cuối cùng**:
+💡 **Lời khuyên trước khi sang Phần 2**:
 
 - **Viết code mỗi ngày** - kiến thức chỉ thực sự là của bạn khi bạn dùng nó
 - **Đọc code thư viện chuẩn** - `net/http`, `strings`, `sort` là những ví dụ tuyệt vời về Go "chuẩn"
 - **Giữ mọi thứ đơn giản** - "Clear is better than clever" (Go Proverbs)
 - **Test là bạn** - `go test -race ./...` trước mỗi lần commit
-- **Tham gia cộng đồng** - Gophers Việt Nam, r/golang, Gophers Slack
+- **Giữ lại dự án Todo API** - sau mỗi bài ở Phần 2, hãy thử áp dụng kiến thức mới (lưu file, database, logging...) để nâng cấp nó
 
-**Chúc bạn trở thành một Gopher xuất sắc! 🐹✨**
+**Hẹn gặp lại bạn ở Phần 2! 🐹✨**

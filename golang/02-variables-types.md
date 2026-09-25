@@ -881,6 +881,153 @@ func main() {
 // Kiểu BMI:   float64
 ```
 
+## 🌍 Ứng dụng thực tế
+
+Biến, hằng số, phép toán, `fmt`, `strings`, `strconv` là "đồ nghề" bạn dùng **mỗi ngày** khi làm phần mềm bán hàng, ngân hàng, form đăng ký... Dưới đây là 2 tình huống rất hay gặp.
+
+### Ví dụ 1: Hóa đơn quán cà phê - giảm giá, VAT và định dạng tiền VND
+
+Những điểm "nghề" cần chú ý: tiền lưu bằng `int` (đồng), **nhân trước rồi mới chia** khi tính phần trăm, làm tròn bằng phép chia nguyên, và in số tiền có dấu chấm ngăn cách hàng nghìn cho dễ đọc.
+
+```go
+package main
+
+import "fmt"
+
+// Cấu hình của quán (giả định để minh họa)
+const (
+	memberDiscount = 10 // Giảm 10% cho khách có thẻ thành viên
+	vatPercent     = 8  // Thuế VAT 8%
+)
+
+// vnd định dạng số tiền kiểu Việt Nam: 58000 → "58.000 đ"
+// Cách đơn giản này đúng cho số từ 1.000 đến 999.999 - đủ cho hóa đơn quán nước.
+// Phiên bản tổng quát (dùng vòng lặp) có ở Bài 3. Hàm sẽ học kỹ ở Bài 4.
+func vnd(amount int) string {
+	return fmt.Sprintf("%d.%03d đ", amount/1000, amount%1000)
+}
+
+func main() {
+	// ✅ Tiền luôn lưu bằng int (đơn vị: đồng), KHÔNG dùng float64
+	const (
+		priceCaPheSua = 29_000
+		priceBacXiu   = 35_000
+		priceBanhMi   = 25_000
+	)
+	qtyCaPheSua, qtyBacXiu, qtyBanhMi := 2, 1, 3
+
+	lineCaPhe := priceCaPheSua * qtyCaPheSua
+	lineBacXiu := priceBacXiu * qtyBacXiu
+	lineBanhMi := priceBanhMi * qtyBanhMi
+	subtotal := lineCaPhe + lineBacXiu + lineBanhMi
+
+	// Nhân trước, chia sau để không mất phần lẻ: 168000 * 10 / 100
+	discount := subtotal * memberDiscount / 100
+	afterDiscount := subtotal - discount
+	vat := afterDiscount * vatPercent / 100
+	total := afterDiscount + vat
+
+	// Làm tròn đến 1.000 đồng gần nhất (quán không thối tiền lẻ)
+	rounded := (total + 500) / 1000 * 1000
+
+	fmt.Println("========== HÓA ĐƠN ==========")
+	fmt.Printf("%-14s %2d x %s\n", "Cà phê sữa đá", qtyCaPheSua, vnd(priceCaPheSua))
+	fmt.Printf("%-14s %2d x %s\n", "Bạc xỉu", qtyBacXiu, vnd(priceBacXiu))
+	fmt.Printf("%-14s %2d x %s\n", "Bánh mì", qtyBanhMi, vnd(priceBanhMi))
+	fmt.Println("-----------------------------")
+	fmt.Printf("%-18s %10s\n", "Tạm tính:", vnd(subtotal))
+	fmt.Printf("%-18s %10s\n", fmt.Sprintf("Thành viên -%d%%:", memberDiscount), "-"+vnd(discount))
+	fmt.Printf("%-18s %10s\n", fmt.Sprintf("VAT %d%%:", vatPercent), vnd(vat))
+	fmt.Printf("%-18s %10s\n", "Tổng (chưa tròn):", vnd(total))
+	fmt.Printf("%-18s %10s\n", "THANH TOÁN:", vnd(rounded))
+}
+
+// Output:
+// ========== HÓA ĐƠN ==========
+// Cà phê sữa đá   2 x 29.000 đ
+// Bạc xỉu         1 x 35.000 đ
+// Bánh mì         3 x 25.000 đ
+// -----------------------------
+// Tạm tính:           168.000 đ
+// Thành viên -10%:    -16.800 đ
+// VAT 8%:              12.096 đ
+// Tổng (chưa tròn):   163.296 đ
+// THANH TOÁN:         163.000 đ
+```
+
+> 💡 **Vì sao `(total + 500) / 1000 * 1000` làm tròn được?** Chia nguyên bỏ phần lẻ, nên cộng thêm 500 trước khi chia sẽ biến "bỏ phần lẻ" thành "làm tròn đến nghìn gần nhất": `163296 + 500 = 163796` → `/1000 = 163` → `*1000 = 163000`.
+
+> ⚠️ Nếu viết `subtotal / 100 * memberDiscount` (chia trước) thì với số tiền không chia hết cho 100 bạn sẽ **mất tiền lẻ**. Quy tắc: **nhân trước, chia sau**.
+
+### Ví dụ 2: Chuẩn hóa dữ liệu form và tính tiền trả góp
+
+Dữ liệu người dùng nhập vào **không bao giờ sạch**: thừa dấu cách, viết hoa lung tung, số điện thoại có `+84`, giá tiền có dấu chấm và chữ "đ". Trước khi lưu vào database, ta phải **chuẩn hóa** (normalize):
+
+```go
+package main
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	// Dữ liệu người dùng gõ vào form mua trả góp - lộn xộn đủ kiểu!
+	rawName := "   nguyễn   văn   an  "
+	rawEmail := "  An.Nguyen@Gmail.COM "
+	rawPhone := "+84 912-345-678"
+	rawPrice := "12.490.000đ"
+	months := 6
+
+	// 1. Họ tên: bỏ khoảng trắng thừa ở đầu, cuối và giữa các từ
+	name := strings.Join(strings.Fields(rawName), " ")
+
+	// 2. Email: bỏ khoảng trắng, chuyển về chữ thường để so sánh/lưu trữ
+	email := strings.ToLower(strings.TrimSpace(rawEmail))
+
+	// 3. Số điện thoại: bỏ dấu cách, gạch ngang; đổi đầu +84 thành 0
+	phone := strings.ReplaceAll(rawPhone, " ", "")
+	phone = strings.ReplaceAll(phone, "-", "")
+	if strings.HasPrefix(phone, "+84") {
+		phone = "0" + strings.TrimPrefix(phone, "+84")
+	}
+	phoneOK := len(phone) == 10 && strings.HasPrefix(phone, "0")
+
+	// 4. Giá tiền: bỏ dấu chấm và chữ "đ" rồi chuyển sang số
+	priceText := strings.TrimSuffix(strings.ReplaceAll(rawPrice, ".", ""), "đ")
+	price, err := strconv.Atoi(priceText)
+	if err != nil {
+		fmt.Println("Giá không hợp lệ:", err)
+		return
+	}
+
+	// 5. Trả góp 0%: chia đều, phần dư cộng vào kỳ đầu tiên
+	perMonth := price / months
+	remainder := price % months
+	firstMonth := perMonth + remainder
+
+	fmt.Printf("Họ tên:  %q\n", name)
+	fmt.Printf("Email:   %q\n", email)
+	fmt.Printf("SĐT:     %q (hợp lệ: %t)\n", phone, phoneOK)
+	fmt.Printf("Giá:     %d đ\n", price)
+	fmt.Printf("Trả góp: %d kỳ, kỳ đầu %d đ, %d kỳ sau mỗi kỳ %d đ\n",
+		months, firstMonth, months-1, perMonth)
+	fmt.Printf("Kiểm tra: %d + %d x %d = %d đ\n",
+		firstMonth, months-1, perMonth, firstMonth+(months-1)*perMonth)
+}
+
+// Output:
+// Họ tên:  "nguyễn văn an"
+// Email:   "an.nguyen@gmail.com"
+// SĐT:     "0912345678" (hợp lệ: true)
+// Giá:     12490000 đ
+// Trả góp: 6 kỳ, kỳ đầu 2081670 đ, 5 kỳ sau mỗi kỳ 2081666 đ
+// Kiểm tra: 2081670 + 5 x 2081666 = 12490000 đ
+```
+
+> 💡 Chú ý phép `%` (chia lấy dư): `12490000 / 6` không chia hết, phần dư 4 đồng được cộng vào kỳ đầu để **tổng các kỳ khớp chính xác** với giá gốc. Ngân hàng và ví điện tử đều phải xử lý chi tiết này - nếu không, sổ sách sẽ lệch vài đồng mỗi giao dịch!
+
 ## ⚠️ Lỗi thường gặp
 
 ### Lỗi 1: Dùng `:=` ngoài hàm
@@ -1026,6 +1173,7 @@ Tổng cộng                             135000
 - [ ] Dùng thành thạo `%v`, `%d`, `%s`, `%.2f`, `%T`, `%q`
 - [ ] Dùng được các hàm phổ biến trong `strings`
 - [ ] Chuyển chuỗi ↔ số với `strconv` và kiểm tra lỗi
+- [ ] Tính được hóa đơn có giảm giá/VAT bằng `int` và chuẩn hóa dữ liệu nhập từ form (mục Ứng dụng thực tế)
 - [ ] Hoàn thành ít nhất 4 bài tập
 
 ## 🚀 Tiếp theo

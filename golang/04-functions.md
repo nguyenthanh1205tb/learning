@@ -929,6 +929,262 @@ func main() {
 // ❌ Lỗi: phép toán "^" không được hỗ trợ
 ```
 
+## 🌍 Ứng dụng thực tế
+
+Hàm giúp bạn chia bài toán lớn thành các mảnh nhỏ, dễ đọc và dễ kiểm thử. Dưới đây là 3 tình huống quen thuộc trong các ứng dụng thương mại điện tử và tài chính.
+
+### Ví dụ 1: Validate form đăng ký tài khoản
+
+Mỗi trường có một hàm kiểm tra riêng trả về `error`. Hàm `register` gọi lần lượt và **return sớm** ở lỗi đầu tiên - đúng mẫu `(kết quả, error)` bạn sẽ gặp ở mọi codebase Go:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+	"unicode"
+)
+
+// Mỗi hàm validate kiểm tra MỘT trường và trả về error (nil = hợp lệ)
+
+func validateUsername(username string) error {
+	if len(username) < 3 || len(username) > 20 {
+		return errors.New("tên đăng nhập phải dài 3-20 ký tự")
+	}
+	for _, ch := range username {
+		if !(unicode.IsLower(ch) || unicode.IsDigit(ch) || ch == '_') {
+			return fmt.Errorf("tên đăng nhập chứa ký tự không hợp lệ %q", ch)
+		}
+	}
+	return nil
+}
+
+func validatePassword(password string) error {
+	if len(password) < 8 {
+		return errors.New("mật khẩu phải có ít nhất 8 ký tự")
+	}
+	hasUpper, hasDigit := false, false
+	for _, ch := range password {
+		if unicode.IsUpper(ch) {
+			hasUpper = true
+		}
+		if unicode.IsDigit(ch) {
+			hasDigit = true
+		}
+	}
+	if !hasUpper || !hasDigit {
+		return errors.New("mật khẩu phải có chữ hoa và chữ số")
+	}
+	return nil
+}
+
+func validatePhone(phone string) error {
+	if len(phone) != 10 || !strings.HasPrefix(phone, "0") {
+		return errors.New("số điện thoại phải có 10 số và bắt đầu bằng 0")
+	}
+	return nil
+}
+
+// register gọi lần lượt từng validator, dừng ở lỗi đầu tiên ("return sớm")
+func register(username, password, phone string) (string, error) {
+	if err := validateUsername(username); err != nil {
+		return "", err
+	}
+	if err := validatePassword(password); err != nil {
+		return "", err
+	}
+	if err := validatePhone(phone); err != nil {
+		return "", err
+	}
+	return "USR-" + strings.ToUpper(username), nil // Giả lập tạo mã người dùng
+}
+
+func main() {
+	// Mỗi dòng là một lần submit form: username, password, phone
+	// ([3]string là mảng 3 phần tử, [][3]string là danh sách các mảng đó - Bài 5)
+	forms := [][3]string{
+		{"an_nguyen", "MatKhau123", "0912345678"},
+		{"An Nguyen", "MatKhau123", "0912345678"},
+		{"binh", "12345678", "0987654321"},
+		{"chi99", "SieuManh2024", "912345678"},
+	}
+
+	for _, f := range forms {
+		id, err := register(f[0], f[1], f[2])
+		if err != nil {
+			fmt.Printf("❌ %-10s → %v\n", f[0], err)
+			continue
+		}
+		fmt.Printf("✅ %-10s → đăng ký thành công, mã %s\n", f[0], id)
+	}
+}
+
+// Output:
+// ✅ an_nguyen  → đăng ký thành công, mã USR-AN_NGUYEN
+// ❌ An Nguyen  → tên đăng nhập chứa ký tự không hợp lệ 'A'
+// ❌ binh       → mật khẩu phải có chữ hoa và chữ số
+// ❌ chi99      → số điện thoại phải có 10 số và bắt đầu bằng 0
+```
+
+> 💡 Tách mỗi quy tắc thành một hàm nhỏ giúp bạn **tái sử dụng** (form đổi mật khẩu cũng cần `validatePassword`) và **dễ viết test** cho từng hàm ([Bài 9](./09-packages-modules-testing.md)). Muốn trả về **tất cả** lỗi cùng lúc thay vì lỗi đầu tiên? Xem `errors.Join` ở [Bài 7](./07-error-handling.md).
+
+### Ví dụ 2: Tính lãi vay mua trả góp
+
+Hai cách tính lãi phổ biến của ngân hàng/công ty tài chính: **dư nợ giảm dần** (lãi tính trên số gốc còn nợ) và **trả đều hằng tháng** (niên kim - mỗi tháng trả một số tiền như nhau). Ví dụ dùng hàm trả về giá trị, named return và package `math`:
+
+```go
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+// annuityPayment tính số tiền trả CỐ ĐỊNH mỗi tháng (phương pháp niên kim/annuity):
+//
+//	A = P × r / (1 - (1 + r)^(-n))
+//
+// P: số tiền vay, annualRate: lãi suất năm (%), months: số tháng.
+func annuityPayment(principal int, annualRate float64, months int) int {
+	r := annualRate / 100 / 12 // Lãi suất theo tháng
+	if r == 0 {
+		return principal / months
+	}
+	a := float64(principal) * r / (1 - math.Pow(1+r, float64(-months)))
+	return int(math.Round(a)) // Làm tròn đến đồng
+}
+
+// decliningSchedule in lịch trả nợ theo DƯ NỢ GIẢM DẦN:
+// gốc chia đều mỗi tháng, lãi tính trên số dư nợ còn lại.
+// Trả về tổng tiền lãi (named return).
+func decliningSchedule(principal int, annualRate float64, months int) (totalInterest int) {
+	r := annualRate / 100 / 12
+	remaining := principal
+	principalPart := principal / months
+
+	fmt.Println("Tháng |   Gốc     |   Lãi   |  Phải trả  | Dư nợ còn")
+	for m := 1; m <= months; m++ {
+		if m == months {
+			principalPart = remaining // Tháng cuối trả nốt phần gốc còn lại
+		}
+		interest := int(math.Round(float64(remaining) * r))
+		remaining -= principalPart
+		totalInterest += interest
+		fmt.Printf("%5d | %9d | %7d | %10d | %9d\n",
+			m, principalPart, interest, principalPart+interest, remaining)
+	}
+	return // naked return: trả về totalInterest
+}
+
+func main() {
+	const (
+		loan   = 30_000_000 // Vay 30 triệu mua laptop
+		rate   = 18.0       // Lãi suất 18%/năm
+		months = 6
+	)
+
+	fmt.Println("=== Cách 1: Dư nợ giảm dần ===")
+	interest1 := decliningSchedule(loan, rate, months)
+	fmt.Printf("Tổng lãi: %d đ\n\n", interest1)
+
+	fmt.Println("=== Cách 2: Trả đều hằng tháng (niên kim) ===")
+	monthly := annuityPayment(loan, rate, months)
+	interest2 := monthly*months - loan
+	fmt.Printf("Mỗi tháng trả: %d đ\n", monthly)
+	fmt.Printf("Tổng lãi:      %d đ\n", interest2)
+	fmt.Printf("Chênh lệch:    %d đ (dư nợ giảm dần rẻ hơn)\n", interest2-interest1)
+}
+
+// Output:
+// === Cách 1: Dư nợ giảm dần ===
+// Tháng |   Gốc     |   Lãi   |  Phải trả  | Dư nợ còn
+//     1 |   5000000 |  450000 |    5450000 |  25000000
+//     2 |   5000000 |  375000 |    5375000 |  20000000
+//     3 |   5000000 |  300000 |    5300000 |  15000000
+//     4 |   5000000 |  225000 |    5225000 |  10000000
+//     5 |   5000000 |  150000 |    5150000 |   5000000
+//     6 |   5000000 |   75000 |    5075000 |         0
+// Tổng lãi: 1575000 đ
+//
+// === Cách 2: Trả đều hằng tháng (niên kim) ===
+// Mỗi tháng trả: 5265756 đ
+// Tổng lãi:      1594536 đ
+// Chênh lệch:    19536 đ (dư nợ giảm dần rẻ hơn)
+```
+
+> 💡 Cùng lãi suất 18%/năm nhưng hai cách tính cho tổng lãi khác nhau. Đây là lý do khi vay bạn nên hỏi rõ "lãi tính trên dư nợ gốc hay dư nợ giảm dần?". Số tiền được làm tròn bằng `math.Round` ở **từng bước** - trong hệ thống thật, quy tắc làm tròn phải được thống nhất với bộ phận kế toán.
+
+### Ví dụ 3: Hệ thống mã giảm giá bằng closure
+
+Mỗi voucher là một **hàm** được tạo bởi "nhà máy" (`percentOff`, `fixedOff`). Closure "nhớ" cấu hình của từng voucher, và hàm variadic `bestVoucher` chọn mã có lợi nhất cho khách:
+
+```go
+package main
+
+import "fmt"
+
+// Voucher là một HÀM: nhận tổng tiền đơn hàng, trả về số tiền được giảm
+type Voucher func(total int) int
+
+// percentOff tạo voucher giảm theo %, tối đa maxOff đồng (closure nhớ pct, maxOff)
+func percentOff(pct, maxOff int) Voucher {
+	return func(total int) int {
+		discount := total * pct / 100
+		if discount > maxOff {
+			return maxOff
+		}
+		return discount
+	}
+}
+
+// fixedOff tạo voucher giảm cố định, chỉ áp dụng cho đơn từ minOrder trở lên
+func fixedOff(amount, minOrder int) Voucher {
+	return func(total int) int {
+		if total < minOrder {
+			return 0
+		}
+		return amount
+	}
+}
+
+// bestVoucher thử tất cả voucher (variadic), trả về tên và mức giảm tốt nhất
+func bestVoucher(total int, names []string, vouchers ...Voucher) (string, int) {
+	bestName, bestDiscount := "(không có)", 0
+	for i, v := range vouchers {
+		if d := v(total); d > bestDiscount {
+			bestName, bestDiscount = names[i], d
+		}
+	}
+	return bestName, bestDiscount
+}
+
+func main() {
+	// Các chương trình khuyến mãi được "cấu hình" bằng cách gọi factory
+	names := []string{"GIAM10", "FREESHIP30K", "SALE50K"}
+	vouchers := []Voucher{
+		percentOff(10, 40_000),    // Giảm 10%, tối đa 40.000 đ
+		fixedOff(30_000, 150_000), // Giảm 30.000 đ cho đơn từ 150.000 đ
+		fixedOff(50_000, 500_000), // Giảm 50.000 đ cho đơn từ 500.000 đ
+	}
+
+	for _, total := range []int{99_000, 250_000, 450_000, 800_000} {
+		name, discount := bestVoucher(total, names, vouchers...)
+		fmt.Printf("Đơn %7d đ → dùng %-11s giảm %6d đ, còn %7d đ\n",
+			total, name, discount, total-discount)
+	}
+}
+
+// Output:
+// Đơn   99000 đ → dùng GIAM10      giảm   9900 đ, còn   89100 đ
+// Đơn  250000 đ → dùng FREESHIP30K giảm  30000 đ, còn  220000 đ
+// Đơn  450000 đ → dùng GIAM10      giảm  40000 đ, còn  410000 đ
+// Đơn  800000 đ → dùng SALE50K     giảm  50000 đ, còn  750000 đ
+```
+
+> 💡 Muốn thêm loại khuyến mãi mới (ví dụ "giảm 20% cho đơn trên 1 triệu vào thứ Sáu")? Chỉ cần viết thêm một factory trả về `Voucher` - **không phải sửa** `bestVoucher`. Ở [Bài 6](./06-structs-methods-interfaces.md) bạn sẽ thấy interface giải quyết bài toán này theo cách tương tự.
+
 ## ⚠️ Lỗi thường gặp
 
 ### Lỗi 1: Quên `return` trong hàm có giá trị trả về
@@ -1086,6 +1342,7 @@ Giải thích: `fmt.Println` được defer với `x = 0` (tính ngay lúc gặp
 - [ ] Hiểu closure "nhớ" biến bên ngoài
 - [ ] Viết hàm đệ quy có base case đúng
 - [ ] Nắm 3 quy tắc của `defer`
+- [ ] Áp dụng hàm vào bài toán thực tế: validate form đăng ký, tính lãi trả góp, voucher bằng closure
 - [ ] Hoàn thành ít nhất 4 bài tập
 
 ## 🚀 Tiếp theo

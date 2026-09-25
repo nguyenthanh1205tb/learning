@@ -833,6 +833,228 @@ func main() {
 // Số dư cuối: map[A001:300 A002:300]
 ```
 
+## 🌍 Ứng dụng thực tế
+
+Mục 9 đã có ví dụ chuyển tiền ngân hàng (sentinel error, custom error, wrapping). Dưới đây là 2 tình huống khác mà hầu như hệ thống thực tế nào cũng gặp: **thử lại khi lỗi tạm thời** và **chuyển lỗi thành phản hồi cho người dùng**.
+
+### Ví dụ 1: Gọi cổng thanh toán - thử lại khi lỗi tạm thời
+
+Khi gọi dịch vụ bên ngoài, có 2 loại lỗi rất khác nhau: **lỗi tạm thời** (timeout, mạng chập chờn → nên thử lại) và **lỗi vĩnh viễn** (thẻ bị từ chối → thử lại vô ích, thậm chí bị ngân hàng khóa thẻ). Custom error type mang thông tin `Retryable` giúp code quyết định đúng:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+// Sentinel error: thẻ bị ngân hàng từ chối → thử lại cũng vô ích
+var ErrCardDeclined = errors.New("thẻ bị từ chối")
+
+// GatewayError: lỗi từ cổng thanh toán, có mã lỗi và cho biết có nên thử lại không
+type GatewayError struct {
+	Code      string
+	Retryable bool
+}
+
+func (e *GatewayError) Error() string {
+	return fmt.Sprintf("cổng thanh toán lỗi %s", e.Code)
+}
+
+// fakeGateway giả lập cổng thanh toán: mỗi lần gọi trả về kết quả kế tiếp trong kịch bản
+func fakeGateway(script ...error) func(amount int) error {
+	call := 0
+	return func(amount int) error {
+		err := script[min(call, len(script)-1)]
+		call++
+		return err
+	}
+}
+
+// chargeWithRetry thử thanh toán tối đa maxAttempts lần,
+// CHỈ thử lại khi lỗi là tạm thời (Retryable)
+func chargeWithRetry(orderID string, amount int, charge func(int) error, maxAttempts int) error {
+	var err error
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		err = charge(amount)
+		if err == nil {
+			fmt.Printf("   lần %d: thành công\n", attempt)
+			return nil
+		}
+		fmt.Printf("   lần %d: %v\n", attempt, err)
+
+		var gwErr *GatewayError
+		if !errors.As(err, &gwErr) || !gwErr.Retryable {
+			break // Lỗi vĩnh viễn (thẻ bị từ chối, mã lỗi không thử lại được) → dừng ngay
+		}
+		// Thực tế: chờ một chút trước khi thử lại (time.Sleep - Bài 8)
+	}
+	// Bọc lỗi với ngữ cảnh, giữ nguyên lỗi gốc để tầng trên dùng errors.Is/As
+	return fmt.Errorf("thanh toán đơn %s (%d đ): %w", orderID, amount, err)
+}
+
+func main() {
+	timeout := &GatewayError{Code: "TIMEOUT", Retryable: true}
+	invalid := &GatewayError{Code: "INVALID_MERCHANT", Retryable: false}
+
+	cases := []struct {
+		orderID string
+		gateway func(int) error
+	}{
+		{"DH01", fakeGateway(nil)},                   // Thành công ngay
+		{"DH02", fakeGateway(timeout, timeout, nil)}, // Mạng chập chờn, lần 3 OK
+		{"DH03", fakeGateway(timeout)},               // Timeout mãi
+		{"DH04", fakeGateway(fmt.Errorf("ngân hàng ABC: %w", ErrCardDeclined))},
+		{"DH05", fakeGateway(invalid)}, // Lỗi cấu hình, không thử lại
+	}
+
+	for _, c := range cases {
+		fmt.Println("Đơn", c.orderID)
+		err := chargeWithRetry(c.orderID, 250_000, c.gateway, 3)
+
+		var gwErr *GatewayError
+		switch {
+		case err == nil:
+			fmt.Println("   ✅ Đã thanh toán")
+		case errors.Is(err, ErrCardDeclined):
+			fmt.Println("   💳 Báo khách: vui lòng dùng thẻ khác")
+		case errors.As(err, &gwErr) && gwErr.Retryable:
+			fmt.Println("   ⏳ Báo khách: hệ thống bận, thử lại sau ít phút")
+		default:
+			fmt.Println("   🚨 Báo đội kỹ thuật:", err)
+		}
+	}
+}
+
+// Output:
+// Đơn DH01
+//    lần 1: thành công
+//    ✅ Đã thanh toán
+// Đơn DH02
+//    lần 1: cổng thanh toán lỗi TIMEOUT
+//    lần 2: cổng thanh toán lỗi TIMEOUT
+//    lần 3: thành công
+//    ✅ Đã thanh toán
+// Đơn DH03
+//    lần 1: cổng thanh toán lỗi TIMEOUT
+//    lần 2: cổng thanh toán lỗi TIMEOUT
+//    lần 3: cổng thanh toán lỗi TIMEOUT
+//    ⏳ Báo khách: hệ thống bận, thử lại sau ít phút
+// Đơn DH04
+//    lần 1: ngân hàng ABC: thẻ bị từ chối
+//    💳 Báo khách: vui lòng dùng thẻ khác
+// Đơn DH05
+//    lần 1: cổng thanh toán lỗi INVALID_MERCHANT
+//    🚨 Báo đội kỹ thuật: thanh toán đơn DH05 (250000 đ): cổng thanh toán lỗi INVALID_MERCHANT
+```
+
+> 💡 Nhờ bọc lỗi bằng `%w`, tầng gọi `chargeWithRetry` vẫn dùng được `errors.Is(err, ErrCardDeclined)` và `errors.As(err, &gwErr)` dù lỗi gốc đã bị bọc 2 lớp (`ngân hàng ABC: ...` và `thanh toán đơn DH04: ...`).
+
+### Ví dụ 2: Phân tầng lỗi - từ database đến thông báo cho người dùng
+
+Ứng dụng thật thường chia 3 tầng: **repository** (truy cập dữ liệu) → **service** (nghiệp vụ) → **handler** (giao tiếp với người dùng). Mỗi tầng **thêm ngữ cảnh** rồi trả lỗi lên; chỉ tầng trên cùng **quyết định** hiển thị gì - đúng nguyên tắc "xử lý lỗi một lần":
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+// ===== Tầng lưu trữ (repository) =====
+
+var (
+	ErrNotFound = errors.New("không tìm thấy")
+	ErrDBDown   = errors.New("mất kết nối database")
+)
+
+var rooms = map[string]int{"P101": 2, "P202": 0} // Mã phòng → số phòng trống
+
+func findRoom(roomID string) (int, error) {
+	if roomID == "P999" {
+		return 0, ErrDBDown // Giả lập sự cố hạ tầng
+	}
+	available, ok := rooms[roomID]
+	if !ok {
+		return 0, fmt.Errorf("phòng %s: %w", roomID, ErrNotFound)
+	}
+	return available, nil
+}
+
+// ===== Tầng nghiệp vụ (service) =====
+
+var ErrSoldOut = errors.New("đã hết phòng")
+
+// ValidationError: dữ liệu người dùng gửi lên sai, kèm tên trường bị sai
+type ValidationError struct {
+	Field  string
+	Reason string
+}
+
+func (e *ValidationError) Error() string { return e.Field + ": " + e.Reason }
+
+func bookRoom(roomID string, nights int) error {
+	if nights < 1 || nights > 30 {
+		return &ValidationError{Field: "nights", Reason: "số đêm phải từ 1 đến 30"}
+	}
+	available, err := findRoom(roomID)
+	if err != nil {
+		return fmt.Errorf("đặt phòng: %w", err) // Thêm ngữ cảnh, KHÔNG log ở đây
+	}
+	if available == 0 {
+		return fmt.Errorf("đặt phòng %s: %w", roomID, ErrSoldOut)
+	}
+	rooms[roomID]--
+	return nil
+}
+
+// ===== Tầng giao tiếp (handler) - nơi DUY NHẤT quyết định xử lý lỗi =====
+
+// toResponse chuyển lỗi thành HTTP status + thông điệp an toàn cho người dùng
+func toResponse(err error) (int, string) {
+	var vErr *ValidationError
+	switch {
+	case err == nil:
+		return 201, "Đặt phòng thành công"
+	case errors.As(err, &vErr):
+		return 400, "Dữ liệu không hợp lệ: " + vErr.Reason
+	case errors.Is(err, ErrNotFound):
+		return 404, "Phòng không tồn tại"
+	case errors.Is(err, ErrSoldOut):
+		return 409, "Phòng đã hết, vui lòng chọn ngày khác"
+	default:
+		// Lỗi hệ thống: log chi tiết cho dev, người dùng chỉ thấy thông điệp chung
+		fmt.Println("   [LOG] lỗi hệ thống:", err)
+		return 500, "Hệ thống đang bận, vui lòng thử lại sau"
+	}
+}
+
+func main() {
+	requests := []struct {
+		roomID string
+		nights int
+	}{
+		{"P101", 2}, {"P101", 0}, {"P303", 1}, {"P202", 3}, {"P999", 1},
+	}
+	for _, r := range requests {
+		status, msg := toResponse(bookRoom(r.roomID, r.nights))
+		fmt.Printf("%s x%d đêm → %d %s\n", r.roomID, r.nights, status, msg)
+	}
+}
+
+// Output:
+// P101 x2 đêm → 201 Đặt phòng thành công
+// P101 x0 đêm → 400 Dữ liệu không hợp lệ: số đêm phải từ 1 đến 30
+// P303 x1 đêm → 404 Phòng không tồn tại
+// P202 x3 đêm → 409 Phòng đã hết, vui lòng chọn ngày khác
+//    [LOG] lỗi hệ thống: đặt phòng: mất kết nối database
+// P999 x1 đêm → 500 Hệ thống đang bận, vui lòng thử lại sau
+```
+
+> ⚠️ **Đừng bao giờ** trả nguyên `err.Error()` của lỗi hệ thống cho người dùng: nó có thể lộ tên bảng, địa chỉ database, đường dẫn file... Log chi tiết cho đội kỹ thuật, còn người dùng chỉ nhận thông điệp chung. Bạn sẽ dùng đúng hàm kiểu `toResponse` này trong REST API ở [Bài 10](./10-final-project.md).
+
 ## ⚠️ Lỗi thường gặp
 
 ### Lỗi 1: Bỏ qua lỗi
@@ -953,6 +1175,7 @@ Viết hàm `loadConfig(path string) (map[string]string, error)` đọc file d�
 - [ ] Gộp nhiều lỗi với `errors.Join`
 - [ ] Hiểu `panic`/`recover` và biết khi nào (không) nên dùng
 - [ ] Áp dụng nguyên tắc "xử lý lỗi một lần"
+- [ ] Phân biệt lỗi tạm thời/vĩnh viễn để retry, và chuyển lỗi thành phản hồi an toàn cho người dùng (mục Ứng dụng thực tế)
 - [ ] Hoàn thành ít nhất 3 bài tập
 
 ## 🚀 Tiếp theo
