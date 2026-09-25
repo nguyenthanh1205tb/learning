@@ -2,6 +2,8 @@
 
 Tài liệu tự học bằng tiếng Việt, đi từ cơ bản đến thực hành dự án.
 
+🌐 **Học trên web**: [nguyenthanh1205tb.github.io/learning](https://nguyenthanh1205tb.github.io/learning/)
+
 ## 🗂️ Các khóa học
 
 | Khóa học | Mô tả | Bắt đầu |
@@ -25,3 +27,13 @@ Tài liệu tự học bằng tiếng Việt, đi từ cơ bản đến thực h
 2. Học tuần tự từng bài, gõ lại code ví dụ
 3. Làm bài tập cuối mỗi bài và đánh dấu checklist
 4. Hoàn thành dự án cuối khóa
+
+## 🌐 Xem website trên máy (tùy chọn)
+
+Website được build bằng [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) và tự động deploy lên GitHub Pages mỗi khi push lên `main`.
+
+```bash
+pip install -r requirements.txt
+mkdir -p docs && cp -r README.md unity golang python docs/
+mkdocs serve   # mở http://127.0.0.1:8000
+```
