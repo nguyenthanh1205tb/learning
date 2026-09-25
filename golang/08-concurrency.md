@@ -699,11 +699,11 @@ Chạy ví dụ counter lỗi ở mục 7 với `-race`:
 WARNING: DATA RACE
 Read at 0x00c000012158 by goroutine 10:
   main.main.func1()
-      /path/to/main.go:15 +0x84
+      /path/to/main.go:16 +0x84
 
 Previous write at 0x00c000012158 by goroutine 7:
   main.main.func1()
-      /path/to/main.go:15 +0x96
+      /path/to/main.go:16 +0x96
 ...
 ==================
 Counter: 787
@@ -711,7 +711,7 @@ Found 2 data race(s)
 exit status 66
 ```
 
-Race detector chỉ rõ **dòng code nào** đọc/ghi xung đột (`main.go:15` chính là dòng `counter++`).
+Race detector chỉ rõ **dòng code nào** đọc/ghi xung đột (`main.go:16` chính là dòng `counter++`).
 
 ### 💡 Tips quan trọng
 

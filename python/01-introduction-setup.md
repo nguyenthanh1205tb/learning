@@ -23,7 +23,7 @@ Giải thích từng từ khóa:
 - **Thông dịch**: Code được một chương trình tên là **interpreter** đọc và thực thi từng dòng, không cần bước "biên dịch" (compile) ra file `.exe` như C/C++
 - **Đa mục đích**: Dùng được cho gần như mọi thứ - web, dữ liệu, AI, game, tự động hóa...
 
-> 🧠 **Ví dụ dễ hiểu**: Hãy tưởng tượng bạn đưa một công thức nấu ăn (code) cho một đầu bếp (interpreter). Đầu bếp đọc từng bước và làm ngay. Nếu bước 5 viết sai, đầu bếp sẽ làm xong bước 1-4 rồi mới dừng lại báo lỗi ở bước 5. Đó chính là cách Python chạy code!
+> 🧠 **Ví dụ dễ hiểu**: Hãy tưởng tượng bạn đưa một công thức nấu ăn (code) cho một đầu bếp (interpreter). Đầu bếp đọc từng bước và làm ngay. Nếu bước 5 không làm được (ví dụ hết nguyên liệu), đầu bếp sẽ làm xong bước 1-4 rồi mới dừng lại báo lỗi ở bước 5. Đó chính là cách Python chạy code! (Riêng lỗi *viết sai cú pháp* thì Python phát hiện ngay từ đầu, trước khi chạy dòng nào - xem phần 5.)
 
 ### So sánh nhanh: Python vs các ngôn ngữ khác
 
@@ -451,9 +451,10 @@ print("Tên:\tAn")
 x = 10  # Comment ở cuối dòng (cách code ít nhất 2 dấu cách)
 
 """
-Đây là chuỗi nhiều dòng (docstring).
-Thường dùng để mô tả module, hàm, class.
-Nếu không gán vào đâu, nó được dùng như comment nhiều dòng.
+Đây là chuỗi nhiều dòng (triple-quoted string).
+Nếu không gán vào đâu, nó thường được dùng như comment nhiều dòng.
+Khi đặt ở dòng ĐẦU TIÊN của file, hàm hoặc class, nó được gọi là
+docstring - dùng để mô tả file/hàm/class đó (xem Bài 4).
 """
 
 print(x)
@@ -806,6 +807,8 @@ print("A")
 
 ### Quy tắc đặt tên
 
+> 💡 Các ví dụ PEP 8 dưới đây có dùng `def` (hàm - Bài 4), `class` (lớp - Bài 6) và `f"..."` (f-string - Bài 2). Bạn **chưa cần hiểu** chúng lúc này, chỉ cần để ý **cách đặt tên và khoảng trắng**.
+
 ```python
 # ✅ Biến và hàm: snake_case (chữ thường, nối bằng dấu gạch dưới)
 student_name = "Minh"
@@ -981,7 +984,8 @@ TabError: inconsistent use of tabs and spaces in indentation
 # Bạn tạo file tên random.py, trong đó có:
 import random
 print(random.randint(1, 10))
-# AttributeError: module 'random' has no attribute 'randint'
+# AttributeError: partially initialized module 'random' has no attribute 'randint'
+# (most likely due to a circular import)
 ```
 
 **Nguyên nhân**: Python tìm module trong **thư mục hiện tại trước**, nên `import random` import chính file `random.py` của bạn thay vì module chuẩn!

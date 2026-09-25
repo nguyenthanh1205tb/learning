@@ -245,6 +245,7 @@ func main() {
 ✅ **Mẹo hiệu năng**: Nếu biết trước số lượng phần tử, hãy dùng `make([]T, 0, n)` để **tránh cấp phát lại nhiều lần**:
 
 ```go
+// users là slice các User; u.Name là trường Name của struct User (struct: Bài 6)
 results := make([]string, 0, len(users)) // Đặt chỗ trước
 for _, u := range users {
 	results = append(results, u.Name)
@@ -339,6 +340,52 @@ sub := original[1:3:3] // len=2, cap=2 → append sẽ buộc phải tạo mản
 // Cách 2: Tạo bản sao độc lập (xem copy / slices.Clone bên dưới)
 sub := slices.Clone(original[1:3])
 ```
+
+### Truyền slice vào hàm
+
+Ở [Bài 4](./04-functions.md) bạn đã biết Go luôn truyền **bản sao**. Với slice, thứ được sao chép chỉ là **slice header** (pointer, len, cap) - còn **mảng nền vẫn dùng chung**. Hệ quả:
+
+```go
+package main
+
+import "fmt"
+
+func doubleAll(s []int) {
+	for i := range s {
+		s[i] *= 2 // ✅ Sửa phần tử: người gọi THẤY thay đổi (chung mảng nền)
+	}
+}
+
+func addItem(s []int) {
+	s = append(s, 99) // ⚠️ Chỉ đổi slice header BẢN SAO: người gọi KHÔNG thấy phần tử mới
+	fmt.Println("Trong addItem:", s)
+}
+
+func addItemFixed(s []int) []int {
+	return append(s, 99) // ✅ Trả về slice mới, người gọi tự gán lại
+}
+
+func main() {
+	nums := []int{1, 2, 3}
+
+	doubleAll(nums)
+	fmt.Println("Sau doubleAll:", nums)
+
+	addItem(nums)
+	fmt.Println("Sau addItem:", nums)
+
+	nums = addItemFixed(nums)
+	fmt.Println("Sau addItemFixed:", nums)
+}
+
+// Output:
+// Sau doubleAll: [2 4 6]
+// Trong addItem: [2 4 6 99]
+// Sau addItem: [2 4 6]
+// Sau addItemFixed: [2 4 6 99]
+```
+
+> 💡 **Quy tắc**: Hàm **sửa phần tử** của slice → người gọi thấy thay đổi. Hàm **`append`** (thay đổi len/cap) → phải **trả về slice mới** để người gọi gán lại - giống hệt `nums = append(nums, x)`. Đây cũng là lý do các hàm như `slices.Delete`, `slices.Insert` đều trả về slice.
 
 ### `copy` - Sao chép slice
 
@@ -1117,6 +1164,7 @@ fmt.Println(a, b)
 - [ ] Dùng `append` và luôn gán lại kết quả
 - [ ] Hiểu cái bẫy chia sẻ mảng nền và cách phòng tránh
 - [ ] Dùng `copy` và `slices.Clone` để sao chép
+- [ ] Hiểu khi truyền slice vào hàm: sửa phần tử thì người gọi thấy, `append` thì phải trả về slice mới
 - [ ] Phân biệt `make([]T, n)` và `make([]T, 0, n)`
 - [ ] Tạo map, thêm/đọc/sửa/xóa phần tử
 - [ ] Dùng comma-ok để kiểm tra key tồn tại

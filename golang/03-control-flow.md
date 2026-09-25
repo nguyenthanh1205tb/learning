@@ -111,6 +111,8 @@ func main() {
 
 Trong Go, người ta **tránh lồng `if` sâu**. Thay vào đó, xử lý trường hợp lỗi/đặc biệt trước rồi `return`:
 
+> 📝 Ví dụ dưới đây (và một vài ví dụ khác trong bài) dùng hàm tự viết dạng `func tên(thamSố kiểu) kiểuTrảVề { ... }` như hàm `greet` ở Bài 1. `return` nghĩa là "kết thúc hàm và trả giá trị về". Bạn sẽ học kỹ về hàm ở [Bài 4](./04-functions.md).
+
 ```go
 // ❌ Lồng nhau khó đọc ("mũi tên hướng phải")
 func checkAge(age int) string {
@@ -680,8 +682,9 @@ func main() {
 Dùng để **dọn dẹp tài nguyên**: đóng file, đóng kết nối database, mở khóa mutex... Viết lệnh dọn dẹp **ngay cạnh** lệnh mở giúp bạn **không bao giờ quên**:
 
 ```go
+// Kiểu trả về error và cách xử lý lỗi sẽ học kỹ ở Bài 7
 func readConfig(path string) error {
-	file, err := os.Open(path)
+	file, err := os.Open(path) // Mở file (package os)
 	if err != nil {
 		return err
 	}

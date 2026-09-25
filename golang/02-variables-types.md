@@ -181,6 +181,7 @@ func main() {
 
 ```go
 var total int // Không cần viết total := 0
+// Vòng lặp for ... range và slice []int{...} sẽ học kỹ ở Bài 3 và Bài 5
 for _, price := range []int{100, 200, 300} {
 	total += price
 }
@@ -520,7 +521,7 @@ fmt.Println(s2) // Output: 65
 s := "Xin chào"
 bs := []byte(s)   // Chuỗi → mảng byte
 rs := []rune(s)   // Chuỗi → mảng rune
-fmt.Println(len(bs), len(rs)) // Output: 10 8
+fmt.Println(len(bs), len(rs)) // Output: 9 8 (chữ "à" chiếm 2 byte)
 
 back := string(rs) // Mảng rune → chuỗi
 fmt.Println(back)  // Output: Xin chào
@@ -593,6 +594,7 @@ fmt.Println(!hasTicket)             // false - NOT: đảo ngược
 **Short-circuit** (đánh giá tắt): Với `&&`, nếu vế trái `false` thì **không** xét vế phải. Với `||`, nếu vế trái `true` thì **không** xét vế phải. Rất hữu ích để tránh lỗi:
 
 ```go
+// list là một slice (danh sách) - Bài 5. list[0] là phần tử đầu tiên.
 // Nếu len(list) == 0 thì không truy cập list[0] → không bị panic
 if len(list) > 0 && list[0] == "admin" {
 	fmt.Println("Admin đứng đầu")
@@ -762,8 +764,8 @@ import (
 
 func main() {
 	var sb strings.Builder
-	for i := 1; i <= 5; i++ {
-		fmt.Fprintf(&sb, "%d,", i) // Ghi vào builder
+	for i := 1; i <= 5; i++ { // Vòng lặp for: Bài 3
+		fmt.Fprintf(&sb, "%d,", i) // Ghi vào builder (&sb = địa chỉ của sb, con trỏ sẽ học ở Bài 6)
 	}
 	sb.WriteString("hết")
 	fmt.Println(sb.String())

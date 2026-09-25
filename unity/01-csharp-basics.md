@@ -11,6 +11,16 @@
 - Hiểu virtual, abstract và interfaces
 - Biết cách sử dụng generics cơ bản
 
+> 💡 **Lưu ý trước khi đọc**: Các ví dụ trong bài này đã dùng một số thứ của Unity như `MonoBehaviour`, `Start()`, `Update()`, `Debug.Log`, `Vector3`, `transform`, `GetComponent`, `Input.GetKeyDown`. Bạn chỉ cần tạm hiểu:
+>
+> - `MonoBehaviour` = class gốc của mọi script gắn lên GameObject (học ở **Bài 2**)
+> - `Start()` chạy 1 lần khi bắt đầu, `Update()` chạy mỗi frame (học chi tiết ở **Bài 4**)
+> - `Debug.Log(...)` = in ra cửa sổ **Console** của Unity
+> - `Input.GetKeyDown(...)` = kiểm tra phím vừa được nhấn (học ở **Bài 4**)
+>
+> Mỗi file script Unity cần `using UnityEngine;` ở đầu file (các ví dụ lược bỏ cho gọn). Khi dùng `List`/`Dictionary` cần thêm `using System.Collections.Generic;`, khi dùng `Action` cần `using System;`.
+> Mỗi class kế thừa `MonoBehaviour` phải nằm trong **file riêng có tên trùng tên class** (vd: `PlayerController.cs`). Các ví dụ gộp nhiều class trong một khối code chỉ để dễ đọc, và nhiều ví dụ dùng lại tên như `Player`, `Enemy`, `GameManager` - đừng copy tất cả vào cùng một project.
+
 ## 📖 1. Kiểu dữ liệu cơ bản
 
 ### Các kiểu dữ liệu hay dùng trong Unity
@@ -242,6 +252,37 @@ public class Spawner : MonoBehaviour
 }
 ```
 
+### Mảng (Array) và List
+
+```csharp
+using System.Collections.Generic; // Cần cho List và Dictionary
+
+public class CollectionExample : MonoBehaviour
+{
+    void Start()
+    {
+        // Mảng - số phần tử CỐ ĐỊNH khi tạo
+        int[] scores = new int[3];      // [0, 0, 0]
+        scores[0] = 10;                 // Chỉ số (index) bắt đầu từ 0
+        Debug.Log(scores.Length);       // 3
+
+        // List - số phần tử THAY ĐỔI được (hay dùng nhất trong game)
+        List<string> items = new List<string>();
+        items.Add("Kiếm");
+        items.Add("Khiên");
+        items.Remove("Kiếm");
+        Debug.Log(items.Count);         // 1
+
+        // Dictionary - lưu cặp key → value
+        Dictionary<string, int> ammo = new Dictionary<string, int>();
+        ammo["Pistol"] = 12;
+        Debug.Log(ammo["Pistol"]);      // 12
+    }
+}
+```
+
+> 💡 `List<string>` có dấu `<>` là **Generics** - sẽ giải thích ở phần 13. Tạm hiểu: `List<T>` là danh sách chứa các phần tử kiểu `T`.
+
 ## 🔧 5. Hàm (Methods)
 
 ### Hàm cơ bản
@@ -363,7 +404,8 @@ public class GameManager : MonoBehaviour
 
 **Assembly** là một file **DLL hoặc EXE** được compile từ code C#. Trong Unity:
 
-- Mỗi folder trong Assets có thể là một assembly riêng
+- Mặc định, **tất cả** script trong Assets/ được compile chung vào `Assembly-CSharp.dll`
+- Một folder chỉ trở thành assembly riêng khi bạn tạo file **Assembly Definition** (`.asmdef`) trong folder đó
 - Các script trong cùng assembly có thể truy cập lẫn nhau qua `internal`
 - Các script ở assembly khác KHÔNG thể truy cập `internal`
 
@@ -413,9 +455,8 @@ public class AccessExample : MonoBehaviour
 // ❌ Class ở assembly KHÁC
 public class AnotherAssemblyClass
 {
-    void Start()
+    void Use(AccessExample example) // Nhận tham chiếu từ bên ngoài
     {
-        AccessExample example = new AccessExample();
 
         Debug.Log(example.publicValue);    // ✅ OK - public
         // Debug.Log(example.privateValue); // ❌ ERROR - private
@@ -429,7 +470,8 @@ public class SameAssemblyClass : MonoBehaviour
 {
     void Start()
     {
-        AccessExample example = new AccessExample();
+        // Lưu ý: KHÔNG tạo MonoBehaviour bằng `new` - dùng GetComponent (xem Bài 2)
+        AccessExample example = GetComponent<AccessExample>();
 
         Debug.Log(example.publicValue);    // ✅ OK - public
         // Debug.Log(example.privateValue); // ❌ ERROR - private
@@ -442,10 +484,11 @@ public class SameAssemblyClass : MonoBehaviour
 ### Ví dụ thực tế: Internal trong Unity
 
 ```csharp
+// Giả sử folder Scripts/Core/ có file Core.asmdef (Assembly Definition riêng)
 // File: Scripts/Core/GameManager.cs
 public class GameManager : MonoBehaviour
 {
-    // Internal - chỉ các script trong Scripts/Core/ có thể truy cập
+    // Internal - chỉ các script trong assembly Core có thể truy cập
     internal int gameScore = 0;
 
     internal void AddScore(int points)
@@ -459,17 +502,18 @@ public class ScoreDisplay : MonoBehaviour
 {
     void Start()
     {
-        GameManager gm = FindObjectOfType<GameManager>();
+        GameManager gm = FindFirstObjectByType<GameManager>();
         Debug.Log(gm.gameScore); // ✅ OK - cùng assembly
     }
 }
 
-// File: Scripts/ThirdParty/ExternalPlugin.cs (assembly khác)
+// File: Scripts/ThirdParty/ExternalPlugin.cs (assembly khác, có tham chiếu tới Core.asmdef)
 public class ExternalPlugin
 {
     void UseGameManager()
     {
-        GameManager gm = FindObjectOfType<GameManager>();
+        // Class không kế thừa MonoBehaviour nên phải gọi qua Object.
+        GameManager gm = Object.FindFirstObjectByType<GameManager>();
         // Debug.Log(gm.gameScore); // ❌ ERROR - khác assembly
     }
 }
@@ -609,6 +653,8 @@ public class Startup : MonoBehaviour
 ```
 
 ### Ví dụ thực tế: Singleton Pattern
+
+> Đây là ví dụ xem trước - `Awake()`, `DontDestroyOnLoad` và Singleton sẽ được giải thích kỹ ở **Bài 2 (phần 7)** và **Bài 4 (Lifecycle)**.
 
 ```csharp
 public class GameManager : MonoBehaviour
@@ -1534,6 +1580,8 @@ MyList<Enemy> enemyList = new MyList<Enemy>();
 ### Generic Class
 
 ```csharp
+using System.Collections.Generic;
+
 // Generic class với type parameter T
 public class Inventory<T>
 {
@@ -1564,15 +1612,15 @@ public class InventoryTest : MonoBehaviour
 {
     void Start()
     {
-        // Inventory cho weapons
-        Inventory<Weapon> weaponInventory = new Inventory<Weapon>();
+        // Inventory cho weapons (IWeapon, Sword, Bow ở phần 11)
+        Inventory<IWeapon> weaponInventory = new Inventory<IWeapon>();
         weaponInventory.AddItem(new Sword());
         weaponInventory.AddItem(new Bow());
 
-        // Inventory cho items
-        Inventory<Item> itemInventory = new Inventory<Item>();
-        itemInventory.AddItem(new HealthPotion());
-        itemInventory.AddItem(new ManaPotion());
+        // Inventory cho tên vật phẩm (string)
+        Inventory<string> itemInventory = new Inventory<string>();
+        itemInventory.AddItem("Health Potion");
+        itemInventory.AddItem("Mana Potion");
     }
 }
 ```
@@ -1669,17 +1717,18 @@ public class ComponentPool<T> where T : MonoBehaviour
 }
 ```
 
-### Unity Generics - FindObjectOfType
+### Unity Generics - FindFirstObjectByType
 
 ```csharp
 public class GenericFinder : MonoBehaviour
 {
     void Start()
     {
-        // FindObjectOfType là generic method
-        Player player = FindObjectOfType<Player>();
-        Enemy enemy = FindObjectOfType<Enemy>();
-        GameManager gm = FindObjectOfType<GameManager>();
+        // FindFirstObjectByType là generic method
+        // (Unity cũ dùng FindObjectOfType<T>() - đã deprecated từ Unity 2023.1 / Unity 6)
+        Player player = FindFirstObjectByType<Player>();
+        Enemy enemy = FindFirstObjectByType<Enemy>();
+        GameManager gm = FindFirstObjectByType<GameManager>();
 
         // GetComponent là generic method
         Rigidbody rb = GetComponent<Rigidbody>();
@@ -1709,13 +1758,14 @@ public class Player : MonoBehaviour
     {
         health -= damage;
 
-        // Gọi delegate (nếu có ai subscribe)
-        if (onHealthChanged != null)
-        {
-            onHealthChanged(health);
-        }
+        // Cách 1: Kiểm tra null thủ công rồi gọi delegate (nếu có ai subscribe)
+        // if (onHealthChanged != null)
+        // {
+        //     onHealthChanged(health);
+        // }
 
-        // Hoặc dùng ?. (null-conditional)
+        // Cách 2 (ngắn gọn, tương đương): dùng ?. (null-conditional)
+        // Chỉ dùng MỘT trong hai cách, nếu không delegate bị gọi 2 lần!
         onHealthChanged?.Invoke(health);
     }
 }
@@ -1748,7 +1798,12 @@ public class HealthUI : MonoBehaviour
 
 **Event** = Delegate với access control (chỉ class owner mới invoke được)
 
+`Action<int>` là delegate có sẵn trong namespace `System` (hàm nhận 1 tham số `int`, trả về `void`) - không cần tự khai báo `delegate` nữa. `Action` = không tham số, `Action<T1, T2>` = 2 tham số...
+
 ```csharp
+using System;
+using UnityEngine;
+
 public class Player : MonoBehaviour
 {
     private int health = 100;
@@ -1880,7 +1935,8 @@ public class AudioManager : MonoBehaviour
 using UnityEngine;
 using UnityEngine.Events;
 
-public class Button : MonoBehaviour
+// Đặt tên SimpleButton để không trùng với UnityEngine.UI.Button (Bài 5)
+public class SimpleButton : MonoBehaviour
 {
     // UnityEvent có thể assign trong Inspector!
     public UnityEvent onClick;
@@ -1934,7 +1990,7 @@ Tạo GameManager với:
 
 Tạo Object Pool system:
 
-- Generic class `ObjectPool<T>` where T : Component
+- Generic class `ObjectPool<T>` where T : Component (xem Object Pooling ở Bài 2)
 - Pool cho bullets, enemies, effects
 - Auto-expand khi hết objects
 - Performance comparison vs Instantiate

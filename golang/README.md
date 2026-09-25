@@ -27,7 +27,7 @@ Chào mừng bạn đến với khóa học Golang (Go)! Đây là tài liệu h
 
 ### Phần mềm cần cài đặt
 
-1. **Go** - Phiên bản 1.22 trở lên (khuyến nghị bản mới nhất, ví dụ 1.24)
+1. **Go** - Phiên bản 1.23 trở lên (khuyến nghị bản mới nhất, ví dụ 1.24). Một số ví dụ dùng tính năng mới như `for i := range 10` (1.22), routing `"GET /todos/{id}"` (1.22), `maps.Keys` + `slices.Sorted` (1.23)
 2. **Visual Studio Code** + extension **Go** (của Go Team at Google) - hoặc GoLand nếu bạn thích JetBrains
 3. **Git** - Để quản lý code và tải package
 4. **Terminal** - PowerShell (Windows), Terminal (macOS/Linux)

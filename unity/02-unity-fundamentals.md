@@ -23,11 +23,13 @@
 
 ### Tại sao Unity dùng GameObject?
 
-Unity sử dụng **Entity-Component-System (ECS)** pattern:
+Unity sử dụng mô hình **Entity-Component** (GameObject + Component):
 
 - **Entity** = GameObject (chỉ là container)
 - **Component** = Chức năng (Transform, Renderer, Script)
-- **System** = Unity Engine (Physics, Rendering, Audio)
+- **Engine** = Các hệ thống của Unity (Physics, Rendering, Audio) xử lý các component
+
+> ⚠️ Đừng nhầm với **ECS (Entity Component System)** của Unity DOTS - đó là một kiến trúc khác, nâng cao, không nằm trong khóa học này.
 
 ### Tạo GameObject
 
@@ -76,7 +78,7 @@ public class ObjectManager : MonoBehaviour
             }
 
             // Xóa GameObject
-            // Destroy(player); // Xóa ngay lập tức
+            // Destroy(player); // Xóa ở cuối frame hiện tại (không phải ngay lập tức)
             // Destroy(player, 2f); // Xóa sau 2 giây
         }
     }
@@ -214,6 +216,7 @@ public class DamageDealer : MonoBehaviour
 {
     public int damage = 25;
 
+    // OnTriggerEnter được gọi khi có vật thể đi vào vùng trigger (sẽ học ở Bài 3)
     void OnTriggerEnter(Collider other)
     {
         // Lấy HealthComponent từ object khác
@@ -323,13 +326,13 @@ public class TransformUtils : MonoBehaviour
         {
             float distance = Vector3.Distance(transform.position, target.transform.position);
             Debug.Log($"Khoảng cách: {distance}");
+
+            // Hướng đến GameObject khác (chỉ tính khi target tồn tại)
+            Vector3 direction = (target.transform.position - transform.position).normalized;
+
+            // Di chuyển theo hướng (Space.World vì direction tính trong world space)
+            transform.Translate(direction * 2f, Space.World);
         }
-
-        // Hướng đến GameObject khác
-        Vector3 direction = (target.transform.position - transform.position).normalized;
-
-        // Di chuyển theo hướng
-        transform.Translate(direction * 2f);
 
         // Reset transform về mặc định
         transform.position = Vector3.zero;
@@ -389,13 +392,14 @@ public class HierarchyManager : MonoBehaviour
         child1.transform.SetParent(parent.transform);
         child2.transform.SetParent(parent.transform);
 
-        // Hoặc cách ngắn gọn
-        GameObject child3 = new GameObject("Child3", parent.transform);
+        // Đặt parent nhưng giữ nguyên vị trí local (worldPositionStays = false)
+        GameObject child3 = new GameObject("Child3");
+        child3.transform.SetParent(parent.transform, false);
 
         // Lấy GameObject cha
         Transform parentTransform = transform.parent;
 
-        // Lấy tất cả GameObject con
+        // Lấy tất cả Transform con (lưu ý: kết quả bao gồm cả Transform của chính object này)
         Transform[] children = GetComponentsInChildren<Transform>();
 
         // Đếm số con
@@ -590,8 +594,9 @@ public class LayerExample : MonoBehaviour
 
         // Sử dụng LayerMask cho Physics
         LayerMask enemyLayer = 1 << LayerMask.NameToLayer("Enemy");
+        // Hoặc: LayerMask enemyLayer = LayerMask.GetMask("Enemy");
 
-        // Raycast chỉ với Enemy layer
+        // Raycast chỉ với Enemy layer (Raycast sẽ học chi tiết ở Bài 3)
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.forward, out hit, 10f, enemyLayer))
         {
@@ -618,7 +623,7 @@ public class CombatSystem : MonoBehaviour
 
     void Attack()
     {
-        // Tìm tất cả enemy trong bán kính
+        // Tìm tất cả enemy trong bán kính (OverlapSphere - xem Bài 3)
         Collider[] enemies = Physics.OverlapSphere(transform.position, 5f, enemyLayerMask);
 
         foreach (Collider enemy in enemies)
@@ -737,6 +742,9 @@ public class Player : MonoBehaviour
 ### Singleton với Events
 
 ```csharp
+using System;      // Cho Action
+using UnityEngine;
+
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
@@ -811,7 +819,8 @@ public class PersistentData : MonoBehaviour
         {
             Instance = this;
 
-            // Quan trọng: DontDestroyOnLoad phải gọi trong Awake
+            // Nên gọi DontDestroyOnLoad trong Awake (sớm nhất).
+            // Lưu ý: chỉ hoạt động với GameObject gốc (không có parent) trong Hierarchy
             DontDestroyOnLoad(gameObject);
 
             // Load data từ PlayerPrefs
@@ -883,16 +892,23 @@ void FireBullet()
 // Tạo trước bullets, tái sử dụng
 void FireBullet()
 {
-    GameObject bullet = bulletPool.Get(); // Lấy từ pool
+    Bullet bullet = bulletPool.Get(); // Lấy từ pool
     // ... logic
-    bulletPool.Return(bullet, 5f); // Trả về pool sau 5 giây
+    bulletPool.Return(bullet, 5f, this); // Trả về pool sau 5 giây
 }
 // Kết quả: Performance tốt hơn nhiều!
 ```
 
 ### Object Pool cơ bản
 
+> 💡 Các ví dụ dưới đây dùng **Coroutine** (`IEnumerator`, `yield return`, `StartCoroutine`) để chờ một khoảng thời gian - bạn sẽ học chi tiết ở **Bài 4 (phần 7)**. Tạm hiểu: coroutine là hàm có thể "tạm dừng" và chạy tiếp sau một khoảng thời gian. `Queue<T>` là hàng đợi (vào trước ra trước).
+
 ```csharp
+using System.Collections;          // Cho IEnumerator (Coroutine)
+using System.Collections.Generic;  // Cho Queue, List, Dictionary
+using UnityEngine;
+
+// Class thường (không kế thừa MonoBehaviour) nên KHÔNG tự chạy Coroutine được
 public class ObjectPool<T> where T : Component
 {
     private Queue<T> pool = new Queue<T>();
@@ -933,10 +949,10 @@ public class ObjectPool<T> where T : Component
         pool.Enqueue(obj);
     }
 
-    public void Return(T obj, float delay)
+    public void Return(T obj, float delay, MonoBehaviour runner)
     {
-        // Trả về pool sau delay
-        MonoBehaviour.StartCoroutine(ReturnAfterDelay(obj, delay));
+        // Trả về pool sau delay - nhờ một MonoBehaviour (runner) chạy Coroutine
+        runner.StartCoroutine(ReturnAfterDelay(obj, delay));
     }
 
     private IEnumerator ReturnAfterDelay(T obj, float delay)
@@ -973,8 +989,8 @@ public class BulletPool : MonoBehaviour
         bullet.transform.rotation = Quaternion.LookRotation(direction);
         bullet.SetDirection(direction);
 
-        // Trả về pool sau 5 giây
-        bulletPool.Return(bullet, 5f);
+        // Trả về pool sau 5 giây (this = BulletPool chạy Coroutine giúp pool)
+        bulletPool.Return(bullet, 5f, this);
     }
 }
 
@@ -990,15 +1006,19 @@ public class Bullet : MonoBehaviour
 
     public void SetDirection(Vector3 direction)
     {
-        rb.velocity = direction * speed;
+        // Unity 6+: rb.linearVelocity (Unity 2022 trở về trước: rb.velocity)
+        rb.linearVelocity = direction * speed;
     }
 
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Enemy"))
         {
-            // Hit enemy logic
-            other.GetComponent<EnemyHealth>()?.TakeDamage(25);
+            // Hit enemy logic (không dùng ?. với object của Unity - xem Bài 4, phần 9)
+            if (other.TryGetComponent(out EnemyHealth enemyHealth))
+            {
+                enemyHealth.TakeDamage(25);
+            }
         }
 
         // Bullet sẽ được trả về pool tự động
@@ -1009,6 +1029,10 @@ public class Bullet : MonoBehaviour
 ### Enemy Pool System
 
 ```csharp
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
 public class EnemySpawner : MonoBehaviour
 {
     public Enemy enemyPrefab;
@@ -1045,7 +1069,11 @@ public class EnemySpawner : MonoBehaviour
         // Setup enemy
         Vector3 spawnPos = GetRandomSpawnPosition();
         enemy.transform.position = spawnPos;
-        enemy.OnDeath += () => ReturnEnemyToPool(enemy);
+
+        // Enemy cần có: public event Action<Enemy> OnDeath; và gọi OnDeath?.Invoke(this) khi chết.
+        // Gỡ trước rồi mới đăng ký để enemy tái sử dụng từ pool không bị đăng ký nhiều lần
+        enemy.OnDeath -= ReturnEnemyToPool;
+        enemy.OnDeath += ReturnEnemyToPool;
 
         activeEnemies.Add(enemy);
     }
@@ -1068,6 +1096,10 @@ public class EnemySpawner : MonoBehaviour
 ### Generic Pool Manager
 
 ```csharp
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
 public class PoolManager : MonoBehaviour
 {
     public static PoolManager Instance { get; private set; }
@@ -1081,7 +1113,8 @@ public class PoolManager : MonoBehaviour
     }
 
     public Pool[] pools;
-    private Dictionary<string, ObjectPool<GameObject>> poolDictionary;
+    // ObjectPool<T> yêu cầu T : Component, nên dùng Transform (GameObject không phải Component)
+    private Dictionary<string, ObjectPool<Transform>> poolDictionary;
 
     void Awake()
     {
@@ -1099,12 +1132,12 @@ public class PoolManager : MonoBehaviour
 
     void InitializePools()
     {
-        poolDictionary = new Dictionary<string, ObjectPool<GameObject>>();
+        poolDictionary = new Dictionary<string, ObjectPool<Transform>>();
 
         foreach (Pool pool in pools)
         {
-            ObjectPool<GameObject> objectPool = new ObjectPool<GameObject>(
-                pool.prefab,
+            ObjectPool<Transform> objectPool = new ObjectPool<Transform>(
+                pool.prefab.transform,
                 pool.size,
                 transform
             );
@@ -1120,7 +1153,7 @@ public class PoolManager : MonoBehaviour
             return null;
         }
 
-        GameObject obj = poolDictionary[poolName].Get();
+        GameObject obj = poolDictionary[poolName].Get().gameObject;
         obj.transform.position = position;
         obj.transform.rotation = rotation;
 
@@ -1131,7 +1164,7 @@ public class PoolManager : MonoBehaviour
     {
         if (poolDictionary.ContainsKey(poolName))
         {
-            poolDictionary[poolName].Return(obj);
+            poolDictionary[poolName].Return(obj.transform);
         }
     }
 }
@@ -1185,8 +1218,9 @@ public class Weapon : MonoBehaviour
 
 ❌ **Nhược điểm**:
 
-- Không thể có MonoBehaviour methods
+- Không có `Start()`/`Update()` như MonoBehaviour (chỉ có `Awake`, `OnEnable`, `OnDisable`, `OnDestroy`)
 - Không thể có references đến Scene objects
+- ⚠️ Thay đổi giá trị ScriptableObject khi đang Play trong Editor sẽ **được giữ lại** sau khi dừng Play (khác với GameObject). Trong bản build, thay đổi **không** được lưu xuống đĩa → không dùng ScriptableObject để save game
 
 ### ScriptableObject cơ bản
 
@@ -1394,6 +1428,10 @@ public class GameManager : MonoBehaviour
 ### ScriptableObject Events
 
 ```csharp
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Events; // Cho UnityEvent
+
 [CreateAssetMenu(fileName = "Game Event", menuName = "Game/Event")]
 public class GameEvent : ScriptableObject
 {
@@ -1458,8 +1496,11 @@ public class Enemy : MonoBehaviour
 
     void Die()
     {
-        // Raise event
-        onEnemyDeath?.Raise();
+        // Raise event (ScriptableObject là object của Unity → kiểm tra bằng != null, xem Bài 4 phần 9)
+        if (onEnemyDeath != null)
+        {
+            onEnemyDeath.Raise();
+        }
 
         // Destroy enemy
         Destroy(gameObject);
@@ -1532,4 +1573,4 @@ Bạn đã nắm vững Unity Fundamentals cơ bản VÀ nâng cao! Giờ bạn 
 - **Singleton** chỉ dùng khi thực sự cần, tránh overuse
 - **Object Pooling** là must-have cho performance
 - **ScriptableObject** perfect cho data-driven design
-- **DontDestroyOnLoad** phải gọi trong Awake, không phải Start
+- **DontDestroyOnLoad** nên gọi trong Awake (sớm nhất), và chỉ áp dụng cho GameObject gốc

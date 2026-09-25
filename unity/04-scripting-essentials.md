@@ -6,7 +6,7 @@
 - Thành thạo Input system (keyboard, mouse, axes) với best practices
 - Tạo movement system hiệu quả và frame-independent
 - Sử dụng SerializeField và Inspector attributes chuyên nghiệp
-- Biết cách sử dụng GetComponent và FindObjectOfType tối ưu
+- Biết cách sử dụng GetComponent và FindFirstObjectByType (trước đây là FindObjectOfType) tối ưu
 - Thành thạo Coroutine cơ bản và nâng cao
 - Hiểu Time.deltaTime và frame-independent movement
 - Sử dụng Invoke và InvokeRepeating
@@ -32,7 +32,8 @@
 ```csharp
 public class LifecycleExample : MonoBehaviour
 {
-    // Awake - Gọi đầu tiên, ngay cả khi object chưa active
+    // Awake - Gọi đầu tiên, một lần, khi GameObject được active lần đầu
+    // (được gọi kể cả khi component script bị tắt, nhưng KHÔNG gọi nếu GameObject đang inactive)
     void Awake()
     {
         Debug.Log("Awake - Khởi tạo ban đầu");
@@ -56,7 +57,8 @@ public class LifecycleExample : MonoBehaviour
         // ❌ Không dùng: Physics calculations (dùng FixedUpdate)
     }
 
-    // FixedUpdate - Gọi với tần số cố định (50fps mặc định)
+    // FixedUpdate - Gọi với tần số cố định (mặc định 50 lần/giây = mỗi 0.02s),
+    // có thể 0, 1 hoặc nhiều lần trong một frame tùy FPS
     void FixedUpdate()
     {
         Debug.Log("FixedUpdate - Physics update");
@@ -98,22 +100,31 @@ public class LifecycleExample : MonoBehaviour
 ### Thứ tự thực thi chi tiết
 
 ```
-1. Awake() - Tất cả objects (kể cả inactive)
-2. OnEnable() - Khi object được activate
-3. Start() - Tất cả active objects
-4. Update() - Mỗi frame (60fps)
-5. FixedUpdate() - Physics timestep (50fps)
-6. LateUpdate() - Sau Update
-7. OnGUI() - UI rendering
-8. OnDisable() - Khi object bị deactivate
-9. OnDestroy() - Khi object bị destroy
+Khởi tạo (một lần):
+1. Awake()      - Khi GameObject active lần đầu (không gọi nếu GameObject inactive)
+2. OnEnable()   - Mỗi khi object/component được bật
+3. Start()      - Trước frame đầu tiên, chỉ khi component đang bật
+
+Mỗi frame (lặp lại):
+4. FixedUpdate() - Physics timestep (mặc định 50 lần/giây, chạy TRƯỚC Update)
+5. OnTrigger.../OnCollision... - Ngay sau bước physics
+6. Update()      - Mỗi frame (60fps = 60 lần/giây)
+7. LateUpdate()  - Sau khi tất cả Update chạy xong
+8. OnGUI()       - IMGUI cũ (ít dùng, UI hiện đại dùng Canvas - Bài 5)
+
+Kết thúc:
+9. OnDisable()  - Khi object bị deactivate
+10. OnDestroy() - Khi object bị destroy
 ```
 
 ### Khi nào dùng hàm nào?
 
 ```csharp
+// Giả sử GameManager có: public static event Action OnGameStart; (event - Bài 1, phần 14)
 public class LifecycleUsage : MonoBehaviour
 {
+    public static LifecycleUsage Instance { get; private set; }
+
     private Rigidbody rb;
     private bool isInitialized = false;
     private PlayerController player;
@@ -132,6 +143,16 @@ public class LifecycleUsage : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    void OnEnable()
+    {
+        // ✅ Subscribe events (cặp với Unsubscribe trong OnDisable)
+        GameManager.OnGameStart += HandleGameStart;
     }
 
     void Start()
@@ -142,9 +163,6 @@ public class LifecycleUsage : MonoBehaviour
             rb.mass = 2f;
             Debug.Log("Setup hoàn thành!");
         }
-
-        // ✅ Subscribe events
-        GameManager.OnGameStart += HandleGameStart;
     }
 
     void Update()
@@ -190,6 +208,38 @@ public class LifecycleUsage : MonoBehaviour
 - **Mouse** - Chuột
 - **Gamepad** - Tay cầm
 - **Touch** - Cảm ứng (mobile)
+
+> ⚠️ **Input Manager (cũ) vs Input System (mới)**: Unity có 2 hệ thống input:
+>
+> - **Input Manager (cũ)** - class `Input` (`Input.GetKey`, `Input.GetAxis`...). Đơn giản, dễ học, **toàn bộ khóa học dùng hệ thống này**.
+> - **Input System (mới)** - package `com.unity.inputsystem`, namespace `UnityEngine.InputSystem`. Hỗ trợ gamepad/đổi phím tốt hơn, được khuyên dùng cho dự án lớn.
+>
+> Từ **Unity 6**, project mới thường bật sẵn Input System mới. Nếu gặp lỗi `InvalidOperationException: You are trying to read Input using the UnityEngine.Input class...`, vào **Edit → Project Settings → Player → Other Settings → Active Input Handling** và chọn **Both** (hoặc **Input Manager (Old)**), rồi khởi động lại Editor.
+
+Ví dụ tương đương bằng Input System mới (để tham khảo):
+
+```csharp
+using UnityEngine;
+using UnityEngine.InputSystem; // Cần cài package Input System
+
+public class NewInputExample : MonoBehaviour
+{
+    void Update()
+    {
+        // Tương đương Input.GetKeyDown(KeyCode.Space)
+        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+        {
+            Debug.Log("Vừa nhấn Space");
+        }
+
+        // Tương đương Input.GetMouseButtonDown(0)
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            Debug.Log("Vừa click chuột trái");
+        }
+    }
+}
+```
 
 ### Keyboard Input chi tiết
 
@@ -294,10 +344,11 @@ public class InputAxes : MonoBehaviour
         float mouseX = Input.GetAxis("Mouse X");
         float mouseY = Input.GetAxis("Mouse Y");
 
-        // Fire axes (Ctrl, Space, Mouse buttons)
-        float fire1 = Input.GetAxis("Fire1"); // Left Ctrl
-        float fire2 = Input.GetAxis("Fire2"); // Left Alt
-        float fire3 = Input.GetAxis("Fire3"); // Space
+        // Fire axes (Ctrl/Alt/Shift và chuột) - cấu hình trong Project Settings → Input Manager
+        float fire1 = Input.GetAxis("Fire1"); // Left Ctrl hoặc chuột trái
+        float fire2 = Input.GetAxis("Fire2"); // Left Alt hoặc chuột phải
+        float fire3 = Input.GetAxis("Fire3"); // Left Shift hoặc chuột giữa
+        bool jump = Input.GetButtonDown("Jump"); // Space
     }
 }
 ```
@@ -401,6 +452,7 @@ public class RigidbodyMovement : MonoBehaviour
         Vector3 movement = new Vector3(horizontal, 0, vertical) * moveSpeed;
 
         // Sử dụng velocity thay vì AddForce cho movement mượt
+        // Unity 6: rb.linearVelocity (Unity 2022 trở về trước: rb.velocity)
         rb.velocity = new Vector3(movement.x, rb.velocity.y, movement.z);
     }
 
@@ -624,6 +676,7 @@ public class TimeScaleEffects : MonoBehaviour
         }
 
         // UI animation không bị ảnh hưởng bởi timeScale
+        // (Coroutine - xem phần 7; cần `using System.Collections;`)
         if (Input.GetKeyDown(KeyCode.U))
         {
             StartCoroutine(UIAnimation());
@@ -719,7 +772,7 @@ public class CustomAttributes : MonoBehaviour
 }
 ```
 
-## 🔍 6. GetComponent và FindObjectOfType chi tiết
+## 🔍 6. GetComponent và FindFirstObjectByType chi tiết
 
 ### GetComponent - Lấy component từ GameObject
 
@@ -727,15 +780,15 @@ public class CustomAttributes : MonoBehaviour
 public class ComponentAccess : MonoBehaviour
 {
     private Rigidbody rb;
-    private Renderer renderer;
-    private Collider collider;
+    private Renderer rend;   // Tránh đặt tên "renderer"/"collider" - trùng thuộc tính cũ của Component
+    private Collider col;
 
     void Start()
     {
         // Lấy component từ GameObject này
         rb = GetComponent<Rigidbody>();
-        renderer = GetComponent<Renderer>();
-        collider = GetComponent<Collider>();
+        rend = GetComponent<Renderer>();
+        col = GetComponent<Collider>();
 
         // Kiểm tra component có tồn tại không
         if (rb != null)
@@ -761,7 +814,9 @@ public class ComponentAccess : MonoBehaviour
 }
 ```
 
-### FindObjectOfType - Tìm GameObject trong Scene
+### FindFirstObjectByType - Tìm GameObject trong Scene
+
+> 💡 Unity 2023.1 / Unity 6 đã **deprecated** `FindObjectOfType<T>()` và `FindObjectsOfType<T>()`. Thay bằng `FindFirstObjectByType<T>()` (hoặc `FindAnyObjectByType<T>()` - nhanh hơn, không quan tâm thứ tự) và `FindObjectsByType<T>(FindObjectsSortMode.None)`. Nếu dùng Unity 2021 trở về trước thì vẫn dùng tên cũ.
 
 ```csharp
 public class FindObjectExample : MonoBehaviour
@@ -773,12 +828,12 @@ public class FindObjectExample : MonoBehaviour
     void Start()
     {
         // Tìm GameObject theo component
-        player = FindObjectOfType<PlayerController>();
-        gameManager = FindObjectOfType<GameManager>();
-        mainCamera = FindObjectOfType<Camera>();
+        player = FindFirstObjectByType<PlayerController>();
+        gameManager = FindFirstObjectByType<GameManager>();
+        mainCamera = Camera.main; // Camera có tag "MainCamera"
 
         // Tìm tất cả GameObject có component
-        EnemyController[] enemies = FindObjectsOfType<EnemyController>();
+        EnemyController[] enemies = FindObjectsByType<EnemyController>(FindObjectsSortMode.None);
 
         // Tìm GameObject theo tên
         GameObject playerObject = GameObject.Find("Player");
@@ -812,7 +867,7 @@ public class PerformanceTips : MonoBehaviour
     void Start()
     {
         // Tìm một lần và cache
-        player = FindObjectOfType<PlayerController>();
+        player = FindFirstObjectByType<PlayerController>();
         rb = GetComponent<Rigidbody>();
     }
 
@@ -826,7 +881,7 @@ public class PerformanceTips : MonoBehaviour
         }
 
         // Không làm điều này trong Update!
-        // PlayerController badPlayer = FindObjectOfType<PlayerController>();
+        // PlayerController badPlayer = FindFirstObjectByType<PlayerController>();
     }
 }
 ```
@@ -840,19 +895,23 @@ public class PerformanceTips : MonoBehaviour
 ### Cú pháp cơ bản
 
 ```csharp
+using System.Collections; // Bắt buộc để dùng IEnumerator
+using UnityEngine;
+
 public class CoroutineExample : MonoBehaviour
 {
     void Start()
     {
-        // Bắt đầu coroutine
-        StartCoroutine(MyCoroutine());
+        // Bắt đầu coroutine và lưu lại để có thể dừng sau này
+        Coroutine running = StartCoroutine(MyCoroutine());
 
-        // Hoặc với tên string
-        StartCoroutine("MyCoroutine");
+        // Hoặc với tên string (mỗi lần gọi là chạy thêm MỘT coroutine mới!)
+        // StartCoroutine("MyCoroutine");
 
         // Dừng coroutine
-        // StopCoroutine(MyCoroutine());
-        // StopCoroutine("MyCoroutine");
+        // StopCoroutine(running);          // ✅ Dừng đúng coroutine đã lưu
+        // StopCoroutine("MyCoroutine");    // ✅ Chỉ dừng được coroutine start bằng string
+        // StopCoroutine(MyCoroutine());    // ❌ KHÔNG dừng được - tạo IEnumerator mới
     }
 
     // Coroutine phải trả về IEnumerator
@@ -999,6 +1058,7 @@ public class CoroutinePractice : MonoBehaviour
 
     IEnumerator FadeIn()
     {
+        // Lưu ý: Material phải dùng shader hỗ trợ trong suốt (Surface Type = Transparent)
         Renderer renderer = GetComponent<Renderer>();
         Color color = renderer.material.color;
 
@@ -1057,13 +1117,21 @@ public class InvokeExample : MonoBehaviour
     void Start()
     {
         // Gọi hàm sau 2 giây
-        Invoke("DelayedFunction", 2f);
+        // nameof(...) an toàn hơn chuỗi "DelayedFunction" - gõ sai tên sẽ báo lỗi compile
+        Invoke(nameof(DelayedFunction), 2f);
 
-        // Gọi hàm với tham số (không hỗ trợ trực tiếp)
-        Invoke("DelayedFunctionWithParam", 3f);
+        // Invoke không truyền được tham số - hàm được gọi phải không có tham số
+        Invoke(nameof(DelayedFunctionWithParam), 3f);
+    }
 
-        // Hủy invoke
-        CancelInvoke("DelayedFunction");
+    void Update()
+    {
+        // Hủy invoke (vd: khi nhấn phím C trước khi hết 2 giây)
+        // Lưu ý: nếu gọi CancelInvoke ngay trong Start thì hàm sẽ không bao giờ chạy!
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            CancelInvoke(nameof(DelayedFunction));
+        }
     }
 
     void DelayedFunction()
@@ -1086,9 +1154,12 @@ public class InvokeRepeatingExample : MonoBehaviour
     void Start()
     {
         // Gọi hàm sau 1 giây, sau đó lặp lại mỗi 2 giây
-        InvokeRepeating("RepeatingFunction", 1f, 2f);
+        InvokeRepeating(nameof(RepeatingFunction), 1f, 2f);
+    }
 
-        // Hủy tất cả invoke
+    void OnDisable()
+    {
+        // Hủy tất cả invoke của script này khi object bị tắt
         CancelInvoke();
     }
 
@@ -1140,35 +1211,42 @@ public class InvokeVsCoroutine : MonoBehaviour
 
 **Null-conditional operators** (`?.` và `??`) giúp xử lý null values một cách an toàn.
 
+> ⚠️ **Cực kỳ quan trọng trong Unity**: `?.` và `??` **KHÔNG an toàn** với các object của Unity (mọi thứ kế thừa `UnityEngine.Object`: `GameObject`, `Component`, `MonoBehaviour`, `Rigidbody`, `ScriptableObject`...). Khi một object bị `Destroy`, Unity coi nó là `null` qua toán tử `==`/`!=`, nhưng `?.`/`??` bỏ qua kiểm tra này → vẫn gọi hàm và gây `MissingReferenceException`.
+>
+> - Với object của Unity: dùng `if (obj != null)`, `if (obj)` hoặc `TryGetComponent`
+> - Với object C# thuần (`string`, `List`, class tự viết, `event`/`delegate`): dùng `?.` và `??` thoải mái
+
 ### Null-conditional Operator (?.)
 
 ```csharp
 public class NullConditionalExample : MonoBehaviour
 {
-    public PlayerController player;
-    public GameManager gameManager;
+    public PlayerController player;          // Object của Unity
+    public event System.Action OnDamaged;    // Delegate C# thuần
 
     void Start()
     {
-        // ❌ Cách cũ - Có thể gây NullReferenceException
-        // if (player != null)
-        // {
-        //     player.TakeDamage(10);
-        // }
+        // ✅ Với object của Unity - dùng != null (Unity xử lý đúng cả object đã bị Destroy)
+        if (player != null)
+        {
+            player.TakeDamage(10);
+        }
 
-        // ✅ Cách mới - An toàn với null
-        player?.TakeDamage(10);
+        // ❌ KHÔNG nên: player?.TakeDamage(10);  // Lỗi nếu player đã bị Destroy
 
-        // Với properties
-        string playerName = player?.name ?? "Unknown Player";
-        Debug.Log($"Player name: {playerName}");
+        // ✅ Với event/delegate C# - dùng ?. rất phổ biến
+        OnDamaged?.Invoke();
 
-        // Với method calls
-        gameManager?.AddScore(100);
+        // ✅ Với string / class C# thuần
+        string nickname = null;
+        int length = nickname?.Length ?? 0; // nickname null → length = 0
 
-        // Với arrays
-        PlayerController[] players = FindObjectsOfType<PlayerController>();
-        players?[0]?.TakeDamage(5);
+        // ✅ Với mảng - kiểm tra có phần tử trước khi lấy [0]
+        PlayerController[] players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+        if (players.Length > 0)
+        {
+            players[0].TakeDamage(5);
+        }
     }
 }
 ```
@@ -1183,9 +1261,13 @@ public class NullCoalescingExample : MonoBehaviour
 
     void Start()
     {
-        // Null-coalescing operator
+        // Null-coalescing operator (chỉ dùng được với kiểu có thể null)
         string displayName = playerName ?? "Default Player";
-        int displayScore = playerScore ?? 0;
+
+        // int KHÔNG thể null → `playerScore ?? 0` sẽ lỗi compile.
+        // Muốn dùng ?? với số, khai báo kiểu nullable: int? (có dấu ?)
+        int? bonusScore = null;
+        int displayScore = playerScore + (bonusScore ?? 0);
 
         Debug.Log($"Player: {displayName}, Score: {displayScore}");
 
@@ -1202,32 +1284,41 @@ public class NullCoalescingExample : MonoBehaviour
 }
 ```
 
-### Null-conditional trong Unity
+### Kiểm tra null đúng cách trong Unity
 
 ```csharp
-public class UnityNullConditional : MonoBehaviour
+public class UnityNullCheck : MonoBehaviour
 {
     void Update()
     {
-        // Safe component access
-        Rigidbody rb = GetComponent<Rigidbody>();
-        rb?.AddForce(Vector3.forward * 10f);
+        // ✅ Safe component access - TryGetComponent
+        if (TryGetComponent(out Rigidbody rb))
+        {
+            rb.AddForce(Vector3.forward * 10f);
+        }
 
-        // Safe GameObject access
+        // ✅ Safe GameObject access - so sánh != null
         GameObject player = GameObject.Find("Player");
-        player?.SetActive(true);
+        if (player != null)
+        {
+            player.SetActive(true);
 
-        // Safe Transform access
-        Transform playerTransform = player?.transform;
-        Vector3 playerPosition = playerTransform?.position ?? Vector3.zero;
+            // Safe Transform access
+            Vector3 playerPosition = player.transform.position;
 
-        // Safe method calls
-        PlayerController controller = player?.GetComponent<PlayerController>();
-        controller?.TakeDamage(10);
+            // Safe method calls
+            if (player.TryGetComponent(out PlayerController controller))
+            {
+                controller.TakeDamage(10);
+            }
+        }
 
-        // Safe array access
+        // ✅ Safe array access - kiểm tra Length
         Collider[] colliders = Physics.OverlapSphere(transform.position, 5f);
-        colliders?[0]?.gameObject.SetActive(false);
+        if (colliders.Length > 0)
+        {
+            colliders[0].gameObject.SetActive(false);
+        }
     }
 }
 ```
@@ -1271,11 +1362,11 @@ Tạo Coroutine Utilities với:
 - [ ] Thành thạo Input system với best practices
 - [ ] Tạo movement system frame-independent
 - [ ] Sử dụng SerializeField và Inspector attributes chuyên nghiệp
-- [ ] Biết cách sử dụng GetComponent và FindObjectOfType tối ưu
+- [ ] Biết cách sử dụng GetComponent và FindFirstObjectByType tối ưu
 - [ ] Thành thạo Coroutine cơ bản và nâng cao
 - [ ] Hiểu Time.deltaTime và frame-independent movement
 - [ ] Sử dụng Invoke và InvokeRepeating
-- [ ] Thành thạo Null-conditional operators
+- [ ] Hiểu Null-conditional operators và khi nào KHÔNG dùng với object của Unity
 - [ ] Hoàn thành ít nhất 2 bài tập nâng cao
 
 ## 🚀 Tiếp theo
@@ -1295,6 +1386,6 @@ Bạn đã nắm vững Scripting Essentials cơ bản VÀ nâng cao! Giờ bạ
 
 - **Time.deltaTime** là key cho frame-independent movement
 - **Coroutines** rất mạnh cho animations và timing
-- **Null-conditional operators** giúp code safe và clean
+- **Null-conditional operators** chỉ dùng cho object C# thuần - với object Unity hãy dùng `!= null`
 - **Invoke** đơn giản nhưng **Coroutines** linh hoạt hơn
 - **Lifecycle** đúng chỗ = performance tốt

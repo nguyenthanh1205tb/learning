@@ -13,6 +13,23 @@
 - Tạo Responsive Design cho multiple screen sizes
 - Sử dụng TextMeshPro cho typography chuyên nghiệp
 
+> 💡 **Chuẩn bị trước khi code UI**:
+>
+> - Các script UI cần thêm `using` ở đầu file (các ví dụ bên dưới lược bỏ cho gọn):
+>
+>   ```csharp
+>   using UnityEngine;
+>   using UnityEngine.UI;              // Canvas Scaler, Button, Image, Slider, Text, Layout Groups
+>   using UnityEngine.EventSystems;    // EventSystem, IPointerClickHandler, PointerEventData...
+>   using UnityEngine.SceneManagement; // SceneManager (phần 7)
+>   using TMPro;                       // TextMeshProUGUI, TextAlignmentOptions
+>   using System.Collections;          // IEnumerator (Coroutine)
+>   ```
+>
+> - Cách nhanh nhất để tạo UI là dùng menu **GameObject → UI → ...** (Unity tự tạo Canvas + EventSystem). Lần đầu tạo Text - TextMeshPro, bấm **Import TMP Essentials** khi được hỏi.
+> - Các ví dụ tạo UI bằng code chỉ để hiểu cấu trúc; thực tế nên dựng UI trong Editor rồi kéo reference vào Inspector.
+> - Một số ví dụ dùng `GameManager.Instance`, `PlayerHealth.Instance` - đây là các Singleton giả định (xem Bài 2, phần 7).
+
 ## 🎨 1. Canvas - Nền tảng UI chi tiết
 
 ### Canvas là gì?
@@ -138,6 +155,8 @@ public class CreateCanvas : MonoBehaviour
         // Thêm EventSystem
         GameObject eventSystemGO = new GameObject("EventSystem");
         eventSystemGO.AddComponent<EventSystem>();
+        // StandaloneInputModule dùng Input Manager (cũ).
+        // Nếu project dùng Input System (mới) thì thay bằng InputSystemUIInputModule.
         eventSystemGO.AddComponent<StandaloneInputModule>();
     }
 }
@@ -161,7 +180,8 @@ public class TextExample : MonoBehaviour
 
         Text text = textGO.AddComponent<Text>();
         text.text = "Score: 0";
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        // Unity 2022.2+ đổi font mặc định thành "LegacyRuntime.ttf" (bản cũ hơn dùng "Arial.ttf")
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         text.fontSize = 24;
         text.color = Color.white;
 
@@ -233,7 +253,8 @@ public class TextMeshProExample : MonoBehaviour
 
         if (healthText != null)
         {
-            float healthPercent = PlayerHealth.Instance.currentHealth / PlayerHealth.Instance.maxHealth;
+            // Ép kiểu float để tránh chia số nguyên (vd 50 / 100 = 0 nếu cả hai là int)
+            float healthPercent = (float)PlayerHealth.Instance.currentHealth / PlayerHealth.Instance.maxHealth;
             string healthColor = healthPercent > 0.6f ? "#00FF00" : healthPercent > 0.3f ? "#FFFF00" : "#FF0000";
             healthText.text = $"Health: <color={healthColor}>{PlayerHealth.Instance.currentHealth:F0}</color>/<color=#FFFFFF>{PlayerHealth.Instance.maxHealth:F0}</color>";
         }
@@ -279,6 +300,7 @@ public class TextMeshProAdvanced : MonoBehaviour
     void SetupGradientText()
     {
         // Gradient text với rich text
+        // (Cần tạo Color Gradient Preset tên "red_to_blue"... trong thư mục Resources/Color Gradient Presets)
         gradientText.text = "<gradient=\"red_to_blue\">Gradient Text</gradient>";
 
         // Multiple gradients
@@ -396,7 +418,7 @@ public class ImageExample : MonoBehaviour
         // Cập nhật health bar
         if (healthBar != null)
         {
-            float healthPercent = PlayerHealth.Instance.currentHealth / PlayerHealth.Instance.maxHealth;
+            float healthPercent = (float)PlayerHealth.Instance.currentHealth / PlayerHealth.Instance.maxHealth;
             healthBar.fillAmount = healthPercent;
 
             // Đổi màu theo health
@@ -452,8 +474,8 @@ public class SliderExample : MonoBehaviour
         background.color = Color.gray;
         slider.targetGraphic = background;
 
-        // Thêm Fill Area
-        GameObject fillAreaGO = new GameObject("Fill Area");
+        // Thêm Fill Area (không có component UI nào nên phải tự thêm RectTransform)
+        GameObject fillAreaGO = new GameObject("Fill Area", typeof(RectTransform));
         fillAreaGO.transform.SetParent(sliderGO.transform);
 
         RectTransform fillAreaRect = fillAreaGO.GetComponent<RectTransform>();
@@ -578,15 +600,18 @@ public class CustomEventHandler : MonoBehaviour, IPointerClickHandler, IPointerE
 ### Drag and Drop chi tiết
 
 ```csharp
+// Cần thêm component CanvasGroup vào object được kéo
 public class DragDropHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
 {
     private Vector2 originalPosition;
     private Transform originalParent;
     private Canvas canvas;
+    private CanvasGroup canvasGroup;
 
     void Start()
     {
         canvas = GetComponentInParent<Canvas>();
+        canvasGroup = GetComponent<CanvasGroup>();
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -597,14 +622,18 @@ public class DragDropHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         // Đặt làm con của Canvas để drag trên tất cả UI
         transform.SetParent(canvas.transform);
 
-        // Đặt sorting order cao để hiển thị trên top
-        GetComponent<Canvas>().sortingOrder = 100;
+        // Đưa xuống cuối danh sách con để vẽ trên cùng
+        transform.SetAsLastSibling();
+
+        // Cho raycast "xuyên qua" object đang kéo, để phát hiện được ô bên dưới khi thả
+        canvasGroup.blocksRaycasts = false;
 
         Debug.Log("Begin drag");
     }
 
     public void OnDrag(PointerEventData eventData)
     {
+        // Đúng với Canvas Screen Space - Overlay (vị trí chuột = vị trí màn hình)
         transform.position = eventData.position;
     }
 
@@ -625,8 +654,8 @@ public class DragDropHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             transform.SetParent(originalParent);
         }
 
-        // Reset sorting order
-        GetComponent<Canvas>().sortingOrder = 0;
+        // Bật lại raycast
+        canvasGroup.blocksRaycasts = true;
 
         Debug.Log("End drag");
     }
@@ -977,13 +1006,14 @@ public class AnchorPivotPractice : MonoBehaviour
         // Crosshair - Center of screen
         SetupCrosshair();
 
-        // Inventory panel - Stretch both, anchor to bottom
+        // Inventory panel - Stretch ngang, neo ở đáy
         SetupInventoryPanel();
     }
 
     void SetupHealthBar()
     {
-        GameObject healthBarGO = new GameObject("Health Bar");
+        // typeof(RectTransform): object UI cần RectTransform ngay từ đầu để GetComponent bên dưới không bị null
+        GameObject healthBarGO = new GameObject("Health Bar", typeof(RectTransform));
         healthBarGO.transform.SetParent(transform);
 
         RectTransform rectTransform = healthBarGO.GetComponent<RectTransform>();
@@ -1000,7 +1030,7 @@ public class AnchorPivotPractice : MonoBehaviour
 
     void SetupScoreDisplay()
     {
-        GameObject scoreGO = new GameObject("Score Display");
+        GameObject scoreGO = new GameObject("Score Display", typeof(RectTransform));
         scoreGO.transform.SetParent(transform);
 
         RectTransform rectTransform = scoreGO.GetComponent<RectTransform>();
@@ -1020,7 +1050,7 @@ public class AnchorPivotPractice : MonoBehaviour
 
     void SetupCrosshair()
     {
-        GameObject crosshairGO = new GameObject("Crosshair");
+        GameObject crosshairGO = new GameObject("Crosshair", typeof(RectTransform));
         crosshairGO.transform.SetParent(transform);
 
         RectTransform rectTransform = crosshairGO.GetComponent<RectTransform>();
@@ -1037,12 +1067,12 @@ public class AnchorPivotPractice : MonoBehaviour
 
     void SetupInventoryPanel()
     {
-        GameObject inventoryGO = new GameObject("Inventory Panel");
+        GameObject inventoryGO = new GameObject("Inventory Panel", typeof(RectTransform));
         inventoryGO.transform.SetParent(transform);
 
         RectTransform rectTransform = inventoryGO.GetComponent<RectTransform>();
 
-        // Stretch both, anchor to bottom
+        // Stretch ngang (anchorMin.x = 0, anchorMax.x = 1), neo ở đáy
         rectTransform.anchorMin = new Vector2(0, 0);
         rectTransform.anchorMax = new Vector2(1, 0);
         rectTransform.anchoredPosition = new Vector2(0, 100);
@@ -1080,23 +1110,23 @@ public class ResponsiveDesign : MonoBehaviour
 
     void AdjustUIForScreenSize(float width, float height, float aspectRatio)
     {
-        // Mobile (portrait)
-        if (aspectRatio < 0.6f)
+        // Màn hình dọc (aspect < 1, vd 9:16 = 0.56)
+        if (aspectRatio < 1.0f)
         {
             Debug.Log("Mobile Portrait");
             AdjustForMobilePortrait();
         }
-        // Mobile (landscape)
-        else if (aspectRatio < 1.0f)
-        {
-            Debug.Log("Mobile Landscape");
-            AdjustForMobileLandscape();
-        }
-        // Tablet
+        // Gần vuông (vd tablet 4:3 = 1.33)
         else if (aspectRatio < 1.5f)
         {
             Debug.Log("Tablet");
             AdjustForTablet();
+        }
+        // Điện thoại nằm ngang (vd 19.5:9 = 2.17) - aspect giống desktop nên kiểm tra nền tảng
+        else if (Application.isMobilePlatform)
+        {
+            Debug.Log("Mobile Landscape");
+            AdjustForMobileLandscape();
         }
         // Desktop
         else
@@ -1140,7 +1170,7 @@ public class ResponsiveDesign : MonoBehaviour
 
     void AdjustButtonSizes(float multiplier)
     {
-        Button[] buttons = FindObjectsOfType<Button>();
+        Button[] buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
         foreach (Button button in buttons)
         {
             RectTransform rectTransform = button.GetComponent<RectTransform>();
@@ -1150,7 +1180,7 @@ public class ResponsiveDesign : MonoBehaviour
 
     void AdjustTextSizes(float multiplier)
     {
-        TextMeshProUGUI[] texts = FindObjectsOfType<TextMeshProUGUI>();
+        TextMeshProUGUI[] texts = FindObjectsByType<TextMeshProUGUI>(FindObjectsSortMode.None);
         foreach (TextMeshProUGUI text in texts)
         {
             text.fontSize *= multiplier;
@@ -1159,13 +1189,13 @@ public class ResponsiveDesign : MonoBehaviour
 
     void AdjustSpacing(float multiplier)
     {
-        HorizontalLayoutGroup[] horizontalLayouts = FindObjectsOfType<HorizontalLayoutGroup>();
+        HorizontalLayoutGroup[] horizontalLayouts = FindObjectsByType<HorizontalLayoutGroup>(FindObjectsSortMode.None);
         foreach (HorizontalLayoutGroup layout in horizontalLayouts)
         {
             layout.spacing *= multiplier;
         }
 
-        VerticalLayoutGroup[] verticalLayouts = FindObjectsOfType<VerticalLayoutGroup>();
+        VerticalLayoutGroup[] verticalLayouts = FindObjectsByType<VerticalLayoutGroup>(FindObjectsSortMode.None);
         foreach (VerticalLayoutGroup layout in verticalLayouts)
         {
             layout.spacing *= multiplier;
@@ -1212,11 +1242,11 @@ public class DynamicUIScaling : MonoBehaviour
     {
         float aspectRatio = screenSize.x / screenSize.y;
 
-        if (aspectRatio < 0.6f) // Mobile Portrait
+        if (aspectRatio < 1.0f) // Màn hình dọc
         {
             canvasScaler.matchWidthOrHeight = 0f; // Match width
         }
-        else if (aspectRatio < 1.0f) // Mobile Landscape
+        else if (aspectRatio > 2.0f) // Màn hình rất rộng (điện thoại nằm ngang)
         {
             canvasScaler.matchWidthOrHeight = 1f; // Match height
         }
@@ -1236,8 +1266,11 @@ public class DynamicUIScaling : MonoBehaviour
 
 ### Scene Loading
 
+> ⚠️ Scene muốn load bằng code phải được thêm vào danh sách build: **File → Build Settings → Add Open Scenes** (Unity 6: **File → Build Profiles → Scene List**). Nếu không sẽ gặp lỗi "Scene couldn't be loaded because it has not been added to the build settings".
+
 ```csharp
-public class SceneManager : MonoBehaviour
+// Không đặt tên class là "SceneManager" - sẽ trùng với UnityEngine.SceneManagement.SceneManager
+public class SceneLoader : MonoBehaviour
 {
     void Start()
     {
@@ -1316,11 +1349,9 @@ public class SceneTransition : MonoBehaviour
         // Chờ animation hoàn thành
         yield return new WaitForSeconds(transitionTime);
 
-        // Load scene
+        // Load scene - object này sẽ bị hủy khi scene cũ đóng (trừ khi dùng DontDestroyOnLoad),
+        // nên animation "FadeIn" đặt ở scene mới (vd: Animator của màn che tự chạy FadeIn khi scene mở)
         UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
-
-        // Play animation in
-        transitionAnimator.SetTrigger("FadeIn");
     }
 }
 ```

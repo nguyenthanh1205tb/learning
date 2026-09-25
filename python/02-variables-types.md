@@ -178,6 +178,15 @@ print(id(a) == id(b))   # id(): "địa chỉ" định danh của đối tượn
 
 Điều này rất quan trọng khi làm việc với list, dict (sẽ học ở [Bài 5](./05-data-structures.md)). Với số và chuỗi thì không đáng lo vì chúng **không thể thay đổi** (immutable).
 
+> ⚠️ **`is` khác `==`**: `==` so sánh **giá trị**, `is` so sánh **có phải cùng một đối tượng**. Đừng dùng `is` để so sánh số hay chuỗi: CPython tái sử dụng sẵn các số nguyên nhỏ (-5 đến 256) nên `a is b` *đôi khi* ra `True`, nhưng với số lớn hơn thì có thể ra `False` dù giá trị bằng nhau. Chỉ dùng `is` với `None` (và `True`/`False`) - xem phần `None` bên dưới.
+>
+> ```python
+> a = 1000
+> b = int("1000")     # Cùng giá trị nhưng là đối tượng khác
+> print(a == b, a is b)
+> # Output: True False
+> ```
+
 ### 💡 Tips quan trọng
 
 - `=` là **gán**, `==` là **so sánh** ✅
@@ -365,11 +374,13 @@ print(type(result))
 # Output: <class 'NoneType'>
 
 # Kiểm tra None: dùng "is", KHÔNG dùng "=="
+# (if = "nếu điều kiện đúng thì chạy khối thụt lề bên dưới" - học kỹ ở Bài 3)
 if result is None:
     print("Chưa có dữ liệu")
 # Output: Chưa có dữ liệu
 
 # Hàm không có return sẽ trả về None
+# (def dùng để định nghĩa hàm - học kỹ ở Bài 4)
 def say_hi():
     print("Hi")
 
@@ -497,7 +508,7 @@ print(math.ceil(3.2))   # Làm tròn lên
 # Output: 4
 ```
 
-> 🧠 **Tại sao lại làm tròn về số chẵn?** Nếu luôn làm tròn .5 **lên**, khi cộng hàng triệu số, tổng sẽ bị lệch lên. Làm tròn về số chẵn giúp sai số "cân bằng" - nửa lên, nửa xuống. Đây là chuẩn trong kế toán và thống kê.
+> 🧠 **Tại sao lại làm tròn về số chẵn?** Nếu luôn làm tròn .5 **lên**, khi cộng hàng triệu số, tổng sẽ bị lệch lên. Làm tròn về số chẵn giúp sai số "cân bằng" - nửa lên, nửa xuống. Đây là cách làm tròn mặc định của chuẩn số thực IEEE 754, hay dùng trong thống kê. Nếu cần làm tròn "kiểu sách giáo khoa" (.5 luôn lên, ví dụ khi tính tiền), dùng `Decimal` với `ROUND_HALF_UP`.
 
 ### Ép kiểu thất bại
 
@@ -571,7 +582,7 @@ print(7 % 2)        # 1 → lẻ
 total_seconds = 125
 minutes = total_seconds // 60
 seconds = total_seconds % 60
-print(f"{minutes} phút {seconds} giây")
+print(f"{minutes} phút {seconds} giây")     # f-string: chèn biến vào {} - xem phần 7
 # Output: 2 phút 5 giây
 
 # Lấy chữ số cuối cùng
@@ -645,7 +656,7 @@ print("apple" < "banana")
 print("Z" < "a")    # Chữ HOA có mã nhỏ hơn chữ thường
 # Output: True
 
-# So sánh chuỗi (chained comparison) - rất Pythonic!
+# So sánh nối tiếp (chained comparison) - rất Pythonic!
 age = 25
 print(18 <= age < 60)       # Tương đương: 18 <= age and age < 60
 # Output: True

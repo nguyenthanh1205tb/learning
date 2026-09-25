@@ -183,7 +183,7 @@ Ví dụ thực tế:
 def analyze_scores(scores):
     """Trả về (trung bình, số đậu, số rớt)."""
     average = sum(scores) / len(scores)
-    passed = sum(1 for s in scores if s >= 5)
+    passed = sum(1 for s in scores if s >= 5)   # Đếm số điểm >= 5 (cú pháp này học ở Bài 5)
     failed = len(scores) - passed
     return average, passed, failed
 
@@ -354,7 +354,7 @@ print(user)
 # Output: {'name': 'An', 'age': 25, 'city': 'Đà Nẵng', 'job': 'Developer'}
 ```
 
-- Dấu `**` gom **tất cả đối số keyword thừa** vào một **dict**
+- Dấu `**` gom **tất cả đối số keyword thừa** vào một **dict** - kiểu dữ liệu lưu các cặp `key: value` (bạn đã thấy ở `match` Bài 3, sẽ học kỹ ở [Bài 5](./05-data-structures.md))
 
 ### Kết hợp tất cả
 
@@ -363,6 +363,7 @@ Thứ tự bắt buộc: **tham số thường → `*args` → keyword-only → 
 ```python
 def log(level, *messages, sep=" | ", **metadata):
     text = sep.join(messages)
+    # Ghép từng cặp key=value của dict metadata (dict & .items() học kỹ ở Bài 5)
     meta = ", ".join(f"{k}={v}" for k, v in metadata.items())
     print(f"[{level}] {text} ({meta})")
 
@@ -747,7 +748,7 @@ def calculate_bmi(weight_kg, height_m):
         22.9
     """
     if height_m <= 0:
-        raise ValueError("Chiều cao phải lớn hơn 0")
+        raise ValueError("Chiều cao phải lớn hơn 0")   # raise: chủ động báo lỗi (Bài 7)
     return round(weight_kg / height_m ** 2, 1)
 
 
