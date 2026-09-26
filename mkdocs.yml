@@ -132,7 +132,7 @@ nav:
       - Bài 8 - Tìm kiếm & Binary Search: algorithms/08-binary-search.md
       - Bài 9 - Cây & BST: algorithms/09-trees-bst.md
       - Bài 10 - Heap & Priority Queue: algorithms/10-heaps.md
-      - Bài 11 - Đồ thị: BFS, DFS, Topo Sort: algorithms/11-graphs-traversal.md
+      - Bài 11 - Đồ thị (BFS, DFS, Topo Sort): algorithms/11-graphs-traversal.md
       - Bài 12 - Đường đi ngắn nhất & Cây khung: algorithms/12-shortest-paths-mst.md
       - Bài 13 - Tham lam (Greedy): algorithms/13-greedy.md
       - Bài 14 - Quy hoạch động (DP): algorithms/14-dynamic-programming.md
