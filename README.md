@@ -8,14 +8,14 @@ Tài liệu tự học bằng tiếng Việt, đi từ cơ bản đến thực h
 
 | Khóa học | Mô tả | Bắt đầu |
 | --- | --- | --- |
-| 🐹 **Golang** | Cú pháp Go, struct & interface, error handling, concurrency, file/JSON/CLI, HTTP API, database, production | [golang/README.md](./golang/README.md) |
+| 🐹 **Golang** | Cú pháp Go, struct & interface, error handling, concurrency, file/JSON/CLI, HTTP API, database, production, Docker, gRPC | [golang/README.md](./golang/README.md) |
 | 🐍 **Python** | Cú pháp Python, OOP, file, module, advanced Python, FastAPI, database, xử lý dữ liệu, production | [python/README.md](./python/README.md) |
 
 ## 📁 Cấu trúc thư mục
 
 ```
 .
-├── golang/   # Khóa học Golang (16 bài)
+├── golang/   # Khóa học Golang (18 bài)
 └── python/   # Khóa học Python (16 bài)
 ```
 

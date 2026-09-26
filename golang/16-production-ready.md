@@ -2947,7 +2947,7 @@ Viết `internal/storage/postgres` cài đặt **cùng** interface `bookmark.Rep
 4. **Viết blog / chia sẻ** những gì học được - giải thích cho người khác là cách học sâu nhất
 5. **Tham gia cộng đồng**: Gophers Việt Nam, Gophers Slack, r/golang
 
-**Quay về trang chính**: [README](./README.md)
+**Bài tiếp theo**: [Bài 17: Docker cho ứng dụng Go](./17-docker.md)
 
 ---
 

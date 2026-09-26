@@ -7,7 +7,7 @@ Chào mừng bạn đến với khóa học Golang (Go)! Đây là tài liệu h
 Khóa học gồm **2 phần**:
 
 - **Phần 1: Cơ bản → Trung cấp** (Bài 1-10): cú pháp, cấu trúc dữ liệu, interface, xử lý lỗi, concurrency, testing và dự án tổng hợp Todo REST API
-- **Phần 2: Nâng cao & Thực tế** (Bài 11-16): file/JSON/CLI, HTTP client, database, concurrency patterns nâng cao, generics & reflection, và đưa Go lên production với dự án tổng kết Bookmark API
+- **Phần 2: Nâng cao & Thực tế** (Bài 11-18): file/JSON/CLI, HTTP client, database, concurrency patterns nâng cao, generics & reflection, đưa Go lên production với dự án tổng kết Bookmark API, đóng gói bằng Docker và xây dựng microservice với gRPC
 
 > 💡 **Go là gì?** Go là ngôn ngữ lập trình do Google tạo ra năm 2009 (Robert Griesemer, Rob Pike, Ken Thompson). Go nổi tiếng vì **đơn giản**, **biên dịch nhanh**, **chạy nhanh** và **hỗ trợ lập trình đồng thời (concurrency) cực tốt**. Docker, Kubernetes, Terraform, Prometheus... đều được viết bằng Go.
 
@@ -26,10 +26,12 @@ Khóa học gồm **2 phần**:
 - Làm việc với database bằng `database/sql`
 - Áp dụng các concurrency pattern nâng cao, generics nâng cao, reflection và thư viện chuẩn
 - Đưa ứng dụng Go lên **production** (logging, cấu hình, đóng gói, triển khai) qua dự án tổng kết **Bookmark API**
+- Đóng gói và chạy ứng dụng bằng **Docker** & **Docker Compose**
+- Xây dựng microservice giao tiếp bằng **gRPC** và Protocol Buffers
 
 ### ⏱️ Thời gian học tập
 
-- **Tổng thời gian**: 7-8 tuần (1-2 giờ/ngày) - Phần 1 khoảng 5 tuần, Phần 2 khoảng 3 tuần
+- **Tổng thời gian**: 8-9 tuần (1-2 giờ/ngày) - Phần 1 khoảng 5 tuần, Phần 2 khoảng 4 tuần
 - **Cấp độ**: Người mới bắt đầu (biết sơ qua một ngôn ngữ lập trình bất kỳ là lợi thế, nhưng không bắt buộc)
 - **Kết quả**: Có thể tự viết CLI tool, web API có database, đọc hiểu code Go trong các dự án thực tế và triển khai ứng dụng lên server
 
@@ -78,7 +80,7 @@ Khóa học gồm **2 phần**:
 
 - [x] **Bài 10**: [Dự án tổng hợp phần cơ bản - Todo REST API](./10-final-project.md) - `net/http`, JSON, `sync.Mutex`, `httptest`
 
-### 🚀 Phần 2: Nâng cao & Thực tế (Bài 11-16)
+### 🚀 Phần 2: Nâng cao & Thực tế (Bài 11-18)
 
 #### Tuần 6: Làm việc với dữ liệu và mạng
 
@@ -94,6 +96,11 @@ Khóa học gồm **2 phần**:
 
 - [x] **Bài 15**: [Generics nâng cao, Reflection & Thư viện chuẩn](./15-generics-reflection-stdlib.md)
 - [x] **Bài 16**: [Go trong Production](./16-production-ready.md) - dự án tổng kết **Bookmark API**
+
+#### Tuần 9: Docker & Microservices
+
+- [x] **Bài 17**: [Docker cho ứng dụng Go](./17-docker.md) - Dockerfile multi-stage, Docker Compose, registry
+- [x] **Bài 18**: [gRPC với Go](./18-grpc.md) - Protocol Buffers, 4 kiểu RPC, interceptors, microservices
 
 > 💡 **Nên học Phần 2 khi nào?** Khi bạn đã hoàn thành Bài 10 và tự tin với interface, error handling, goroutine/channel và testing. Phần 2 dùng lại rất nhiều kiến thức của Phần 1.
 
@@ -225,6 +232,13 @@ go run .
 - [ ] Hoàn thành Bài 15: Generics nâng cao, Reflection & Thư viện chuẩn
 - [ ] Hoàn thành Bài 16: Go trong Production
 - [ ] Hoàn thành dự án tổng kết Bookmark API và đẩy lên GitHub
+
+#### Tuần 9
+
+- [ ] Hoàn thành Bài 17: Docker cho ứng dụng Go
+- [ ] Hoàn thành Bài 18: gRPC với Go
+- [ ] Chạy được Go API + PostgreSQL bằng Docker Compose
+- [ ] Viết được 2 service Go giao tiếp với nhau qua gRPC
 
 ## 🎯 Tips học hiệu quả
 
