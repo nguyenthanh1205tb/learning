@@ -1,9 +1,9 @@
-site_name: Learning Hub - Golang & Python
-site_description: Tài liệu tự học Golang và Python bằng tiếng Việt
+site_name: Learning Hub - Backend Engineering
+site_description: Tài liệu tự học Golang, Python, Backend, Thuật toán và tư duy Software Engineer bằng tiếng Việt
 site_url: https://nguyenthanh1205tb.github.io/learning/
 repo_url: https://github.com/nguyenthanh1205tb/learning
 
-# Thư mục docs/ được tạo lúc build bằng cách copy README.md, golang/, python/
+# Thư mục docs/ được tạo lúc build bằng cách copy README.md, golang/, python/, backend/, algorithms/, mindset/, static/
 # (xem .github/workflows/pages.yml) nên không cần di chuyển file bài học
 docs_dir: docs
 
@@ -45,10 +45,24 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.details
+
+extra_css:
+  - static/css/algo-viz.css
+
+extra_javascript:
+  - static/js/algo-viz.js
 
 nav:
   - Trang chủ: README.md
@@ -90,3 +104,50 @@ nav:
       - Bài 14 - Concurrency & Parallelism: python/14-concurrency-parallelism.md
       - Bài 15 - Xử lý dữ liệu & Tự động hóa: python/15-data-processing.md
       - Bài 16 - Python trong Production: python/16-production-ready.md
+  - Backend:
+      - backend/README.md
+      - Bài 1 - Web hoạt động thế nào: backend/01-how-the-web-works.md
+      - Bài 2 - Linux & Shell: backend/02-linux-shell.md
+      - Bài 3 - Thiết kế API: backend/03-api-design.md
+      - Bài 4 - Authentication & Authorization: backend/04-auth.md
+      - Bài 5 - Thiết kế Database quan hệ: backend/05-relational-database-design.md
+      - Bài 6 - Database Internals & Hiệu năng: backend/06-database-internals-performance.md
+      - Bài 7 - NoSQL: backend/07-nosql.md
+      - Bài 8 - Caching & Redis: backend/08-caching.md
+      - Bài 9 - Message Queue & Xử lý bất đồng bộ: backend/09-message-queues.md
+      - Bài 10 - System Design & Scalability: backend/10-system-design.md
+      - Bài 11 - Observability & Reliability: backend/11-observability-reliability.md
+      - Bài 12 - Bảo mật Backend: backend/12-security.md
+      - Bài 13 - Testing, CI/CD & Deployment: backend/13-testing-cicd-deployment.md
+      - Bài 14 - Kiến trúc & Microservices: backend/14-architecture-microservices.md
+  - Thuật toán:
+      - algorithms/README.md
+      - Bài 1 - Độ phức tạp (Big-O): algorithms/01-complexity.md
+      - Bài 2 - Mảng & Chuỗi: algorithms/02-arrays-strings.md
+      - Bài 3 - Hash Table: algorithms/03-hashing.md
+      - Bài 4 - Linked List: algorithms/04-linked-lists.md
+      - Bài 5 - Stack & Queue: algorithms/05-stacks-queues.md
+      - Bài 6 - Đệ quy & Quay lui: algorithms/06-recursion-backtracking.md
+      - Bài 7 - Thuật toán sắp xếp: algorithms/07-sorting.md
+      - Bài 8 - Tìm kiếm & Binary Search: algorithms/08-binary-search.md
+      - Bài 9 - Cây & BST: algorithms/09-trees-bst.md
+      - Bài 10 - Heap & Priority Queue: algorithms/10-heaps.md
+      - Bài 11 - Đồ thị: BFS, DFS, Topo Sort: algorithms/11-graphs-traversal.md
+      - Bài 12 - Đường đi ngắn nhất & Cây khung: algorithms/12-shortest-paths-mst.md
+      - Bài 13 - Tham lam (Greedy): algorithms/13-greedy.md
+      - Bài 14 - Quy hoạch động (DP): algorithms/14-dynamic-programming.md
+      - Bài 15 - Cấu trúc dữ liệu nâng cao: algorithms/15-advanced-data-structures.md
+      - Bài 16 - Thuật toán chuỗi, Toán & Bit: algorithms/16-strings-math-bits.md
+      - Bài 17 - Pattern giải bài & Phỏng vấn: algorithms/17-problem-solving-patterns.md
+  - Tư duy SE:
+      - mindset/README.md
+      - Bài 1 - Software Engineer là gì: mindset/01-what-is-software-engineering.md
+      - Bài 2 - Tư duy giải quyết vấn đề: mindset/02-problem-solving.md
+      - Bài 3 - Clean Code: mindset/03-clean-code.md
+      - Bài 4 - Nguyên tắc thiết kế: mindset/04-design-principles.md
+      - Bài 5 - Tư duy Debug: mindset/05-debugging.md
+      - Bài 6 - Testing & Chất lượng: mindset/06-testing-quality.md
+      - Bài 7 - Trade-off & Ra quyết định kỹ thuật: mindset/07-tradeoffs-decisions.md
+      - Bài 8 - Làm việc nhóm & Giao tiếp: mindset/08-teamwork-communication.md
+      - Bài 9 - Tư duy sản phẩm: mindset/09-product-thinking.md
+      - Bài 10 - Phát triển sự nghiệp: mindset/10-career-growth.md

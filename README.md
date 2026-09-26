@@ -32,6 +32,6 @@ Website được build bằng [MkDocs Material](https://squidfunk.github.io/mkdo
 
 ```bash
 pip install -r requirements.txt
-mkdir -p docs && cp -r README.md golang python docs/
+mkdir -p docs && cp -r README.md golang python backend algorithms mindset static docs/
 mkdocs serve   # mở http://127.0.0.1:8000
 ```
