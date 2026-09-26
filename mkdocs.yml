@@ -70,6 +70,8 @@ nav:
       - Bài 14 - Concurrency nâng cao: golang/14-advanced-concurrency.md
       - Bài 15 - Generics, Reflection & Stdlib: golang/15-generics-reflection-stdlib.md
       - Bài 16 - Go trong Production: golang/16-production-ready.md
+      - Bài 17 - Docker: golang/17-docker.md
+      - Bài 18 - gRPC: golang/18-grpc.md
   - Python:
       - python/README.md
       - Bài 1 - Giới thiệu & Cài đặt: python/01-introduction-setup.md
