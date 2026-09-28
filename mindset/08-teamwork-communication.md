@@ -1326,9 +1326,9 @@ Bạn đang làm tính năng tích hợp hóa đơn điện tử, hạn release 
 
 ### Bài tập 6 (Khó): Blameless postmortem
 
-Viết postmortem theo mẫu ở mục 12 cho sự cố giả định sau: *"Một developer cập nhật config giới hạn tốc độ (rate limit) từ 1000 request/phút thành 100 (định gõ 10000 nhưng thiếu số 0... thực ra thừa... nói chung là gõ nhầm). Config được deploy lúc 20h tối thứ Sáu. 30% request của khách bị từ chối trong 2 giờ cho đến khi có người phát hiện qua phàn nàn trên Facebook."*
+Viết postmortem theo mẫu ở mục 12 cho sự cố giả định sau: *"Một developer cập nhật config giới hạn tốc độ (rate limit), định tăng từ 1000 lên 10000 request/phút nhưng gõ nhầm thành 100. Config được deploy lúc 20h tối thứ Sáu. 30% request của khách bị từ chối trong 2 giờ cho đến khi có người phát hiện qua phàn nàn trên Facebook."*
 
-Yêu cầu: phần nguyên cả nhân **không được** có tên người; ít nhất 4 hành động cải tiến mang tính hệ thống.
+Yêu cầu: phần nguyên nhân **không được** có tên người; ít nhất 4 hành động cải tiến mang tính hệ thống.
 
 <details>
 <summary>Gợi ý hành động cải tiến</summary>
