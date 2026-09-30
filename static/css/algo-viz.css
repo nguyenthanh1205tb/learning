@@ -69,6 +69,8 @@
 .algo-viz .av-bucket { fill: none; stroke-dasharray: 3 3; }
 .algo-viz .av-bucket.s-q { fill: var(--f); }
 .algo-viz .av-thick { stroke-width: 3; }
+.algo-viz .av-under { fill: var(--av-bg); stroke: none; }
+.algo-viz .av-wall { fill: var(--av-fg2); stroke: none; opacity: .75; }
 .algo-viz .av-end { fill: none; stroke: var(--c, var(--av-fg)); stroke-width: 1.4; }
 .algo-viz .av-dashed { stroke-dasharray: 5 4; }
 .algo-viz .av-dark { fill: var(--av-fg3); fill-opacity: .35; }

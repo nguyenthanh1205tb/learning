@@ -134,7 +134,7 @@
     return '<text x="' + r1(x) + '" y="' + r1(y) + '" class="av-t ' + (cls || '') + '" text-anchor="' + (anc || 'middle') + '" dominant-baseline="central">' + esc(fmt(s)) + '</text>';
   }
   function C(cx, cy, r, st, extra) {
-    return '<circle cx="' + r1(cx) + '" cy="' + r1(cy) + '" r="' + r1(r) + '" class="av-box' + sc(st) + (extra ? ' ' + extra : '') + '"/>';
+    return (extra ? '' : '<circle cx="' + r1(cx) + '" cy="' + r1(cy) + '" r="' + r1(r) + '" class="av-under"/>') + '<circle cx="' + r1(cx) + '" cy="' + r1(cy) + '" r="' + r1(r) + '" class="av-box' + sc(st) + (extra ? ' ' + extra : '') + '"/>';
   }
   function L(x1, y1, x2, y2, st, extra) {
     return '<line x1="' + r1(x1) + '" y1="' + r1(y1) + '" x2="' + r1(x2) + '" y2="' + r1(y2) + '" class="av-ln' + sc(st) + (extra ? ' ' + extra : '') + '"/>';
@@ -1359,7 +1359,976 @@
       } };
   });
 
-  /* @@MORE@@ */
+  /* ================================================================
+   * 10. BST (tree)
+   * ================================================================ */
+  function bstIns(T, v) {
+    var nd = { v: v, l: -1, r: -1 };
+    if (T.root < 0) { T.nodes.push(nd); T.root = T.nodes.length - 1; return T.root; }
+    var c = T.root;
+    while (true) {
+      var cur = T.nodes[c];
+      if (v === cur.v) return -1;
+      var side = v < cur.v ? 'l' : 'r';
+      if (cur[side] < 0) { T.nodes.push(nd); cur[side] = T.nodes.length - 1; return cur[side]; }
+      c = cur[side];
+    }
+  }
+  function bstLevel(T) { var out = [], q = T.root >= 0 ? [T.root] : []; while (q.length) { var i = q.shift(), nd = T.nodes[i]; out.push(nd.v); if (nd.l >= 0) q.push(nd.l); if (nd.r >= 0) q.push(nd.r); } return out; }
+  function bstBlock(Tr, cls) {
+    var k = 0, dep = 0, pos = {}, slot = 40, lh = 54, r = 17, s = '', ON = { vis: 1, cmp: 1, done: 1, swap: 1, cur: 1 };
+    (function go(i, d) { if (i < 0) return; go(Tr.nodes[i].l, d + 1); pos[i] = [k++ * slot + slot / 2, r + 2 + d * lh]; dep = Math.max(dep, d); go(Tr.nodes[i].r, d + 1); })(Tr.root, 0);
+    Object.keys(pos).forEach(function (i) {
+      var nd = Tr.nodes[i];
+      [nd.l, nd.r].forEach(function (c) { if (c >= 0) s += L(pos[i][0], pos[i][1], pos[c][0], pos[c][1], ON[cls[i]] && ON[cls[c]] ? 'vis' : ''); });
+    });
+    Object.keys(pos).forEach(function (i) { s += C(pos[i][0], pos[i][1], r, cls[i]) + T(pos[i][0], pos[i][1], Tr.nodes[i].v, String(Tr.nodes[i].v).length > 2 ? 'av-v av-sm' : 'av-v'); });
+    if (Tr.root < 0) s += T(slot, r, '(cây rỗng)', 'av-i');
+    return blk(Math.max(k, 2) * slot, 2 * r + 4 + dep * lh, s);
+  }
+  function bstSetup(P) {
+    var vals = P.nums('input', { ex: '50,30,70,20,40,60,80', maxLen: 15 }), T = { nodes: [], root: -1 };
+    return { vals: vals, T: T, build: function () { vals.forEach(function (v) { bstIns(T, v); }); } };
+  }
+  function bstRender(extra) {
+    return function (x) {
+      var parts = [bstBlock(x.T, x.cls || {})];
+      if (extra) extra(x, parts);
+      return vstack(parts, 12);
+    };
+  }
+  var LEG_BST = [['cmp', 'đang so sánh'], ['vis', 'đường đi'], ['new', 'nút mới'], ['done', 'kết quả'], ['swap', 'thay đổi']];
+
+  reg('tree', 'bst-insert', function (P) {
+    var S = bstSetup(P), T = S.T, rec = new Rec(['so sánh']);
+    function snap(c, cls) { rec.s(c, { T: clone(T), cls: cls || {} }); }
+    snap('Xây BST bằng cách chèn lần lượt ' + bA(S.vals) + '. Nhỏ hơn → sang trái, lớn hơn → sang phải.');
+    S.vals.forEach(function (v) {
+      if (T.root < 0) { bstIns(T, v); snap('Cây rỗng → ' + b(v) + ' trở thành gốc', M(T.root, 'new')); return; }
+      var c = T.root, path = {};
+      while (true) {
+        var nd = T.nodes[c]; rec.inc('so sánh');
+        var cls = Object.assign({}, path, M(c, 'cmp'));
+        if (v === nd.v) { snap('Chèn ' + b(v) + ': bằng ' + nd.v + ' → khóa đã tồn tại, bỏ qua', cls); break; }
+        var side = v < nd.v ? 'l' : 'r', word = v < nd.v ? v + ' < ' + nd.v + ' → đi sang trái' : v + ' > ' + nd.v + ' → đi sang phải';
+        if (nd[side] < 0) {
+          snap('Chèn ' + b(v) + ': ' + word + ' — chỗ trống', cls);
+          var id = bstIns(T, v); path[c] = 'vis';
+          snap('Đặt ' + b(v) + ' làm con ' + (side === 'l' ? 'trái' : 'phải') + ' của ' + nd.v, Object.assign({}, path, M(id, 'new')));
+          break;
+        }
+        snap('Chèn ' + b(v) + ': ' + word, cls);
+        path[c] = 'vis'; c = nd[side];
+      }
+    });
+    var ino = []; (function go(i) { if (i < 0) return; go(T.nodes[i].l); ino.push(T.nodes[i].v); go(T.nodes[i].r); })(T.root);
+    snap('Hoàn tất! Duyệt inorder cho dãy tăng dần: ' + bA(ino) + '.');
+    return { steps: rec.steps, result: bstLevel(T), leg: LEG_BST, render: bstRender() };
+  });
+
+  reg('tree', 'bst-search', function (P) {
+    var S = bstSetup(P), T = S.T, t = P.int('target'), rec = new Rec(['so sánh']), found = false, pv = [];
+    S.build();
+    function snap(c, cls) { rec.s(c, { T: T, cls: cls || {} }); }
+    snap('Tìm ' + b(t) + ' trong BST: bắt đầu từ gốc, mỗi lần so sánh loại bỏ một nhánh.');
+    var c = T.root, path = {};
+    while (c >= 0) {
+      var nd = T.nodes[c]; rec.inc('so sánh'); pv.push(nd.v);
+      if (nd.v === t) { found = true; snap('So sánh với ' + b(nd.v) + ' → bằng ' + t + ' → tìm thấy sau ' + pv.length + ' lần so sánh!', Object.assign({}, path, M(c, 'done'))); break; }
+      var left = t < nd.v;
+      snap('So sánh với ' + b(nd.v) + ' → ' + t + (left ? ' < ' : ' > ') + nd.v + ' → đi sang ' + (left ? 'trái' : 'phải') + (((left ? nd.l : nd.r) < 0) ? ', nhưng nhánh đó rỗng' : ''), Object.assign({}, path, M(c, 'cmp')));
+      path[c] = 'vis'; c = left ? nd.l : nd.r;
+    }
+    if (!found) snap('Gặp null → ' + b(t) + ' không có trong cây.', path);
+    return { steps: rec.steps, result: { found: found, path: pv }, leg: LEG_BST, render: bstRender() };
+  });
+
+  reg('tree', 'bst-delete', function (P) {
+    var S = bstSetup(P), T = S.T, t = P.int('target', { ex: '30' }), rec = new Rec(['so sánh']);
+    S.build();
+    function snap(c, cls) { rec.s(c, { T: clone(T), cls: cls || {} }); }
+    function repl(p, c, child) { if (p < 0) T.root = child; else if (T.nodes[p].l === c) T.nodes[p].l = child; else T.nodes[p].r = child; }
+    snap('Xóa ' + b(t) + ' khỏi BST. Trước tiên tìm nút chứa ' + t + '.');
+    var p = -1, c = T.root, path = {};
+    while (c >= 0 && T.nodes[c].v !== t) {
+      rec.inc('so sánh');
+      var left = t < T.nodes[c].v;
+      snap('So sánh với ' + b(T.nodes[c].v) + ' → đi sang ' + (left ? 'trái' : 'phải'), Object.assign({}, path, M(c, 'cmp')));
+      path[c] = 'vis'; p = c; c = left ? T.nodes[c].l : T.nodes[c].r;
+    }
+    if (c < 0) snap('Không tìm thấy ' + b(t) + ' → cây giữ nguyên.', path);
+    else {
+      rec.inc('so sánh');
+      var nd = T.nodes[c];
+      if (nd.l < 0 && nd.r < 0) {
+        snap('Tìm thấy ' + b(t) + '. Trường hợp 1: nút lá → chỉ cần gỡ bỏ.', Object.assign({}, path, M(c, 'swap')));
+        repl(p, c, -1); snap('Đã gỡ ' + b(t) + '.', {});
+      } else if (nd.l < 0 || nd.r < 0) {
+        var ch = nd.l >= 0 ? nd.l : nd.r;
+        snap('Tìm thấy ' + b(t) + '. Trường hợp 2: chỉ có một con (' + T.nodes[ch].v + ') → nối con đó lên thay chỗ.', Object.assign({}, path, M(c, 'swap', ch, 'cmp')));
+        repl(p, c, ch); snap('Đã thay ' + b(t) + ' bằng ' + b(T.nodes[ch].v) + '.', M(ch, 'done'));
+      } else {
+        snap('Tìm thấy ' + b(t) + '. Trường hợp 3: có hai con → thay bằng successor (nút nhỏ nhất của cây con phải).', Object.assign({}, path, M(c, 'swap')));
+        var sp = c, s = nd.r, sc2 = M(c, 'swap');
+        snap('Sang phải một bước: ' + b(T.nodes[s].v), Object.assign({}, sc2, M(s, 'cmp')));
+        while (T.nodes[s].l >= 0) { sc2[s] = 'vis'; sp = s; s = T.nodes[s].l; snap('Đi tiếp sang trái: ' + b(T.nodes[s].v), Object.assign({}, sc2, M(s, 'cmp'))); }
+        snap('Successor = ' + b(T.nodes[s].v) + ' (không còn con trái).', Object.assign({}, sc2, M(s, 'done')));
+        nd.v = T.nodes[s].v;
+        snap('Chép ' + b(nd.v) + ' vào vị trí của ' + t + '; giờ cần xóa nút successor cũ.', M(c, 'done', s, 'swap'));
+        repl(sp, s, T.nodes[s].r);
+        snap('Đã xóa successor cũ (nối con phải của nó, nếu có, lên thay).', M(c, 'done'));
+      }
+      snap('Hoàn tất! Duyệt theo tầng: ' + bA(bstLevel(T)) + '.', {});
+    }
+    return { steps: rec.steps, result: bstLevel(T), leg: LEG_BST, render: bstRender() };
+  });
+
+  function travReg(kind) {
+    reg('tree', kind, function (P) {
+      var S = bstSetup(P), T = S.T, rec = new Rec(['nút đã in']), out = [], cls = {}, q = [];
+      S.build();
+      var NAME = { inorder: 'Inorder (trái → gốc → phải)', preorder: 'Preorder (gốc → trái → phải)', postorder: 'Postorder (trái → phải → gốc)', levelorder: 'Level-order (theo tầng, dùng hàng đợi)' };
+      function snap(c) { rec.s(c, { T: T, cls: Object.assign({}, cls), out: out.slice(), q: q.map(function (i) { return T.nodes[i].v; }) }); }
+      function emit(i) { out.push(T.nodes[i].v); rec.inc('nút đã in'); cls[i] = 'done'; }
+      snap('Duyệt cây ' + NAME[kind] + '.');
+      if (kind === 'levelorder') {
+        if (T.root >= 0) q.push(T.root);
+        snap('Cho gốc ' + b(T.nodes[T.root].v) + ' vào hàng đợi.');
+        while (q.length) {
+          var i = q.shift(); emit(i); cls[i] = 'cur';
+          var nd = T.nodes[i], kids = [nd.l, nd.r].filter(function (c) { return c >= 0; });
+          kids.forEach(function (c) { q.push(c); cls[c] = 'q'; });
+          snap('Lấy ' + b(nd.v) + ' ra khỏi hàng đợi → in; ' + (kids.length ? 'cho các con ' + kids.map(function (c) { return T.nodes[c].v; }).join(', ') + ' vào hàng đợi' : 'không có con'));
+          cls[i] = 'done';
+        }
+      } else {
+        (function go(i) {
+          if (i < 0) return;
+          var nd = T.nodes[i]; cls[i] = 'cur';
+          if (kind === 'preorder') { emit(i); snap('Tới ' + b(nd.v) + ' → in ngay (gốc trước), rồi sang trái, sang phải'); cls[i] = 'done'; }
+          else snap('Tới ' + b(nd.v) + ' → ' + (kind === 'inorder' ? 'duyệt cây con trái trước' : 'duyệt hai cây con trước'));
+          if (kind !== 'preorder') cls[i] = 'vis';
+          go(nd.l);
+          if (kind === 'inorder') { cls[i] = 'cur'; emit(i); snap('Xong cây con trái của ' + nd.v + ' → in ' + b(nd.v) + ', rồi sang phải'); cls[i] = 'done'; }
+          go(nd.r);
+          if (kind === 'postorder') { cls[i] = 'cur'; emit(i); snap('Xong cả hai cây con của ' + nd.v + ' → in ' + b(nd.v)); cls[i] = 'done'; }
+        })(T.root);
+      }
+      snap('Hoàn tất! Thứ tự ' + kind + ': ' + bA(out));
+      return { steps: rec.steps, result: out.slice(), leg: [['cur', 'nút đang xét'], ['vis', 'đang chờ (trên đường đi)'], ['q', 'trong hàng đợi'], ['done', 'đã in']],
+        render: bstRender(function (x, parts) {
+          if (kind === 'levelorder') parts.push(chips(x.q, { label: 'Hàng đợi:', empty: '(rỗng)', maxW: 380 }));
+          parts.push(chips(x.out, { label: 'Kết quả:', empty: '—', maxW: 380 }));
+        }) };
+    });
+  }
+  ['inorder', 'preorder', 'postorder', 'levelorder'].forEach(travReg);
+
+  /* ================================================================
+   * 11. HEAP
+   * ================================================================ */
+  function heapReg(kind) {
+    reg('heap', kind, function (P) {
+      var inp = P.nums('input', { ex: '5,3,8,1,9,2', maxLen: 15 }), tp = (P.raw('type') || 'min').toLowerCase();
+      if (tp !== 'min' && tp !== 'max') fail('<code>data-type</code> chỉ nhận "min" hoặc "max".');
+      var mx = tp === 'max', rec = new Rec(['so sánh', 'hoán đổi']), a = kind === 'insert' ? [] : inp.slice(), out = [];
+      var better = function (x, y) { return mx ? x > y : x < y; }, SY = mx ? '>' : '<', NSY = mx ? '≤' : '≥', HN = mx ? 'max-heap' : 'min-heap';
+      function snap(c, cls) { rec.s(c, { a: a.slice(), cls: cls || {}, out: out.slice() }); }
+      function up(i) {
+        while (i > 0) {
+          var p = (i - 1) >> 1; rec.inc('so sánh');
+          if (better(a[i], a[p])) {
+            snap(b(a[i]) + ' ' + SY + ' cha ' + b(a[p]) + ' → vi phạm tính chất ' + HN + ', hoán đổi lên', M(i, 'cmp', p, 'cmp'));
+            swap(a, i, p); rec.inc('hoán đổi'); snap('Đã hoán đổi: ' + b(a[p]) + ' lên vị trí ' + p, M(p, 'swap', i, 'swap')); i = p;
+          } else { snap(b(a[i]) + ' ' + NSY + ' cha ' + b(a[p]) + ' → đúng vị trí, dừng sift-up', M(i, 'done', p, 'cmp')); return; }
+        }
+        snap(b(a[0]) + ' đã lên tới gốc.', M(0, 'done'));
+      }
+      function down(i, size) {
+        while (true) {
+          var l = 2 * i + 1, r = 2 * i + 2, bst = i;
+          if (l >= size) { snap(b(a[i]) + ' không còn con → dừng sift-down', M(i, 'done')); return; }
+          rec.inc('so sánh'); if (better(a[l], a[bst])) bst = l;
+          if (r < size) { rec.inc('so sánh'); if (better(a[r], a[bst])) bst = r; }
+          var kids = 'con ' + a[l] + (r < size ? ', ' + a[r] : '');
+          if (bst === i) { snap('So sánh ' + b(a[i]) + ' với ' + kids + ' → cha đã ' + (mx ? 'lớn' : 'nhỏ') + ' nhất, dừng', M(i, 'done', l, 'cmp', r < size ? r : null, 'cmp')); return; }
+          snap('So sánh ' + b(a[i]) + ' với ' + kids + ' → con ' + (mx ? 'lớn' : 'nhỏ') + ' nhất là ' + b(a[bst]) + ' → hoán đổi xuống', M(i, 'cur', l, 'cmp', r < size ? r : null, 'cmp'));
+          swap(a, i, bst); rec.inc('hoán đổi'); snap('Đã hoán đổi: ' + b(a[bst]) + ' xuống vị trí ' + bst, M(i, 'swap', bst, 'swap')); i = bst;
+        }
+      }
+      if (kind === 'insert') {
+        snap('Chèn lần lượt ' + bA(inp) + ' vào ' + HN + ' rỗng: thêm vào cuối mảng rồi sift-up.');
+        inp.forEach(function (v) { a.push(v); snap('Thêm ' + b(v) + ' vào cuối mảng (chỉ số ' + (a.length - 1) + ')', M(a.length - 1, 'new')); up(a.length - 1); });
+      } else {
+        snap('Mảng ' + bA(a) + '. Heapify (build-heap): sift-down từ nút trong cuối cùng (chỉ số ' + ((a.length >> 1) - 1) + ') ngược về gốc → O(n).');
+        for (var i = (a.length >> 1) - 1; i >= 0; i--) { snap('Sift-down nút a[' + i + '] = ' + b(a[i]), M(i, 'cur')); down(i, a.length); }
+        snap('Đã có ' + HN + ': ' + bA(a) + '. Gốc = ' + b(a[0]) + ' là phần tử ' + (mx ? 'lớn' : 'nhỏ') + ' nhất.', M(0, 'done'));
+        if (kind === 'extract') {
+          while (a.length) {
+            var top = a[0];
+            snap('Extract: lấy gốc ' + b(top) + ' ra', M(0, 'swap'));
+            out.push(top);
+            var last = a.pop();
+            if (a.length) { a[0] = last; snap('Đưa phần tử cuối ' + b(last) + ' lên gốc, rồi sift-down', M(0, 'cur')); down(0, a.length); }
+          }
+          snap('Hoàn tất! Thứ tự lấy ra: ' + bA(out) + ' — đã sắp ' + (mx ? 'giảm' : 'tăng') + ' dần (đây chính là heap sort).');
+        }
+      }
+      if (kind !== 'extract') snap('Hoàn tất! ' + HN + ' dạng mảng: ' + bA(a) + '. Con của i ở 2i+1, 2i+2; cha ở ⌊(i−1)/2⌋.');
+      return { steps: rec.steps, result: kind === 'extract' ? out.slice() : a.slice(), leg: [['cmp', 'đang so sánh'], ['cur', 'nút đang xét'], ['swap', 'hoán đổi'], ['new', 'vừa thêm'], ['done', 'đúng vị trí']],
+        render: function (x) {
+          var cls = x.a.map(function (_, i) { return x.cls[i] || ''; });
+          var parts = [x.a.length ? heapTree(x.a, cls, x.a.length, { idx: true }) : tb('(heap rỗng)', 'av-i'), cells(x.a.length ? x.a : [''], { w: 32, idx: x.a.length ? true : false, cls: cls })];
+          if (kind === 'extract') parts.push(chips(x.out, { label: 'Đã lấy ra:', empty: '—', maxW: 380 }));
+          return vstack(parts, 14);
+        } };
+    });
+  }
+  ['insert', 'heapify', 'extract'].forEach(heapReg);
+
+  /* ================================================================
+   * 12. GRAPH
+   * ================================================================ */
+  function graphSetup(P) {
+    var names = P.list('nodes', { ex: 'A,B,C,D', maxLen: 12, itemMax: 4 }), id = {};
+    names.forEach(function (nm, i) { if (nm in id) fail('Đỉnh "' + esc(nm) + '" bị lặp trong <code>data-nodes</code>.'); id[nm] = i; });
+    var raw = P.list('edges', { ex: 'A-B:4,A-C:2', maxLen: 40 }), directed = P.bool('directed'), weighted = false, edges = [];
+    raw.forEach(function (e) {
+      var m = e.match(/^([^\s:-]+)\s*-\s*([^\s:]+)\s*(?::\s*(-?\d+(?:\.\d+)?))?$/);
+      if (!m) fail('Cạnh "' + esc(e) + '" sai định dạng (ví dụ: <code>A-B:4</code> hoặc <code>A-B</code>).');
+      if (!(m[1] in id) || !(m[2] in id)) fail('Cạnh "' + esc(e) + '" dùng đỉnh không có trong <code>data-nodes</code>.');
+      if (m[3] != null) weighted = true;
+      edges.push({ u: id[m[1]], v: id[m[2]], w: m[3] != null ? +m[3] : 1 });
+    });
+    edges.forEach(function (e) { e.rev = directed && edges.some(function (f) { return f.u === e.v && f.v === e.u; }); });
+    var adj = names.map(function () { return []; });
+    edges.forEach(function (e, k) { adj[e.u].push({ v: e.v, w: e.w, e: k }); if (!directed) adj[e.v].push({ v: e.u, w: e.w, e: k }); });
+    var sv = P.raw('start'), start = sv ? id[sv] : 0;
+    if (sv && start == null) fail('<code>data-start="' + esc(sv) + '"</code> không có trong <code>data-nodes</code>.');
+    var n = names.length, R = n <= 3 ? 70 : Math.max(88, n * 17), pad = 46;
+    var pos = names.map(function (_, i) { var a = -Math.PI / 2 + 2 * Math.PI * i / n; return [pad + R + R * Math.cos(a), pad + R + R * Math.sin(a), Math.cos(a), Math.sin(a)]; });
+    var G = { names: names, id: id, edges: edges, adj: adj, directed: directed, weighted: weighted, start: start, pos: pos, W: 2 * (pad + R), H: 2 * (pad + R) };
+    G.N = function (i) { return names[i]; };
+    G.E = function (k) { var e = edges[k]; return names[e.u] + (directed ? '→' : '–') + names[e.v] + (weighted ? ' (' + e.w + ')' : ''); };
+    return G;
+  }
+  function graphBlock(G, x) {
+    var s = '', top = '', r = 18;
+    G.edges.forEach(function (e, k) {
+      var a = G.pos[e.u], c = G.pos[e.v], st = (x.es && x.es[k]) || '', lx, ly, piece = '';
+      if (e.u === e.v) { piece = C(a[0] + a[2] * 26, a[1] + a[3] * 26, 10, '', 'av-bucket'); lx = a[0] + a[2] * 40; ly = a[1] + a[3] * 40; }
+      else if (G.directed && e.rev) { var cv = curve(a[0], a[1], c[0], c[1], 20, st, r, r + 1); piece = cv.s; lx = cv.lx; ly = cv.ly; }
+      else { piece = G.directed ? arrow(a[0], a[1], c[0], c[1], st, r, r + 1) : L(a[0], a[1], c[0], c[1], st); lx = (a[0] + c[0]) / 2; ly = (a[1] + c[1]) / 2; }
+      if (G.weighted) { var ww = tw(e.w, 11.5) + 6; piece += '<rect class="av-wbg" x="' + r1(lx - ww / 2) + '" y="' + r1(ly - 8) + '" width="' + r1(ww) + '" height="16" rx="3"/>' + T(lx, ly, e.w, 'av-w' + (st && st !== 'dim' ? ' av-p' : '')); }
+      if (st && st !== 'dim') top += piece; else s += piece;
+    });
+    s += top;
+    G.names.forEach(function (nm, i) {
+      var p = G.pos[i];
+      s += C(p[0], p[1], r, x.ns && x.ns[i]) + T(p[0], p[1], nm, nm.length > 2 ? 'av-v av-sm' : 'av-v');
+      if (x.bd && x.bd[i] != null) s += T(p[0] + p[2] * (r + 16), p[1] + p[3] * (r + 14), x.bd[i], 'av-p');
+    });
+    return blk(G.W, G.H, s);
+  }
+  function gTable(G, vals, label, cls) { return cells(vals, { w: 34, h: 26, idx: G.names, label: label, labelW: 64, cls: cls }); }
+  function gOut(G, def, extraParts) {
+    def.render = function (x) { return vstack([graphBlock(G, x)].concat(extraParts(x)), 12); };
+    return def;
+  }
+
+  reg('graph', 'bfs', function (P) {
+    var G = graphSetup(P), n = G.names.length, rec = new Rec(['đỉnh đã thăm', 'cạnh đã xét']);
+    var ns = mk(n, function () { return ''; }), es = G.edges.map(function () { return ''; }), vis = {}, q = [], order = [];
+    function snap(c) { rec.s(c, { ns: ns.slice(), es: es.slice(), q: q.map(G.N), order: order.map(G.N) }); }
+    vis[G.start] = 1; q.push(G.start); ns[G.start] = 'q';
+    snap('Bắt đầu BFS từ ' + b(G.N(G.start)) + ': đánh dấu đã thăm và cho vào hàng đợi.');
+    while (q.length) {
+      var u = q.shift(); order.push(u); ns[u] = 'cur'; rec.inc('đỉnh đã thăm');
+      snap('Lấy ' + b(G.N(u)) + ' ra khỏi đầu hàng đợi → thăm. Xét các đỉnh kề của ' + G.N(u) + '.');
+      G.adj[u].forEach(function (a) {
+        rec.inc('cạnh đã xét');
+        if (!vis[a.v]) { vis[a.v] = 1; q.push(a.v); ns[a.v] = 'q'; es[a.e] = 'done'; snap(G.N(u) + ' – ' + b(G.N(a.v)) + ': chưa thăm → đánh dấu, cho vào cuối hàng đợi'); }
+        else if (es[a.e] !== 'done') { es[a.e] = 'cmp'; snap(G.N(u) + ' – ' + b(G.N(a.v)) + ': đã được đánh dấu → bỏ qua'); es[a.e] = 'dim'; }
+      });
+      ns[u] = 'vis';
+    }
+    var miss = G.names.filter(function (_, i) { return !vis[i]; });
+    snap('Hoàn tất! Thứ tự BFS: ' + b(order.map(G.N).join(' → ')) + '. Các cạnh xanh tạo thành cây BFS (đường đi ít cạnh nhất từ ' + G.N(G.start) + ').' + (miss.length ? ' Không tới được: ' + esc(miss.join(', ')) + '.' : ''));
+    return gOut(G, { steps: rec.steps, result: order.map(G.N), leg: [['cur', 'đang xét'], ['q', 'trong hàng đợi'], ['vis', 'đã thăm'], ['done', 'cạnh cây BFS']] }, function (x) {
+      return [chips(x.q, { label: 'Hàng đợi:', empty: '(rỗng)', maxW: 380 }), chips(x.order, { label: 'Thứ tự thăm:', empty: '—', maxW: 380 })];
+    });
+  });
+
+  reg('graph', 'dfs', function (P) {
+    var G = graphSetup(P), n = G.names.length, rec = new Rec(['đỉnh đã thăm', 'cạnh đã xét']);
+    var ns = mk(n, function () { return ''; }), es = G.edges.map(function () { return ''; }), vis = {}, stk = [], order = [];
+    function snap(c) { rec.s(c, { ns: ns.slice(), es: es.slice(), stk: stk.map(G.N), order: order.map(G.N) }); }
+    snap('Bắt đầu DFS (đệ quy) từ ' + b(G.N(G.start)) + ': đi sâu hết mức theo một nhánh rồi mới quay lui.');
+    (function dfs(u, from) {
+      vis[u] = 1; order.push(u); stk.push(u); rec.inc('đỉnh đã thăm');
+      if (from != null) ns[from] = 'q';
+      ns[u] = 'cur';
+      snap('Thăm ' + b(G.N(u)) + ' (push vào stack đệ quy).');
+      G.adj[u].forEach(function (a) {
+        if (es[a.e] === 'done' && vis[a.v]) return;
+        rec.inc('cạnh đã xét');
+        if (!vis[a.v]) { es[a.e] = 'done'; snap(G.N(u) + ' – ' + b(G.N(a.v)) + ': chưa thăm → đi sâu vào ' + G.N(a.v)); dfs(a.v, u); ns[u] = 'cur'; snap('Quay lại ' + b(G.N(u)) + ', xét tiếp các đỉnh kề còn lại.'); }
+        else { var o = es[a.e]; es[a.e] = 'cmp'; snap(G.N(u) + ' – ' + b(G.N(a.v)) + ': đã thăm → bỏ qua'); es[a.e] = o || 'dim'; }
+      });
+      stk.pop(); ns[u] = 'vis';
+    })(G.start, null);
+    snap('Hoàn tất! Thứ tự DFS: ' + b(order.map(G.N).join(' → ')) + '.');
+    return gOut(G, { steps: rec.steps, result: order.map(G.N), leg: [['cur', 'đang xét'], ['q', 'trên stack (chờ quay lại)'], ['vis', 'đã xong'], ['done', 'cạnh cây DFS']] }, function (x) {
+      return [chips(x.stk, { label: 'Stack:', empty: '(rỗng)', maxW: 380 }), chips(x.order, { label: 'Thứ tự thăm:', empty: '—', maxW: 380 })];
+    });
+  });
+
+  function distMap(G, d) { var o = {}; G.names.forEach(function (nm, i) { o[nm] = d[i] === Infinity ? null : d[i]; }); return o; }
+
+  reg('graph', 'dijkstra', function (P) {
+    var G = graphSetup(P), n = G.names.length, rec = new Rec(['lần relax', 'cập nhật']);
+    G.edges.forEach(function (e) { if (e.w < 0) fail('Dijkstra không dùng được với trọng số âm (cạnh ' + esc(G.E(G.edges.indexOf(e))) + '). Hãy dùng <code>bellman-ford</code>.'); });
+    var d = mk(n, function () { return Infinity; }), pe = mk(n, function () { return -1; }), done = {}, cur = -1, ex = -1;
+    d[G.start] = 0;
+    function snap(c) {
+      var es = G.edges.map(function () { return ''; }); pe.forEach(function (k) { if (k >= 0) es[k] = 'done'; }); if (ex >= 0) es[ex] = 'cmp';
+      var ns = mk(n, function (i) { return i === cur ? 'cur' : done[i] ? 'vis' : (d[i] < Infinity ? 'q' : ''); });
+      rec.s(c, { ns: ns, es: es, bd: d.map(fmt), d: d.slice(), prev: pe.map(function (k, i) { return k < 0 ? '-' : G.N(G.edges[k].u === i ? G.edges[k].v : G.edges[k].u); }), dn: Object.assign({}, done) });
+    }
+    snap('Khởi tạo: dist[' + G.N(G.start) + '] = 0, các đỉnh khác = ∞. Mỗi vòng chốt đỉnh chưa chốt có dist nhỏ nhất.');
+    while (true) {
+      var u = -1;
+      for (var i = 0; i < n; i++) if (!done[i] && d[i] < Infinity && (u < 0 || d[i] < d[u])) u = i;
+      if (u < 0) break;
+      done[u] = 1; cur = u; ex = -1;
+      snap('Chọn ' + b(G.N(u)) + ' (dist nhỏ nhất chưa chốt = ' + d[u] + ') → chốt: dist[' + G.N(u) + '] = ' + b(d[u]) + ' là tối ưu.');
+      G.adj[u].forEach(function (a) {
+        if (done[a.v]) return;
+        rec.inc('lần relax'); ex = a.e;
+        var nd = d[u] + a.w, hd = 'Relax ' + G.N(u) + ' → ' + G.N(a.v) + ': dist[' + G.N(u) + '] + ' + a.w + ' = ' + nd;
+        if (nd < d[a.v]) { var old = d[a.v]; d[a.v] = nd; pe[a.v] = a.e; rec.inc('cập nhật'); snap(hd + ' < ' + fmt(old) + ' → cập nhật dist[' + G.N(a.v) + '] = ' + b(nd)); }
+        else snap(hd + ' ≥ ' + d[a.v] + ' → giữ nguyên');
+      });
+      ex = -1;
+    }
+    cur = -1;
+    snap('Hoàn tất! Khoảng cách ngắn nhất từ ' + G.N(G.start) + ': ' + G.names.map(function (nm, i) { return nm + ' = ' + b(d[i]); }).join(', ') + '. Cạnh xanh = cây đường đi ngắn nhất.');
+    return gOut(G, { steps: rec.steps, result: distMap(G, d), leg: [['cur', 'vừa chốt'], ['vis', 'đã chốt'], ['q', 'đã có dist tạm'], ['cmp', 'cạnh đang relax'], ['done', 'cạnh đường đi ngắn nhất']] }, function (x) {
+      return [vstack([gTable(G, x.d, 'dist', x.d.map(function (_, i) { return x.dn[i] ? 'vis' : ''; })), gTable(G, x.prev, 'trước')], 4, true)];
+    });
+  });
+
+  reg('graph', 'bellman-ford', function (P) {
+    var G = graphSetup(P), n = G.names.length, rec = new Rec(['lần relax', 'cập nhật']);
+    var d = mk(n, function () { return Infinity; }), pe = mk(n, function () { return -1; }), ex = -1, hot = -1, neg = false;
+    d[G.start] = 0;
+    var dirs = [];
+    G.edges.forEach(function (e, k) { dirs.push({ u: e.u, v: e.v, w: e.w, e: k }); if (!G.directed) dirs.push({ u: e.v, v: e.u, w: e.w, e: k }); });
+    function snap(c, bad) {
+      var es = G.edges.map(function () { return ''; }); pe.forEach(function (k) { if (k >= 0) es[k] = 'done'; }); if (ex >= 0) es[ex] = bad ? 'bad' : 'cmp';
+      var ns = mk(n, function (i) { return i === hot ? 'cur' : (d[i] < Infinity ? 'q' : ''); });
+      rec.s(c, { ns: ns, es: es, bd: d.map(fmt), d: d.slice(), hot: hot });
+    }
+    snap('Khởi tạo: dist[' + G.N(G.start) + '] = 0, còn lại ∞. Lặp tối đa V − 1 = ' + (n - 1) + ' vòng; mỗi vòng relax lần lượt mọi cạnh (chấp nhận trọng số âm).');
+    for (var it = 1; it < n; it++) {
+      var changed = false; ex = -1; hot = -1;
+      snap('Vòng ' + b(it) + ': duyệt tất cả ' + dirs.length + ' cạnh theo thứ tự.');
+      dirs.forEach(function (q) {
+        ex = q.e; hot = -1; rec.inc('lần relax');
+        var hd = 'Vòng ' + it + ', cạnh ' + G.N(q.u) + '→' + G.N(q.v) + ' (' + q.w + '): ';
+        if (d[q.u] === Infinity) { snap(hd + 'dist[' + G.N(q.u) + '] = ∞ → chưa relax được'); return; }
+        var nd = d[q.u] + q.w;
+        if (nd < d[q.v]) { var old = d[q.v]; d[q.v] = nd; pe[q.v] = q.e; changed = true; hot = q.v; rec.inc('cập nhật'); snap(hd + d[q.u] + ' + ' + q.w + ' = ' + nd + ' < ' + fmt(old) + ' → cập nhật dist[' + G.N(q.v) + '] = ' + b(nd)); }
+        else snap(hd + d[q.u] + ' + ' + q.w + ' = ' + nd + ' ≥ ' + d[q.v] + ' → giữ nguyên');
+      });
+      ex = -1; hot = -1;
+      if (!changed) { snap('Vòng ' + it + ' không có cập nhật nào → dist đã ổn định, dừng sớm.'); break; }
+    }
+    ex = -1; hot = -1;
+    snap('Kiểm tra chu trình âm: relax thêm một vòng — nếu còn cải thiện được thì có chu trình âm.');
+    dirs.some(function (q) {
+      if (d[q.u] !== Infinity && d[q.u] + q.w < d[q.v]) { neg = true; ex = q.e; snap('Cạnh ' + G.N(q.u) + '→' + G.N(q.v) + ' vẫn relax được → ' + b('có chu trình âm') + '! Khoảng cách ngắn nhất không xác định.', true); return true; }
+      return false;
+    });
+    if (!neg) snap('Không cạnh nào relax thêm được → không có chu trình âm. Kết quả: ' + G.names.map(function (nm, i) { return nm + ' = ' + b(d[i]); }).join(', ') + '.');
+    return gOut(G, { steps: rec.steps, result: { dist: distMap(G, d), negCycle: neg }, leg: [['cmp', 'cạnh đang relax'], ['cur', 'vừa cập nhật'], ['q', 'đã có dist'], ['done', 'cạnh đường đi hiện tại'], ['bad', 'chu trình âm']] }, function (x) {
+      return [gTable(G, x.d, 'dist', x.d.map(function (_, i) { return i === x.hot ? 'cur' : ''; }))];
+    });
+  });
+
+  function mstCheck(G) { if (G.directed) fail('Cây khung nhỏ nhất (Prim/Kruskal) cần đồ thị vô hướng — bỏ <code>data-directed</code>.'); }
+  reg('graph', 'prim', function (P) {
+    var G = graphSetup(P), n = G.names.length, rec = new Rec(['cạnh đã xét']); mstCheck(G);
+    var inT = {}, mst = [], total = 0, cand = [], pick = -1;
+    inT[G.start] = 1;
+    function snap(c) {
+      var es = G.edges.map(function () { return ''; }); cand.forEach(function (k) { es[k] = 'q'; }); mst.forEach(function (k) { es[k] = 'done'; }); if (pick >= 0) es[pick] = 'cmp';
+      rec.s(c, { ns: mk(n, function (i) { return inT[i] ? 'vis' : ''; }), es: es, mst: mst.map(G.E), total: total });
+    }
+    snap('Prim: bắt đầu cây từ ' + b(G.N(G.start)) + '. Mỗi bước chọn cạnh nhẹ nhất nối cây với một đỉnh bên ngoài.');
+    while (Object.keys(inT).length < n) {
+      cand = []; pick = -1;
+      G.edges.forEach(function (e, k) { if (!!inT[e.u] !== !!inT[e.v]) { cand.push(k); rec.inc('cạnh đã xét'); if (pick < 0 || e.w < G.edges[pick].w) pick = k; } });
+      if (pick < 0) { snap('Không còn cạnh nào nối ra ngoài → đồ thị không liên thông; đây là cây khung của thành phần chứa ' + G.N(G.start) + '.'); break; }
+      var e = G.edges[pick], nv = inT[e.u] ? e.v : e.u;
+      snap('Các cạnh cắt (tím): ' + cand.map(function (k) { return esc(G.E(k)); }).join(', ') + ' → nhẹ nhất: ' + b(G.E(pick)));
+      inT[nv] = 1; mst.push(pick); total += e.w; cand = []; var pk = pick; pick = -1;
+      snap('Thêm cạnh ' + b(G.E(pk)) + ' và đỉnh ' + b(G.N(nv)) + ' vào cây. Tổng trọng số = ' + b(total));
+    }
+    snap('Hoàn tất! Cây khung nhỏ nhất gồm ' + mst.length + ' cạnh, tổng trọng số = ' + b(total) + '.');
+    return gOut(G, { steps: rec.steps, result: { total: total, edges: mst.map(G.E) }, leg: [['vis', 'đỉnh trong cây'], ['q', 'cạnh ứng viên'], ['cmp', 'cạnh được chọn'], ['done', 'cạnh của MST']] }, function (x) {
+      return [chips(x.mst, { label: 'MST (tổng ' + x.total + '):', empty: '—', maxW: 400 })];
+    });
+  });
+
+  reg('graph', 'kruskal', function (P) {
+    var G = graphSetup(P), n = G.names.length, rec = new Rec(['cạnh đã xét']); mstCheck(G);
+    var order = G.edges.map(function (_, k) { return k; }).sort(function (a, c) { return G.edges[a].w - G.edges[c].w || a - c; });
+    var par = range(n), rk = mk(n, function () { return 0; }), status = {}, mst = [], total = 0, curE = -1;
+    function find(x) { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; } return x; }
+    function snap(c) {
+      var es = G.edges.map(function (_, k) { return status[k] === 'ok' ? 'done' : status[k] === 'skip' ? 'dim' : ''; }); if (curE >= 0) es[curE] = status[curE] === 'skip' ? 'bad' : 'cmp';
+      var roots = range(n).map(function (i) { var r = i; while (par[r] !== r) r = par[r]; return r; });
+      var ns = mk(n, function (i) { return curE >= 0 && (G.edges[curE].u === i || G.edges[curE].v === i) ? 'cur' : (mst.length && roots.filter(function (r) { return r === roots[i]; }).length > 1 ? 'vis' : ''); });
+      rec.s(c, { ns: ns, es: es, list: order.map(G.E), lc: order.map(function (k) { return k === curE ? (status[k] === 'skip' ? 'bad' : 'cmp') : status[k] === 'ok' ? 'done' : status[k] === 'skip' ? 'dim' : ''; }), grp: roots.map(G.N), total: total });
+    }
+    snap('Kruskal: sắp xếp các cạnh theo trọng số tăng dần, lần lượt chọn cạnh nếu nó không tạo chu trình (kiểm tra bằng Union-Find).');
+    for (var t = 0; t < order.length && mst.length < n - 1; t++) {
+      var k = order[t], e = G.edges[k], ru = find(e.u), rv = find(e.v); curE = k; rec.inc('cạnh đã xét');
+      if (ru !== rv) {
+        if (rk[ru] < rk[rv]) { var tmp = ru; ru = rv; rv = tmp; }
+        par[rv] = ru; if (rk[ru] === rk[rv]) rk[ru]++;
+        status[k] = 'ok'; mst.push(k); total += e.w;
+        snap('Cạnh ' + b(G.E(k)) + ': ' + G.N(e.u) + ' và ' + G.N(e.v) + ' thuộc hai nhóm khác nhau → ' + b('chọn') + ', gộp hai nhóm. Tổng = ' + total);
+      } else { status[k] = 'skip'; snap('Cạnh ' + b(G.E(k)) + ': ' + G.N(e.u) + ' và ' + G.N(e.v) + ' đã cùng nhóm → sẽ tạo chu trình → ' + b('bỏ qua')); }
+    }
+    curE = -1;
+    snap((mst.length === n - 1 ? 'Đủ V − 1 = ' + (n - 1) + ' cạnh → xong! ' : 'Hết cạnh — đồ thị không liên thông. ') + 'Tổng trọng số cây khung nhỏ nhất = ' + b(total) + '.');
+    return gOut(G, { steps: rec.steps, result: { total: total, edges: mst.map(G.E) }, leg: [['cmp', 'cạnh đang xét'], ['done', 'cạnh được chọn'], ['bad', 'bỏ (tạo chu trình)'], ['vis', 'đỉnh đã nối']] }, function (x) {
+      return [chips(x.list, { label: 'Cạnh đã sắp:', cls: x.lc, maxW: 400 }), gTable(G, x.grp, 'nhóm (gốc)')];
+    });
+  });
+
+  reg('graph', 'topo', function (P) {
+    var G = graphSetup(P), n = G.names.length, rec = new Rec(['cạnh đã bỏ']);
+    if (!G.directed) fail('Topo sort cần đồ thị có hướng: thêm <code>data-directed="true"</code>.');
+    var indeg = mk(n, function () { return 0; }), es = G.edges.map(function () { return ''; }), q = [], order = [], ns = mk(n, function () { return ''; }), hi = -1;
+    G.edges.forEach(function (e) { indeg[e.v]++; });
+    function snap(c) { rec.s(c, { ns: ns.slice(), es: es.slice(), indeg: indeg.slice(), q: q.map(G.N), order: order.map(G.N), hi: hi, bd: null }); }
+    snap('Kahn: đếm in-degree (số cạnh đi vào) của mỗi đỉnh. Đỉnh có in-degree 0 không phụ thuộc gì → có thể làm trước.');
+    for (var i = 0; i < n; i++) if (indeg[i] === 0) { q.push(i); ns[i] = 'q'; }
+    snap('Cho các đỉnh có in-degree 0 vào hàng đợi: ' + b(q.map(G.N).join(', ') || '(không có)'));
+    while (q.length) {
+      var u = q.shift(); order.push(u); ns[u] = 'cur'; hi = -1;
+      snap('Lấy ' + b(G.N(u)) + ' ra → thêm vào thứ tự topo. Bỏ các cạnh đi ra từ ' + G.N(u) + '.');
+      G.adj[u].forEach(function (a) {
+        indeg[a.v]--; es[a.e] = 'dim'; hi = a.v; rec.inc('cạnh đã bỏ');
+        if (indeg[a.v] === 0) { q.push(a.v); ns[a.v] = 'q'; }
+        es[a.e] = 'cmp';
+        snap('Bỏ cạnh ' + G.N(u) + '→' + G.N(a.v) + ': in-degree[' + G.N(a.v) + '] = ' + b(indeg[a.v]) + (indeg[a.v] === 0 ? ' → cho ' + G.N(a.v) + ' vào hàng đợi' : ''));
+        es[a.e] = 'dim';
+      });
+      ns[u] = 'done'; hi = -1;
+    }
+    var ok = order.length === n;
+    snap(ok ? 'Hoàn tất! Thứ tự topo: ' + b(order.map(G.N).join(' → ')) + '.' : 'Còn ' + (n - order.length) + ' đỉnh có in-degree > 0 → đồ thị có ' + b('chu trình') + ', không tồn tại thứ tự topo.');
+    return gOut(G, { steps: rec.steps, result: ok ? order.map(G.N) : null, leg: [['q', 'trong hàng đợi'], ['cur', 'đang lấy ra'], ['done', 'đã xếp'], ['cmp', 'cạnh vừa bỏ']] }, function (x) {
+      return [gTable(G, x.indeg, 'in-degree', x.indeg.map(function (_, i) { return i === x.hi ? 'cmp' : (x.ns[i] === 'done' ? 'dim' : ''); })), chips(x.q, { label: 'Hàng đợi:', empty: '(rỗng)', maxW: 380 }), chips(x.order, { label: 'Thứ tự topo:', empty: '—', maxW: 380 })];
+    });
+  });
+
+  /* ================================================================
+   * 13. GRID (mê cung)
+   * ================================================================ */
+  function gridSetup(P) {
+    var rows = P.str('grid', { ex: 'S..#|.#..|...E', maxLen: 400 }).split('|').map(function (r) { return r.trim(); });
+    var C0 = rows[0].length, S = null, E = null;
+    if (rows.length > 12 || C0 > 16) fail('Lưới quá lớn (tối đa 12 hàng × 16 cột).');
+    rows.forEach(function (r, i) {
+      if (r.length !== C0) fail('Các hàng của <code>data-grid</code> phải dài bằng nhau (hàng ' + i + ' dài ' + r.length + ', hàng 0 dài ' + C0 + ').');
+      if (!/^[S.#E]+$/.test(r)) fail('<code>data-grid</code> chỉ dùng các ký tự <code>S . # E</code> (hàng ' + i + ': "' + esc(r) + '").');
+      for (var j = 0; j < r.length; j++) { if (r[j] === 'S') { if (S) fail('Chỉ được có một ô S.'); S = [i, j]; } if (r[j] === 'E') { if (E) fail('Chỉ được có một ô E.'); E = [i, j]; } }
+    });
+    if (!S || !E) fail('<code>data-grid</code> cần có đúng một ô <code>S</code> (xuất phát) và một ô <code>E</code> (đích).');
+    return { g: rows, R: rows.length, C: C0, S: S, E: E };
+  }
+  var DIRS = [[0, 1, 'phải'], [1, 0, 'xuống'], [0, -1, 'trái'], [-1, 0, 'lên']];
+  function gridRender(Gd) {
+    return function (x) {
+      var cs = Gd.C > 12 ? 26 : 32, s = '';
+      for (var r = 0; r < Gd.R; r++) for (var c = 0; c < Gd.C; c++) {
+        var ch = Gd.g[r][c], k = r * Gd.C + c, X = c * cs, Y = r * cs;
+        if (ch === '#') { s += R(X + 1, Y + 1, cs - 2, cs - 2, '', 2, 'av-wall'); continue; }
+        s += R(X + 1, Y + 1, cs - 2, cs - 2, x.cl[k] || '', 3);
+        if (ch === 'S' || ch === 'E') s += T(X + cs / 2, Y + cs / 2, ch, 'av-v');
+        else if (x.dist && x.dist[k] != null) s += T(X + cs / 2, Y + cs / 2, x.dist[k], 'av-i');
+      }
+      return blk(Gd.C * cs, Gd.R * cs, s);
+    };
+  }
+  var LEG_GRID = [['cur', 'ô đang xét'], ['q', 'biên (chờ xét)'], ['vis', 'đã thăm'], ['path', 'đường đi']];
+  reg('grid', 'bfs-path', function (P) {
+    var Gd = gridSetup(P), R0 = Gd.R, C0 = Gd.C, rec = new Rec(['ô đã thăm']), cl = {}, dist = {}, par = {}, q = [], found = -1;
+    var key = function (r, c) { return r * C0 + c; }, nm = function (k) { return '(' + Math.floor(k / C0) + ',' + (k % C0) + ')'; };
+    function snap(c) { rec.s(c, { cl: Object.assign({}, cl), dist: Object.assign({}, dist) }); }
+    var s0 = key(Gd.S[0], Gd.S[1]), e0 = key(Gd.E[0], Gd.E[1]);
+    dist[s0] = 0; q.push(s0); cl[s0] = 'q';
+    snap('BFS từ S ' + nm(s0) + ': loang ra theo từng "lớp" khoảng cách. Số trong ô = số bước từ S.');
+    while (q.length && found < 0) {
+      var u = q.shift(), ur = Math.floor(u / C0), uc = u % C0, added = []; cl[u] = 'cur'; rec.inc('ô đã thăm');
+      DIRS.forEach(function (d) {
+        var nr = ur + d[0], nc = uc + d[1];
+        if (nr < 0 || nc < 0 || nr >= R0 || nc >= C0 || Gd.g[nr][nc] === '#') return;
+        var k = key(nr, nc); if (k in dist) return;
+        dist[k] = dist[u] + 1; par[k] = u; q.push(k); cl[k] = 'q'; added.push(nm(k));
+        if (k === e0 && found < 0) found = k;
+      });
+      snap('Lấy ' + nm(u) + ' (khoảng cách ' + dist[u] + ') khỏi hàng đợi → ' + (added.length ? 'thêm ' + added.length + ' ô kề chưa thăm: ' + added.join(' ') : 'không có ô kề mới') + (found >= 0 ? ' — trong đó có E!' : ''));
+      cl[u] = 'vis';
+    }
+    var len = -1;
+    if (found >= 0) {
+      len = dist[found];
+      var c = found; while (c != null) { cl[c] = 'path'; c = par[c]; }
+      snap('Tới E sau ' + b(len) + ' bước — BFS đảm bảo đây là đường ' + b('ngắn nhất') + '. Lần ngược theo ô cha để dựng đường đi.');
+    } else snap('Hàng đợi rỗng mà chưa tới E → ' + b('không có đường đi') + '.');
+    return { steps: rec.steps, result: len, leg: LEG_GRID, render: gridRender(Gd) };
+  });
+  reg('grid', 'dfs-path', function (P) {
+    var Gd = gridSetup(P), R0 = Gd.R, C0 = Gd.C, rec = new Rec(['ô đã thăm', 'quay lui']), cl = {}, vis = {}, path = [];
+    var key = function (r, c) { return r * C0 + c; }, nm = function (k) { return '(' + Math.floor(k / C0) + ',' + (k % C0) + ')'; };
+    function snap(c) { var m = Object.assign({}, cl); path.forEach(function (k, i) { m[k] = i === path.length - 1 ? 'cur' : 'path'; }); rec.s(c, { cl: m }); }
+    var s0 = key(Gd.S[0], Gd.S[1]), e0 = key(Gd.E[0], Gd.E[1]);
+    snap('DFS từ S: đi sâu theo thứ tự hướng phải → xuống → trái → lên; gặp ngõ cụt thì quay lui.');
+    var ok = (function go(u) {
+      vis[u] = 1; path.push(u); rec.inc('ô đã thăm');
+      if (u === e0) { snap('Tới E! Đường tìm được dài ' + b(path.length - 1) + ' bước (DFS không đảm bảo ngắn nhất).'); return true; }
+      snap('Đi tới ' + nm(u) + ' (độ sâu ' + (path.length - 1) + ')');
+      var ur = Math.floor(u / C0), uc = u % C0;
+      for (var i = 0; i < 4; i++) {
+        var nr = ur + DIRS[i][0], nc = uc + DIRS[i][1];
+        if (nr < 0 || nc < 0 || nr >= R0 || nc >= C0 || Gd.g[nr][nc] === '#' || vis[key(nr, nc)]) continue;
+        if (go(key(nr, nc))) return true;
+      }
+      path.pop(); cl[u] = 'vis'; rec.inc('quay lui');
+      snap(nm(u) + ' là ngõ cụt → quay lui' + (path.length ? ' về ' + nm(path[path.length - 1]) : ''));
+      return false;
+    })(s0);
+    if (!ok) snap('Đã thử hết mọi hướng → ' + b('không có đường đi') + '.');
+    return { steps: rec.steps, result: ok ? path.length - 1 : -1, leg: [['cur', 'ô hiện tại'], ['path', 'đường đang đi'], ['vis', 'ngõ cụt (đã quay lui)']], render: gridRender(Gd) };
+  });
+
+  /* ================================================================
+   * 14. UNION-FIND
+   * ================================================================ */
+  reg('unionfind', 'ops', function (P) {
+    var n = P.int('n', { min: 1, max: 12, ex: '6' }), ops = P.list('ops', { ex: 'union 0 1,find 1', maxLen: 20 }).map(function (o) {
+      var m = o.match(/^(union|find|connected)\s+(\d+)(?:\s+(\d+))?$/i);
+      if (!m || (m[1].toLowerCase() === 'find') !== (m[3] == null)) fail('Thao tác "' + esc(o) + '" không hợp lệ. Dùng <code>union a b</code>, <code>find a</code> hoặc <code>connected a b</code>.');
+      var a = +m[2], c = m[3] != null ? +m[3] : null;
+      if (a >= n || (c != null && c >= n)) fail('Thao tác "' + esc(o) + '": chỉ số phải nằm trong 0..' + (n - 1) + '.');
+      return { op: m[1].toLowerCase(), a: a, b: c, raw: o };
+    });
+    var par = range(n), rk = mk(n, function () { return 0; }), rec = new Rec(['bước đi lên', 'nén']), k = -1;
+    function snap(c, cls) { rec.s(c, { p: par.slice(), rk: rk.slice(), cls: cls || {}, k: k }); }
+    function findS(x, show) {
+      var path = [x], c = x;
+      while (par[c] !== c) { c = par[c]; path.push(c); rec.inc('bước đi lên'); }
+      var root = c, cls = {};
+      path.forEach(function (q) { cls[q] = 'cmp'; }); cls[root] = 'done';
+      if (show) snap('find(' + x + '): đi lên theo parent ' + b(path.join(' → ')) + ' → gốc là ' + b(root), cls);
+      var moved = path.slice(0, -2).filter(function (q) { return par[q] !== root; });
+      if (moved.length) {
+        moved.forEach(function (q) { par[q] = root; rec.inc('nén'); cls[q] = 'swap'; });
+        snap('Nén đường đi: gắn ' + b(moved.join(', ')) + ' trỏ thẳng về gốc ' + root + ' → lần sau find chỉ 1 bước', cls);
+      }
+      return root;
+    }
+    snap('Union-Find với ' + n + ' phần tử: ban đầu mỗi phần tử là một nhóm riêng (parent[i] = i). Dùng union by rank + path compression.');
+    ops.forEach(function (o, i) {
+      k = i;
+      if (o.op === 'find') { var r = findS(o.a, true); snap(code(o.raw) + ' → ' + b(r), M(o.a, 'cur', r, 'done')); return; }
+      var ra = findS(o.a, false), rb = findS(o.b, false);
+      if (o.op === 'connected') { snap(code(o.raw) + ': find(' + o.a + ') = ' + ra + ', find(' + o.b + ') = ' + rb + ' → ' + b(ra === rb ? 'true (cùng nhóm)' : 'false (khác nhóm)'), M(o.a, 'cur', o.b, 'cur')); return; }
+      if (ra === rb) { snap(code(o.raw) + ': find(' + o.a + ') = find(' + o.b + ') = ' + ra + ' → đã cùng nhóm, không làm gì', M(ra, 'done')); return; }
+      var hd = code(o.raw) + ': find(' + o.a + ') = ' + ra + ' (hạng ' + rk[ra] + '), find(' + o.b + ') = ' + rb + ' (hạng ' + rk[rb] + ')';
+      var big = ra, sm = rb;
+      if (rk[ra] < rk[rb]) { big = rb; sm = ra; }
+      var eq = rk[ra] === rk[rb];
+      par[sm] = big; if (eq) rk[big]++;
+      snap(hd + ' → ' + (eq ? 'cùng hạng: gắn gốc ' + sm + ' vào ' + big + ', hạng[' + big + '] = ' + rk[big] : 'gắn gốc hạng thấp ' + sm + ' vào gốc hạng cao ' + big), M(sm, 'swap', big, 'done'));
+    });
+    k = ops.length;
+    var groups = range(n).filter(function (i) { return par[i] === i; }).length;
+    snap('Hoàn tất! parent = ' + bA(par) + ', còn ' + b(groups) + ' nhóm.');
+    return { steps: rec.steps, result: par.slice(), leg: [['cmp', 'đường đi lên gốc'], ['done', 'gốc'], ['swap', 'vừa đổi parent'], ['cur', 'phần tử được hỏi']],
+      render: function (x) {
+        var kids = mk(n, function () { return []; });
+        x.p.forEach(function (pp, i) { if (pp !== i) kids[pp].push(i); });
+        var nodes = mk(n, function (i) { return { kids: kids[i] }; }), off = 0, s = '', H = 0;
+        range(n).filter(function (i) { return x.p[i] === i; }).forEach(function (r) {
+          var dm = layoutTree(nodes, r, 38, 50);
+          (function sh(i) { nodes[i].px += off; nodes[i].kids.forEach(sh); })(r);
+          off += dm.w + 6; H = Math.max(H, dm.h);
+        });
+        nodes.forEach(function (nd, i) { if (x.p[i] !== i) { var q = nodes[x.p[i]]; s += arrow(nd.px, nd.py, q.px, q.py, x.cls[i] === 'swap' ? 'swap' : '', 15, 16); } });
+        nodes.forEach(function (nd, i) { s += C(nd.px, nd.py, 15, x.cls[i]) + T(nd.px, nd.py, i, 'av-v'); });
+        return vstack([blk(off, H, s), cells(x.p, { w: 30, idx: true, label: 'parent', labelW: 58, cls: x.p.map(function (_, i) { return x.cls[i] || ''; }) }),
+          chips(ops.map(function (o) { return o.raw; }), { label: 'Thao tác:', maxW: 400, cls: ops.map(function (_, i) { return i === x.k ? 'cur' : (i < x.k ? 'dim' : ''); }) })], 12);
+      } };
+  });
+
+  /* ================================================================
+   * 15. TRIE
+   * ================================================================ */
+  reg('trie', 'insert', function (P) {
+    var words = P.list('input', { ex: 'cat,car,cart,dog', maxLen: 10, itemMax: 10 }).map(function (w) { return w.toLowerCase(); });
+    var nodes = [{ ch: '', kids: [], end: false }], rec = new Rec(['nút mới']), wi = -1;
+    function snap(c, cls) { rec.s(c, { nodes: clone(nodes), cls: cls || {}, wi: wi }); }
+    snap('Trie bắt đầu với một nút gốc rỗng. Mỗi cạnh là một ký tự; nút có viền đôi đánh dấu kết thúc một từ (isEnd).');
+    words.forEach(function (w, i) {
+      wi = i;
+      var cur = 0, path = M(0, 'vis');
+      snap('Chèn từ ' + b('"' + w + '"') + ': bắt đầu từ gốc.', path);
+      for (var t = 0; t < w.length; t++) {
+        var ch = w[t], nx = -1;
+        nodes[cur].kids.forEach(function (k) { if (nodes[k].ch === ch) nx = k; });
+        if (nx >= 0) { cur = nx; snap('Ký tự ' + b("'" + ch + "'") + ' đã có → đi xuống (dùng chung tiền tố "' + esc(w.slice(0, t + 1)) + '")', Object.assign({}, path, M(cur, 'cmp'))); }
+        else {
+          nodes.push({ ch: ch, kids: [], end: false }); nx = nodes.length - 1; rec.inc('nút mới');
+          var ks = nodes[cur].kids; ks.push(nx); ks.sort(function (a, c) { return nodes[a].ch < nodes[c].ch ? -1 : 1; });
+          cur = nx; snap('Ký tự ' + b("'" + ch + "'") + ' chưa có → tạo nút mới', Object.assign({}, path, M(cur, 'new')));
+        }
+        path[cur] = 'vis';
+      }
+      var had = nodes[cur].end; nodes[cur].end = true;
+      snap(had ? 'Từ "' + esc(w) + '" đã có sẵn (isEnd đã = true).' : 'Hết từ → đánh dấu isEnd = true tại nút ' + b("'" + nodes[cur].ch + "'") + '. Đã chèn ' + b('"' + w + '"') + '.', Object.assign({}, path, M(cur, 'done')));
+    });
+    wi = words.length;
+    var all = [];
+    (function dfs(i, pre) { if (nodes[i].end) all.push(pre); nodes[i].kids.forEach(function (k) { dfs(k, pre + nodes[k].ch); }); })(0, '');
+    snap('Hoàn tất! Trie có ' + b(nodes.length - 1) + ' nút ký tự cho ' + words.length + ' từ — các từ chung tiền tố dùng chung nút.');
+    return { steps: rec.steps, result: { nodes: nodes.length - 1, words: all }, leg: [['vis', 'đường đi'], ['cmp', 'ký tự đã có'], ['new', 'nút mới tạo'], ['done', 'kết thúc từ']],
+      render: function (x) {
+        var nd = x.nodes, dm = layoutTree(nd, 0, 34, 46), s = '';
+        nd.forEach(function (q) { q.kids.forEach(function (k) { s += L(q.px, q.py + 13, nd[k].px, nd[k].py - 13, x.cls[k] && x.cls[q.kids ? k : k] ? 'vis' : ''); }); });
+        nd.forEach(function (q, i) {
+          if (q.end) s += '<circle cx="' + r1(q.px) + '" cy="' + r1(q.py) + '" r="17" class="av-end' + sc(x.cls[i] || 'done') + '"/>';
+          s += C(q.px, q.py, 13, x.cls[i] || (q.end ? 'done' : '')) + T(q.px, q.py, i === 0 ? '•' : q.ch, 'av-v');
+        });
+        return vstack([blk(Math.max(dm.w, 60), dm.h + 4, s), chips(words, { label: 'Từ:', maxW: 380, cls: words.map(function (_, i) { return i === x.wi ? 'cur' : (i < x.wi ? 'done' : ''); }) })], 12);
+      } };
+  });
+
+  /* ================================================================
+   * 16. DP
+   * ================================================================ */
+  /** Bảng 1 chiều tự xuống dòng mỗi `per` ô. */
+  function dp1(vals, cls, per, w) {
+    var rows = [];
+    for (var s0 = 0; s0 < vals.length; s0 += per) {
+      var part = vals.slice(s0, s0 + per);
+      rows.push(cells(part, { w: w, h: 28, idx: part.map(function (_, t) { return t + s0; }), cls: part.map(function (_, t) { return cls[t + s0] || ''; }) }));
+    }
+    return vstack(rows, 6, true);
+  }
+  /** Bảng 2 chiều có tiêu đề hàng/cột. cls: {"i,j": state} */
+  function dp2(vals, rows, cols, cls, o) {
+    o = o || {};
+    var cw = o.cw || 30, ch = 26, lw = o.lw || 30, th = 20, s = '';
+    if (o.corner) s += T(lw - 6, th / 2, o.corner, 'av-i', 'end');
+    cols.forEach(function (c, j) { s += T(lw + j * cw + cw / 2 - 1, th / 2, c, 'av-lb'); });
+    rows.forEach(function (r, i) { s += T(lw - 6, th + i * ch + ch / 2 - 1, r, 'av-lb', 'end'); });
+    vals.forEach(function (row, i) {
+      row.forEach(function (v, j) {
+        var st = cls[i + ',' + j] || '';
+        s += R(lw + j * cw, th + i * ch, cw - 2, ch - 2, st || (v == null ? 'dim' : ''), 3);
+        if (v != null) s += T(lw + j * cw + cw / 2 - 1, th + i * ch + ch / 2 - 1, v, String(fmt(v)).length > 3 ? 'av-v av-sm' : 'av-v');
+      });
+    });
+    return blk(lw + cols.length * cw, th + rows.length * ch, s);
+  }
+  var LEG_DP = [['swap', 'ô đang tính'], ['cmp', 'ô phụ thuộc'], ['path', 'truy vết / đáp án']];
+
+  function fibLike(P, climb) {
+    var n = P.int('n', { min: 0, max: 30, ex: '6' }), rec = new Rec(['phép cộng']), dp = mk(n + 1, function () { return null; });
+    var F = climb ? 'ways' : 'dp';
+    function snap(c, cls) { rec.s(c, { dp: dp.slice(), cls: cls || {} }); }
+    if (climb) {
+      snap('Leo ' + n + ' bậc, mỗi lần 1 hoặc 2 bậc. ways[i] = số cách lên bậc i; bước cuối là 1 bậc (từ i − 1) hoặc 2 bậc (từ i − 2) → ways[i] = ways[i−1] + ways[i−2].');
+      dp[0] = 1; if (n >= 1) dp[1] = 1;
+      snap('Cơ sở: ways[0] = 1 (đứng yên), ways[1] = 1.', M(0, 'path', n >= 1 ? 1 : null, 'path'));
+    } else {
+      snap('Fibonacci bằng quy hoạch động bottom-up: dp[i] = dp[i−1] + dp[i−2], mỗi ô chỉ tính đúng một lần.');
+      dp[0] = 0; if (n >= 1) dp[1] = 1;
+      snap('Cơ sở: dp[0] = 0, dp[1] = 1.', M(0, 'path', n >= 1 ? 1 : null, 'path'));
+    }
+    for (var i = 2; i <= n; i++) {
+      dp[i] = dp[i - 1] + dp[i - 2]; rec.inc('phép cộng');
+      snap(F + '[' + i + '] = ' + F + '[' + (i - 1) + '] + ' + F + '[' + (i - 2) + '] = ' + dp[i - 1] + ' + ' + dp[i - 2] + ' = ' + b(dp[i]), M(i, 'swap', i - 1, 'cmp', i - 2, 'cmp'));
+    }
+    snap('Hoàn tất! ' + (climb ? 'Số cách leo ' + n + ' bậc' : 'fib(' + n + ')') + ' = ' + b(dp[n]) + ' — O(n) thời gian thay vì O(2ⁿ) của đệ quy thuần.', M(n, 'path'));
+    var w = Math.max(32, tw(dp[n], 11.5) + 10);
+    return { steps: rec.steps, result: dp[n], leg: LEG_DP, render: function (x) { return dp1(x.dp, x.cls, 10, w); } };
+  }
+  reg('dp', 'fibonacci', function (P) { return fibLike(P, false); });
+  reg('dp', 'climbing-stairs', function (P) { return fibLike(P, true); });
+
+  reg('dp', 'coin-change', function (P) {
+    var coins = P.nums('coins', { min: 1, max: 50, maxLen: 8, ex: '1,2,5' }), A = P.int('amount', { min: 0, max: 40, ex: '11' });
+    var rec = new Rec(['phép so sánh']), dp = mk(A + 1, function () { return null; }), ch = mk(A + 1, function () { return -1; }), used = [];
+    function snap(c, cls) { rec.s(c, { dp: dp.slice(), cls: cls || {}, used: used.slice() }); }
+    snap('Đổi ' + b(A) + ' bằng ít đồng xu nhất với các mệnh giá ' + bA(coins) + '. dp[x] = số xu ít nhất để tạo ra x; dp[x] = min(dp[x − c] + 1).');
+    dp[0] = 0; snap('Cơ sở: dp[0] = 0 (không cần xu nào).', M(0, 'path'));
+    for (var x = 1; x <= A; x++) {
+      var best = Infinity, cls = M(x, 'swap'), parts = [];
+      coins.forEach(function (c) {
+        if (c > x) return;
+        rec.inc('phép so sánh'); cls[x - c] = 'cmp';
+        var v = dp[x - c] + 1; parts.push('dp[' + (x - c) + '] + 1 = ' + fmt(v));
+        if (v < best) { best = v; ch[x] = c; }
+      });
+      dp[x] = best;
+      snap('dp[' + x + ']: ' + (parts.length ? parts.join(', ') : 'không đồng xu nào ≤ ' + x) + ' → dp[' + x + '] = ' + b(best), cls);
+    }
+    if (dp[A] === Infinity) snap('dp[' + A + '] = ∞ → ' + b('không thể') + ' đổi được ' + A + ' → trả về -1.', M(A, 'bad'));
+    else {
+      var cur = A, pc = {};
+      while (cur > 0) { pc[cur] = 'path'; used.push(ch[cur]); snap('Truy vết: tại ' + cur + ' đã dùng đồng ' + b(ch[cur]) + ' → sang dp[' + (cur - ch[cur]) + ']', Object.assign({}, pc)); cur -= ch[cur]; }
+      pc[0] = 'path';
+      snap('Hoàn tất! Cần ít nhất ' + b(dp[A]) + ' đồng xu: ' + bA(used) + '.', pc);
+    }
+    return { steps: rec.steps, result: dp[A] === Infinity ? -1 : dp[A], leg: LEG_DP,
+      render: function (q) { return vstack([dp1(q.dp, q.cls, 12, 30), chips(q.used, { label: 'Xu đã dùng:', empty: '—', maxW: 380 })], 12, true); } };
+  });
+
+  reg('dp', 'knapsack', function (P) {
+    var wt = P.nums('weights', { min: 1, max: 20, maxLen: 6, ex: '1,3,4,5' }), vl = P.nums('values', { min: 0, max: 99, maxLen: 6, ex: '1,4,5,7' }), W = P.int('capacity', { min: 0, max: 15, ex: '7' });
+    if (wt.length !== vl.length) fail('<code>data-weights</code> và <code>data-values</code> phải có cùng số phần tử.');
+    var n = wt.length, rec = new Rec(['ô đã tính']), dp = mk(n + 1, function () { return mk(W + 1, function () { return null; }); }), take = [];
+    function snap(c, cls) { rec.s(c, { dp: clone(dp), cls: cls || {}, take: take.slice() }); }
+    snap('Balo 0/1 sức chứa ' + b(W) + '. dp[i][w] = giá trị lớn nhất khi chỉ dùng i vật đầu và sức chứa w.');
+    for (var w = 0; w <= W; w++) dp[0][w] = 0;
+    snap('Hàng 0: không có vật nào → giá trị 0 với mọi sức chứa.', (function () { var c = {}; for (var t = 0; t <= W; t++) c['0,' + t] = 'path'; return c; })());
+    for (var i = 1; i <= n; i++) for (w = 0; w <= W; w++) {
+      var no = dp[i - 1][w], cls = {}, cap;
+      cls[i + ',' + w] = 'swap'; cls[(i - 1) + ',' + w] = 'cmp'; rec.inc('ô đã tính');
+      cap = 'Vật ' + i + ' (nặng ' + wt[i - 1] + ', giá ' + vl[i - 1] + '), sức chứa ' + w + ': không lấy = ' + no;
+      if (wt[i - 1] <= w) {
+        var yes = dp[i - 1][w - wt[i - 1]] + vl[i - 1]; cls[(i - 1) + ',' + (w - wt[i - 1])] = 'cmp';
+        dp[i][w] = Math.max(no, yes);
+        cap += '; lấy = dp[' + (i - 1) + '][' + (w - wt[i - 1]) + '] + ' + vl[i - 1] + ' = ' + yes + ' → dp = ' + b(dp[i][w]);
+      } else { dp[i][w] = no; cap += '; quá nặng (' + wt[i - 1] + ' > ' + w + ') không lấy được → dp = ' + b(no); }
+      snap(cap, cls);
+    }
+    var pc = {}, cw = W;
+    for (i = n; i >= 1; i--) {
+      pc[i + ',' + cw] = 'path';
+      if (dp[i][cw] !== dp[i - 1][cw]) { take.unshift(i); snap('Truy vết: dp[' + i + '][' + cw + '] = ' + dp[i][cw] + ' ≠ dp[' + (i - 1) + '][' + cw + '] = ' + dp[i - 1][cw] + ' → ' + b('lấy vật ' + i) + ', sức chứa còn ' + (cw - wt[i - 1]), Object.assign({}, pc)); cw -= wt[i - 1]; }
+      else snap('Truy vết: dp[' + i + '][' + cw + '] = dp[' + (i - 1) + '][' + cw + '] → không lấy vật ' + i, Object.assign({}, pc));
+    }
+    pc['0,' + cw] = 'path';
+    snap('Hoàn tất! Giá trị lớn nhất = ' + b(dp[n][W]) + ', chọn các vật ' + bA(take) + ' (tổng nặng ' + take.reduce(function (s, t) { return s + wt[t - 1]; }, 0) + ').', pc);
+    var rows = ['0'].concat(wt.map(function (q, t) { return (t + 1) + ' (' + q + ',' + vl[t] + ')'; }));
+    return { steps: rec.steps, result: { best: dp[n][W], items: take.slice() }, leg: LEG_DP,
+      render: function (x) { return vstack([dp2(x.dp, rows, range(W + 1), x.cls, { lw: 64, corner: 'vật\\w', cw: 30 }), chips(x.take.map(function (t) { return 'vật ' + t; }), { label: 'Đã chọn:', empty: '—', maxW: 380 })], 10, true); } };
+  });
+
+  function strPair(P) {
+    var a = P.str('a', { ex: 'ABCBDAB', maxLen: 12 }), c = P.str('b', { ex: 'BDCABA', maxLen: 12 });
+    return [a, c];
+  }
+  reg('dp', 'lcs', function (P) {
+    var ab = strPair(P), A = ab[0], B = ab[1], m = A.length, n = B.length, rec = new Rec(['ô đã tính']), out = '';
+    var dp = mk(m + 1, function () { return mk(n + 1, function () { return null; }); });
+    function snap(c, cls) { rec.s(c, { dp: clone(dp), cls: cls || {}, out: out }); }
+    snap('LCS của ' + b(A) + ' và ' + b(B) + '. dp[i][j] = độ dài dãy con chung dài nhất của i ký tự đầu của A và j ký tự đầu của B.');
+    for (var i = 0; i <= m; i++) dp[i][0] = 0; for (var j = 0; j <= n; j++) dp[0][j] = 0;
+    snap('Hàng 0 và cột 0 = 0 (một chuỗi rỗng thì LCS rỗng).');
+    for (i = 1; i <= m; i++) for (j = 1; j <= n; j++) {
+      var cls = {}; cls[i + ',' + j] = 'swap'; rec.inc('ô đã tính');
+      if (A[i - 1] === B[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1; cls[(i - 1) + ',' + (j - 1)] = 'cmp';
+        snap('A[' + (i - 1) + '] = B[' + (j - 1) + '] = ' + b(A[i - 1]) + ' → khớp: dp[' + i + '][' + j + '] = dp[' + (i - 1) + '][' + (j - 1) + '] + 1 = ' + b(dp[i][j]), cls);
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]); cls[(i - 1) + ',' + j] = 'cmp'; cls[i + ',' + (j - 1)] = 'cmp';
+        snap(esc(A[i - 1]) + ' ≠ ' + esc(B[j - 1]) + ' → dp[' + i + '][' + j + '] = max(trên ' + dp[i - 1][j] + ', trái ' + dp[i][j - 1] + ') = ' + b(dp[i][j]), cls);
+      }
+    }
+    var pc = {}; i = m; j = n;
+    while (i > 0 && j > 0) {
+      pc[i + ',' + j] = 'path';
+      if (A[i - 1] === B[j - 1]) { out = A[i - 1] + out; snap('Truy vết: ' + b(A[i - 1]) + ' khớp → thuộc LCS, đi chéo lên. LCS (từ cuối): ' + b(out), Object.assign({}, pc)); i--; j--; }
+      else if (dp[i - 1][j] >= dp[i][j - 1]) { snap('Truy vết: không khớp, ô trên (' + dp[i - 1][j] + ') ≥ ô trái (' + dp[i][j - 1] + ') → đi lên', Object.assign({}, pc)); i--; }
+      else { snap('Truy vết: không khớp, ô trái lớn hơn → đi sang trái', Object.assign({}, pc)); j--; }
+    }
+    snap('Hoàn tất! Độ dài LCS = ' + b(dp[m][n]) + ', một LCS là ' + b('"' + out + '"') + '.', pc);
+    return { steps: rec.steps, result: { len: dp[m][n], lcs: out }, leg: LEG_DP,
+      render: function (x) { return vstack([dp2(x.dp, ['∅'].concat(A.split('')), ['∅'].concat(B.split('')), x.cls, { corner: 'A\\B' }), tb('LCS: "' + x.out + '"', 'av-lb')], 10, true); } };
+  });
+
+  reg('dp', 'edit-distance', function (P) {
+    var ab = strPair(P), A = ab[0], B = ab[1], m = A.length, n = B.length, rec = new Rec(['ô đã tính']), ops = [];
+    var dp = mk(m + 1, function () { return mk(n + 1, function () { return null; }); });
+    function snap(c, cls) { rec.s(c, { dp: clone(dp), cls: cls || {}, ops: ops.slice() }); }
+    snap('Khoảng cách chỉnh sửa (Levenshtein) từ ' + b(A) + ' sang ' + b(B) + ': số thao tác chèn / xóa / thay ít nhất. dp[i][j] cho i ký tự đầu của A và j ký tự đầu của B.');
+    for (var i = 0; i <= m; i++) dp[i][0] = i; for (var j = 0; j <= n; j++) dp[0][j] = j;
+    snap('Hàng 0: dp[0][j] = j (chèn j ký tự); cột 0: dp[i][0] = i (xóa i ký tự).');
+    for (i = 1; i <= m; i++) for (j = 1; j <= n; j++) {
+      var cls = {}; cls[i + ',' + j] = 'swap'; rec.inc('ô đã tính');
+      if (A[i - 1] === B[j - 1]) { dp[i][j] = dp[i - 1][j - 1]; cls[(i - 1) + ',' + (j - 1)] = 'cmp'; snap(b(A[i - 1]) + ' = ' + b(B[j - 1]) + ' → không tốn thao tác: dp[' + i + '][' + j + '] = dp[' + (i - 1) + '][' + (j - 1) + '] = ' + b(dp[i][j]), cls); }
+      else {
+        var del = dp[i - 1][j], ins = dp[i][j - 1], rep = dp[i - 1][j - 1];
+        dp[i][j] = 1 + Math.min(del, ins, rep); cls[(i - 1) + ',' + j] = 'cmp'; cls[i + ',' + (j - 1)] = 'cmp'; cls[(i - 1) + ',' + (j - 1)] = 'cmp';
+        snap(esc(A[i - 1]) + ' ≠ ' + esc(B[j - 1]) + ' → 1 + min(xóa ' + del + ', chèn ' + ins + ', thay ' + rep + ') = ' + b(dp[i][j]), cls);
+      }
+    }
+    var pc = {}; i = m; j = n;
+    while (i > 0 || j > 0) {
+      pc[i + ',' + j] = 'path';
+      if (i > 0 && j > 0 && A[i - 1] === B[j - 1] && dp[i][j] === dp[i - 1][j - 1]) { i--; j--; continue; }
+      if (i > 0 && j > 0 && dp[i][j] === dp[i - 1][j - 1] + 1) { ops.unshift('thay ' + A[i - 1] + '→' + B[j - 1]); i--; j--; }
+      else if (i > 0 && dp[i][j] === dp[i - 1][j] + 1) { ops.unshift('xóa ' + A[i - 1]); i--; }
+      else { ops.unshift('chèn ' + B[j - 1]); j--; }
+      snap('Truy vết: ' + b(ops[0]), Object.assign({}, pc));
+    }
+    pc['0,0'] = 'path';
+    snap('Hoàn tất! Khoảng cách chỉnh sửa = ' + b(dp[m][n]) + ' thao tác.', pc);
+    return { steps: rec.steps, result: dp[m][n], leg: LEG_DP,
+      render: function (x) { return vstack([dp2(x.dp, ['∅'].concat(A.split('')), ['∅'].concat(B.split('')), x.cls, { corner: 'A\\B' }), chips(x.ops, { label: 'Thao tác:', empty: '—', maxW: 380 })], 10, true); } };
+  });
+
+  reg('dp', 'lis', function (P) {
+    var a = P.nums('input', { ex: '10,9,2,5,3,7,101,18' }), n = a.length, rec = new Rec(['so sánh']), dp = mk(n, function () { return null; }), pv = mk(n, function () { return -1; });
+    function snap(c, ac, dc) { rec.s(c, { dp: dp.slice(), ac: ac || {}, dc: dc || {} }); }
+    snap('Dãy con tăng dài nhất (LIS) của ' + bA(a) + '. dp[i] = độ dài LIS kết thúc tại a[i] = 1 + max(dp[j]) với j < i và a[j] < a[i].');
+    for (var i = 0; i < n; i++) {
+      var best = 1, bj = -1, deps = M(i, 'swap');
+      for (var j = 0; j < i; j++) { rec.inc('so sánh'); if (a[j] < a[i]) { deps[j] = 'cmp'; if (dp[j] + 1 > best) { best = dp[j] + 1; bj = j; } } }
+      dp[i] = best; pv[i] = bj;
+      snap('i = ' + i + ' (a[i] = ' + b(a[i]) + '): ' + (bj < 0 ? 'không có a[j] < ' + a[i] + ' phía trước → dp[' + i + '] = 1' : 'các j có a[j] < ' + a[i] + ' (vàng); tốt nhất j = ' + bj + ' → dp[' + i + '] = dp[' + bj + '] + 1 = ' + b(best)), deps, deps);
+    }
+    var mi = 0; for (i = 1; i < n; i++) if (dp[i] > dp[mi]) mi = i;
+    var seq = [], pc = {};
+    for (var c = mi; c >= 0; c = pv[c]) { seq.unshift(a[c]); pc[c] = 'path'; }
+    snap('Hoàn tất! Độ dài LIS = max(dp) = ' + b(dp[mi]) + ', truy vết qua prev: ' + bA(seq) + '.', pc, pc);
+    var w = cellW(n);
+    return { steps: rec.steps, result: dp[mi], leg: LEG_DP,
+      render: function (x) {
+        return vstack([cells(a, { w: w, label: 'a', labelW: 30, cls: a.map(function (_, i) { return x.ac[i]; }) }), cells(x.dp, { w: w, label: 'dp', labelW: 30, idx: true, cls: x.dp.map(function (_, i) { return x.dc[i]; }) })], 6, true);
+      } };
+  });
+
+  /* ================================================================
+   * 17. STRING MATCHING
+   * ================================================================ */
+  function strSetup(P) {
+    var t = P.str('text', { ex: 'ABABDABACDABABCABAB', maxLen: 32 }), p = P.str('pattern', { ex: 'ABABCABAB', maxLen: 32 });
+    if (p.length > t.length) fail('<code>data-pattern</code> dài hơn <code>data-text</code>.');
+    return { t: t, p: p };
+  }
+  function strRender(S, extra) {
+    var w = S.t.length > 22 ? 20 : 24, g = 3;
+    return function (x) {
+      var tt = cells(S.t.split(''), { w: w, g: g, h: 28, idx: true, cls: S.t.split('').map(function (_, i) { return (x.tc || {})[i] || ''; }), ptr: x.tp || {}, ptrUp: true, ptrRows: 1 });
+      var pr = cells(S.p.split(''), { w: w, g: g, h: 28, cls: S.p.split('').map(function (_, i) { return (x.pc || {})[i] || ''; }), ptr: x.pp || {}, ptrRows: 1 });
+      var off = (x.off || 0) * (w + g), s = tt.s + tr(off, tt.h + 6, pr.s), H = tt.h + 6 + pr.h, Wd = Math.max(tt.w, off + pr.w);
+      if (x.lps) {
+        var lr = cells(x.lps.map(function (v) { return v == null ? '' : v; }), { w: w, g: g, h: 24, cls: x.lps.map(function (_, i) { return (x.lc || {})[i] || ''; }) });
+        s += tr(off, H + 2, lr.s) + T(off - 6, H + 14, 'lps', 'av-lb', 'end'); H += 26;
+      }
+      var parts = [blk(Wd, H, s)];
+      if (extra) extra(x, parts);
+      parts.push(chips((x.found || []).map(function (f) { return 'vị trí ' + f; }), { label: 'Tìm thấy:', empty: '—', maxW: 380 }));
+      return vstack(parts, 10, true);
+    };
+  }
+  var LEG_STR = [['cmp', 'đang so sánh'], ['done', 'khớp'], ['bad', 'không khớp'], ['path', 'vị trí tìm thấy']];
+  function rngCls(a, b2, st) { var m = {}; for (var i = a; i < b2; i++) m[i] = st; return m; }
+
+  reg('string', 'naive', function (P) {
+    var S = strSetup(P), t = S.t, p = S.p, n = t.length, m = p.length, rec = new Rec(['so sánh ký tự']), found = [];
+    function snap(c, x) { x.found = found.slice(); rec.s(c, x); }
+    snap('Naive: đặt pattern ở từng vị trí s = 0..' + (n - m) + ' và so từng ký tự từ trái sang phải.', { off: 0 });
+    for (var s = 0; s <= n - m; s++) {
+      var j = 0;
+      for (; j < m; j++) {
+        rec.inc('so sánh ký tự');
+        var ok = t[s + j] === p[j], tc = rngCls(s, s + j, 'done'), pc = rngCls(0, j, 'done');
+        tc[s + j] = ok ? 'done' : 'bad'; pc[j] = ok ? 'done' : 'bad';
+        if (!ok) { snap('s = ' + s + ': text[' + (s + j) + '] = ' + b(t[s + j]) + ' ≠ pattern[' + j + '] = ' + b(p[j]) + ' → sai sau ' + j + ' ký tự khớp; dịch pattern sang 1 ô và so lại từ đầu', { off: s, tc: tc, pc: pc, tp: { i: s + j }, pp: { j: j } }); break; }
+        if (j === m - 1 || j === 0) snap('s = ' + s + ': text[' + (s + j) + '] = pattern[' + j + '] = ' + b(p[j]) + (j === m - 1 ? '' : ' → so tiếp'), { off: s, tc: tc, pc: pc, tp: { i: s + j }, pp: { j: j } });
+      }
+      if (j === m) { found.push(s); snap('Khớp đủ ' + m + ' ký tự → tìm thấy tại vị trí ' + b(s) + '!', { off: s, tc: rngCls(s, s + m, 'path'), pc: rngCls(0, m, 'path') }); }
+    }
+    snap('Hoàn tất! ' + (found.length ? 'Pattern xuất hiện tại ' + bA(found) : 'Không tìm thấy pattern') + '. Tổng ' + rec.c['so sánh ký tự'] + ' lần so sánh ký tự — tệ nhất O(n·m).', { off: found.length ? found[0] : 0, tc: found.length ? rngCls(found[0], found[0] + m, 'path') : {} });
+    return { steps: rec.steps, result: found.slice(), leg: LEG_STR, render: strRender(S) };
+  });
+
+  reg('string', 'kmp', function (P) {
+    var S = strSetup(P), t = S.t, p = S.p, n = t.length, m = p.length, rec = new Rec(['so sánh ký tự']), found = [], lps = mk(m, function () { return null; });
+    function snap(c, x) { x.found = found.slice(); x.lps = lps.slice(); rec.s(c, x); }
+    snap('KMP — giai đoạn 1: xây bảng LPS. lps[i] = độ dài tiền tố dài nhất của pattern[0..i] cũng là hậu tố của nó.', { off: 0 });
+    lps[0] = 0;
+    var len = 0, i = 1;
+    snap('lps[0] = 0. Dùng i (đang xét) và len (độ dài tiền tố-hậu tố hiện tại).', { off: 0, lc: M(0, 'done') });
+    while (i < m) {
+      rec.inc('so sánh ký tự');
+      if (p[i] === p[len]) { len++; lps[i] = len; snap('pattern[' + i + '] = pattern[' + (len - 1) + '] = ' + b(p[i]) + ' → len = ' + len + ', lps[' + i + '] = ' + b(len), { off: 0, pc: M(i, 'done', len - 1, 'cmp'), pp: { i: i }, lc: M(i, 'swap') }); i++; }
+      else if (len > 0) { var ol = len; len = lps[len - 1]; snap('pattern[' + i + '] = ' + b(p[i]) + ' ≠ pattern[' + ol + '] = ' + b(p[ol]) + ' → lùi len = lps[' + (ol - 1) + '] = ' + len + ' (không tăng i)', { off: 0, pc: M(i, 'bad', ol, 'cmp'), pp: { i: i }, lc: M(ol - 1, 'cmp') }); }
+      else { lps[i] = 0; snap('pattern[' + i + '] = ' + b(p[i]) + ' ≠ pattern[0] và len = 0 → lps[' + i + '] = ' + b(0), { off: 0, pc: M(i, 'bad', 0, 'cmp'), pp: { i: i }, lc: M(i, 'swap') }); i++; }
+    }
+    snap('Bảng LPS: ' + bA(lps) + '. Giai đoạn 2: so khớp; i trên text chỉ tăng, khi sai thì j = lps[j − 1].', { off: 0 });
+    i = 0; var j = 0;
+    while (i < n) {
+      rec.inc('so sánh ký tự');
+      if (t[i] === p[j]) {
+        var tc = rngCls(i - j, i + 1, 'done'), pc = rngCls(0, j + 1, 'done');
+        snap('text[' + i + '] = pattern[' + j + '] = ' + b(t[i]) + ' → khớp, tăng i và j', { off: i - j, tc: tc, pc: pc, tp: { i: i }, pp: { j: j } });
+        i++; j++;
+        if (j === m) {
+          found.push(i - m);
+          snap('j = m = ' + m + ' → tìm thấy tại vị trí ' + b(i - m) + '! Đặt j = lps[' + (m - 1) + '] = ' + lps[m - 1] + ' để tìm tiếp.', { off: i - m, tc: rngCls(i - m, i, 'path'), pc: rngCls(0, m, 'path'), lc: M(m - 1, 'cmp') });
+          j = lps[m - 1];
+        }
+      } else if (j > 0) {
+        var oj = j; j = lps[j - 1];
+        snap('text[' + i + '] = ' + b(t[i]) + ' ≠ pattern[' + oj + '] = ' + b(p[oj]) + ' → j = lps[' + (oj - 1) + '] = ' + b(j) + ': trượt pattern sang, giữ nguyên i', { off: i - oj, tc: Object.assign(rngCls(i - oj, i, 'done'), M(i, 'bad')), pc: Object.assign(rngCls(0, oj, 'done'), M(oj, 'bad')), tp: { i: i }, pp: { j: oj }, lc: M(oj - 1, 'cmp') });
+      } else {
+        snap('text[' + i + '] = ' + b(t[i]) + ' ≠ pattern[0] = ' + b(p[0]) + ' → tăng i', { off: i, tc: M(i, 'bad'), pc: M(0, 'bad'), tp: { i: i }, pp: { j: 0 } });
+        i++;
+      }
+    }
+    snap('Hoàn tất! ' + (found.length ? 'Pattern xuất hiện tại ' + bA(found) : 'Không tìm thấy pattern') + '. ' + rec.c['so sánh ký tự'] + ' lần so sánh — O(n + m).', { off: found.length ? found[0] : 0, tc: found.length ? rngCls(found[0], found[0] + m, 'path') : {} });
+    return { steps: rec.steps, result: found.slice(), leg: [['cmp', 'đang dùng'], ['done', 'khớp'], ['bad', 'không khớp'], ['swap', 'lps vừa tính'], ['path', 'tìm thấy']], render: strRender(S) };
+  });
+
+  reg('string', 'rabin-karp', function (P) {
+    var S = strSetup(P), t = S.t, p = S.p, n = t.length, m = p.length, D = 256, Q = 101, rec = new Rec(['so sánh hash', 'so sánh ký tự', 'va chạm giả']), found = [];
+    function snap(c, x) { x.found = found.slice(); rec.s(c, x); }
+    var h = 1; for (var k = 0; k < m - 1; k++) h = (h * D) % Q;
+    var hp = 0, ht = 0;
+    for (k = 0; k < m; k++) { hp = (D * hp + p.charCodeAt(k)) % Q; ht = (D * ht + t.charCodeAt(k)) % Q; }
+    snap('Rabin-Karp: hash(s) = Σ mã ký tự × ' + D + '^vị trí, lấy mod ' + Q + '. hash(pattern) = ' + b(hp) + ', hash(cửa sổ đầu) = ' + b(ht) + '. h = ' + D + '^(m−1) mod ' + Q + ' = ' + h + '.', { off: 0, hp: hp, ht: ht, tc: rngCls(0, m, 'q') });
+    for (var s = 0; s <= n - m; s++) {
+      rec.inc('so sánh hash');
+      var win = rngCls(s, s + m, 'q');
+      if (ht === hp) {
+        var ok = true;
+        for (k = 0; k < m; k++) { rec.inc('so sánh ký tự'); if (t[s + k] !== p[k]) { ok = false; break; } }
+        if (ok) { found.push(s); snap('s = ' + s + ': hash cửa sổ = ' + ht + ' = hash(pattern) → so từng ký tự: khớp hết → tìm thấy tại ' + b(s) + '!', { off: s, hp: hp, ht: ht, tc: rngCls(s, s + m, 'path'), pc: rngCls(0, m, 'path') }); }
+        else { rec.inc('va chạm giả'); snap('s = ' + s + ': hash trùng (' + ht + ') nhưng ký tự ' + k + ' khác (' + esc(t[s + k]) + ' ≠ ' + esc(p[k]) + ') → ' + b('va chạm giả') + ', bỏ qua', { off: s, hp: hp, ht: ht, tc: Object.assign(win, M(s + k, 'bad')), pc: M(k, 'bad') }); }
+      } else snap('s = ' + s + ': hash cửa sổ "' + esc(t.substr(s, m)) + '" = ' + b(ht) + ' ≠ ' + hp + ' → loại ngay bằng 1 phép so sánh số', { off: s, hp: hp, ht: ht, tc: win, pc: rngCls(0, m, 'dim') });
+      if (s < n - m) {
+        var old = ht;
+        ht = (D * (ht - t.charCodeAt(s) * h) + t.charCodeAt(s + m)) % Q; if (ht < 0) ht += Q;
+        snap('Cuộn hash: bỏ ' + b(t[s]) + ' (mã ' + t.charCodeAt(s) + '), thêm ' + b(t[s + m]) + ' (mã ' + t.charCodeAt(s + m) + '): (' + D + '·(' + old + ' − ' + t.charCodeAt(s) + '·' + h + ') + ' + t.charCodeAt(s + m) + ') mod ' + Q + ' = ' + b(ht) + ' — O(1)', { off: s + 1, hp: hp, ht: ht, tc: Object.assign(rngCls(s + 1, s + m + 1, 'q'), M(s, 'dim', s + m, 'cmp')) });
+      }
+    }
+    snap('Hoàn tất! ' + (found.length ? 'Pattern xuất hiện tại ' + bA(found) : 'Không tìm thấy pattern') + '. Chỉ so từng ký tự khi hash trùng — trung bình O(n + m).', { off: found.length ? found[0] : 0, hp: hp, ht: ht, tc: found.length ? rngCls(found[0], found[0] + m, 'path') : {} });
+    return { steps: rec.steps, result: found.slice(), leg: [['q', 'cửa sổ hiện tại'], ['cmp', 'ký tự vừa thêm'], ['bad', 'khác'], ['path', 'tìm thấy']],
+      render: strRender(S, function (x, parts) { parts.push(tb('hash(pattern) = ' + x.hp + '   |   hash(cửa sổ) = ' + x.ht, 'av-lb')); }) };
+  });
 
   /* ================================================================
    * 99. Khởi tạo
