@@ -2559,7 +2559,7 @@ Thêm tính năng **ngân sách**: bảng `budgets` (category, month, limit), en
 
 Viết `compose.yaml` chạy Expense Tracker với **PostgreSQL** (image `postgres:16`), dùng biến môi trường cho mật khẩu DB, volume cho dữ liệu, `depends_on` với healthcheck. Thêm một job CI chạy test với service PostgreSQL (`services:` trong GitHub Actions).
 
-<details>
+<details markdown="1">
 <summary>💡 Gợi ý Bài tập 6</summary>
 
 ```yaml

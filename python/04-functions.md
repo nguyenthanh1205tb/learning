@@ -1232,7 +1232,7 @@ tree = {"src": {"main.py": None, "utils": {"a.py": None, "b.py": None}}, "README
 # count_files(tree) → 4
 ```
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án Bài tập 5.3</summary>
 
 ```python

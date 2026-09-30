@@ -1435,7 +1435,7 @@ Cho `s = "Lập trình Python thật thú vị"`, dùng slicing để lấy ra:
 3. Chuỗi đảo ngược
 4. Các ký tự ở vị trí chẵn
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án Bài tập 3</summary>
 
 ```python

@@ -1569,7 +1569,7 @@ Viết lại "kho hàng + đơn hàng" bằng SQLAlchemy ORM: model `Product`, `
 
 Thay `InMemoryProductRepo` trong Ứng dụng 2 của Bài 12 bằng SQLAlchemy (giữ nguyên toàn bộ endpoint và test). Thêm bảng `categories` (một danh mục - nhiều sản phẩm), endpoint `GET /categories/{id}/products`, và dùng Alembic tạo migration thêm cột `discount_percent`.
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án Bài tập 1</summary>
 
 ```python

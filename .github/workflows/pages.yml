@@ -26,7 +26,7 @@ jobs:
       - name: Copy lessons into docs/
         run: |
           mkdir docs
-          cp -r README.md golang python docs/
+          cp -r README.md golang python backend algorithms mindset static docs/
       - run: mkdocs build --strict
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -1322,7 +1322,7 @@ Cho một đoạn văn bản, hãy:
 3. Nhóm các từ theo chữ cái đầu (dùng `defaultdict`)
 4. Tìm các từ có độ dài > 5 (dùng set comprehension)
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án Bài tập 3.3</summary>
 
 ```python

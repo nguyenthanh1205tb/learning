@@ -1768,7 +1768,7 @@ Mở rộng Ứng dụng 1: với lỗi `HTTP 5xx` hoặc `TIMEOUT`, **thử l�
 
 Xây pipeline async gồm 3 tầng nối nhau bằng 2 `asyncio.Queue`: **tải** (3 worker, giả lập tải trang) → **phân tích** (2 worker, đếm số từ) → **lưu** (1 worker, ghi vào list). Dùng `TaskGroup`, `Queue(maxsize=...)` để tạo **back-pressure** (tầng sau chậm thì tầng trước tự chờ). Đảm bảo chương trình dừng sạch sẽ khi hết việc.
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án Bài tập 2 và gợi ý Bài tập 5</summary>
 
 ```python

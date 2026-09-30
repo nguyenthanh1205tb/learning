@@ -1318,7 +1318,7 @@ func main() {
 }
 ```
 
-<details>
+<details markdown="1">
 <summary>👉 Xem đáp án</summary>
 
 ```text

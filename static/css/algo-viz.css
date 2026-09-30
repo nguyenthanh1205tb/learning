@@ -1,0 +1,179 @@
+/* algo-viz.css — giao diện cho các widget hoạt ảnh thuật toán (.algo-viz).
+ * Dùng biến màu của MkDocs Material để hợp cả sáng lẫn tối ([data-md-color-scheme="slate"]). */
+
+.algo-viz {
+  --av-fg: var(--md-default-fg-color, #222);
+  --av-fg2: var(--md-default-fg-color--light, rgba(0, 0, 0, .54));
+  --av-fg3: var(--md-default-fg-color--lighter, rgba(0, 0, 0, .32));
+  --av-bg: var(--md-default-bg-color, #fff);
+  --av-cell: var(--md-code-bg-color, #f5f5f5);
+  --av-accent: var(--md-accent-fg-color, #526cfe);
+  --av-primary: var(--md-primary-fg-color, #4051b5);
+  --av-edge: var(--md-default-fg-color--light, rgba(0, 0, 0, .5));
+  margin: 1.2em 0;
+  padding: .6rem .7rem .5rem;
+  border: 1px solid var(--av-fg3);
+  border-radius: .5rem;
+  background: var(--av-bg);
+  color: var(--av-fg);
+  font-size: .72rem;
+  line-height: 1.45;
+  outline: none;
+}
+.algo-viz:not(.av-on):not(:has(.algo-viz-error)) { min-height: 3rem; }
+.algo-viz:focus-visible { box-shadow: 0 0 0 2px var(--av-accent); }
+
+.algo-viz .av-title {
+  font-weight: 700;
+  font-size: .8rem;
+  margin-bottom: .35rem;
+  color: var(--av-primary);
+}
+[data-md-color-scheme="slate"] .algo-viz .av-title { color: var(--av-accent); }
+
+.algo-viz .av-stage { width: 100%; overflow: hidden; text-align: center; }
+.algo-viz .av-svg { display: block; width: 100%; height: auto; margin: 0 auto; overflow: visible; }
+
+/* ---------- SVG ---------- */
+.algo-viz .av-t {
+  fill: var(--av-fg);
+  font-family: var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 12px;
+}
+.algo-viz .av-v { font-size: 14px; font-weight: 700; }
+.algo-viz .av-v.av-sm { font-size: 11.5px; }
+.algo-viz .av-i { font-size: 10px; fill: var(--av-fg2); }
+.algo-viz .av-lb { font-size: 12.5px; fill: var(--av-fg2); font-weight: 600; }
+.algo-viz .av-p { font-size: 11.5px; font-weight: 700; fill: var(--av-accent); }
+.algo-viz .av-w { font-size: 11.5px; font-weight: 700; fill: var(--av-fg); }
+.algo-viz .av-wbg { fill: var(--av-bg); stroke: none; }
+.algo-viz .av-big { font-size: 20px; }
+.algo-viz .av-ph { fill: var(--av-accent); }
+
+.algo-viz .av-box {
+  fill: var(--f, var(--av-cell));
+  stroke: var(--c, var(--av-fg3));
+  stroke-width: 1.4;
+  transition: fill .25s, stroke .25s;
+}
+.algo-viz .av-ln {
+  fill: none;
+  stroke: var(--c, var(--av-edge));
+  stroke-width: var(--lw, 1.6);
+  transition: stroke .25s;
+}
+.algo-viz .av-ln[class*=" s-"] { --lw: 3; }
+.algo-viz .av-ln.s-dim { --lw: 1.2; }
+.algo-viz .av-br { --lw: 2; }
+.algo-viz .av-hd { fill: var(--c, var(--av-edge)); stroke: none; }
+.algo-viz .av-bucket { fill: none; stroke-dasharray: 3 3; }
+.algo-viz .av-bucket.s-q { fill: var(--f); }
+.algo-viz .av-thick { stroke-width: 3; }
+.algo-viz .av-under { fill: var(--av-bg); stroke: none; }
+.algo-viz .av-wall { fill: var(--av-fg2); stroke: none; opacity: .75; }
+.algo-viz .av-end { fill: none; stroke: var(--c, var(--av-fg)); stroke-width: 1.4; }
+.algo-viz .av-dashed { stroke-dasharray: 5 4; }
+.algo-viz .av-dark { fill: var(--av-fg3); fill-opacity: .35; }
+.algo-viz .av-light { fill: var(--av-cell); }
+
+/* ---------- Trạng thái (dùng chung cho SVG + chú giải) ---------- */
+.algo-viz .s-cmp  { --c: #e0a100; --f: rgba(255, 193, 7, .45); }
+.algo-viz .s-swap { --c: #e53935; --f: rgba(229, 57, 53, .42); }
+.algo-viz .s-bad  { --c: #e53935; --f: rgba(229, 57, 53, .42); }
+.algo-viz .s-done { --c: #2e9d4f; --f: rgba(67, 160, 71, .45); }
+.algo-viz .s-vis  { --c: #1e88e5; --f: rgba(30, 136, 229, .30); }
+.algo-viz .s-q    { --c: #8e44ad; --f: rgba(142, 68, 173, .25); }
+.algo-viz .s-cur  { --c: #f57c00; --f: rgba(245, 124, 0, .55); }
+.algo-viz .s-path { --c: #00897b; --f: rgba(0, 150, 136, .55); }
+.algo-viz .s-piv  { --c: #8e24aa; --f: rgba(142, 36, 170, .50); }
+.algo-viz .s-new  { --c: #00acc1; --f: rgba(0, 172, 193, .40); }
+.algo-viz .s-dim  { --c: var(--av-fg3); --f: transparent; opacity: .45; }
+.algo-viz text.s-dim { opacity: .45; }
+[data-md-color-scheme="slate"] .algo-viz .s-cmp  { --c: #ffca28; --f: rgba(255, 202, 40, .38); }
+[data-md-color-scheme="slate"] .algo-viz .s-swap,
+[data-md-color-scheme="slate"] .algo-viz .s-bad  { --c: #ff6f60; --f: rgba(255, 111, 96, .40); }
+[data-md-color-scheme="slate"] .algo-viz .s-done { --c: #66d17a; --f: rgba(102, 209, 122, .35); }
+[data-md-color-scheme="slate"] .algo-viz .s-vis  { --c: #64b5f6; --f: rgba(100, 181, 246, .30); }
+[data-md-color-scheme="slate"] .algo-viz .s-q    { --c: #ce93d8; --f: rgba(206, 147, 216, .28); }
+[data-md-color-scheme="slate"] .algo-viz .s-cur  { --c: #ffa040; --f: rgba(255, 160, 64, .45); }
+[data-md-color-scheme="slate"] .algo-viz .s-path { --c: #4db6ac; --f: rgba(77, 182, 172, .45); }
+[data-md-color-scheme="slate"] .algo-viz .s-piv  { --c: #ce93d8; --f: rgba(186, 104, 200, .45); }
+[data-md-color-scheme="slate"] .algo-viz .s-new  { --c: #4dd0e1; --f: rgba(77, 208, 225, .35); }
+
+/* ---------- Chú thích, điều khiển ---------- */
+.algo-viz .av-cap {
+  min-height: 2.9em;
+  margin: .4rem 0 .3rem;
+  padding: .35rem .55rem;
+  border-left: 3px solid var(--av-accent);
+  background: var(--av-cell);
+  border-radius: 0 .3rem .3rem 0;
+  font-size: .74rem;
+}
+.algo-viz .av-cap b { color: var(--av-fg); }
+.algo-viz .av-cap code { font-size: .92em; padding: 0 .2em; }
+.algo-viz .av-ctrl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem .45rem;
+}
+.algo-viz .av-btn {
+  min-width: 2.3rem;
+  height: 2rem;
+  padding: 0 .55rem;
+  border: 1px solid var(--av-fg3);
+  border-radius: .35rem;
+  background: var(--av-cell);
+  color: var(--av-fg);
+  font: inherit;
+  font-size: .8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.algo-viz .av-btn:hover:not(:disabled) { border-color: var(--av-accent); color: var(--av-accent); }
+.algo-viz .av-btn:focus-visible { outline: 2px solid var(--av-accent); outline-offset: 1px; }
+.algo-viz .av-btn:disabled { opacity: .4; cursor: default; }
+.algo-viz .av-play { background: var(--av-primary); color: var(--md-primary-bg-color, #fff); border-color: transparent; min-width: 2.8rem; }
+.algo-viz .av-play:hover:not(:disabled) { color: var(--md-primary-bg-color, #fff); filter: brightness(1.1); }
+.algo-viz .av-speed { display: inline-flex; align-items: center; gap: .3rem; color: var(--av-fg2); font-size: .68rem; }
+.algo-viz .av-speed input { width: 5.5rem; accent-color: var(--av-accent); }
+.algo-viz .av-step { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--av-fg2); font-size: .7rem; white-space: nowrap; }
+.algo-viz .av-stats { display: flex; flex-wrap: wrap; gap: .2rem .9rem; margin-top: .35rem; color: var(--av-fg2); font-size: .68rem; }
+.algo-viz .av-stats b { color: var(--av-fg); font-variant-numeric: tabular-nums; }
+.algo-viz .av-legend { display: flex; flex-wrap: wrap; gap: .25rem .8rem; margin-top: .35rem; font-size: .66rem; color: var(--av-fg2); }
+.algo-viz .av-lg { display: inline-flex; align-items: center; gap: .3rem; }
+.algo-viz .av-sw {
+  display: inline-block;
+  width: .85em;
+  height: .85em;
+  border-radius: .2em;
+  background: var(--f, var(--av-cell));
+  border: 1.5px solid var(--c, var(--av-fg3));
+}
+.algo-viz .av-sw.s-dim { opacity: .6; }
+
+/* ---------- Lỗi ---------- */
+.algo-viz .algo-viz-error,
+.algo-viz-error {
+  padding: .6rem .8rem;
+  border: 1px solid #e53935;
+  border-left-width: 4px;
+  border-radius: .35rem;
+  background: rgba(229, 57, 53, .08);
+  color: var(--md-default-fg-color, #222);
+  font-size: .74rem;
+}
+
+@media (max-width: 480px) {
+  .algo-viz { padding: .5rem .45rem .45rem; }
+  .algo-viz .av-btn { min-width: 2.1rem; padding: 0 .45rem; }
+  .algo-viz .av-speed input { width: 4.2rem; }
+  .algo-viz .av-cap { font-size: .72rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .algo-viz .av-box, .algo-viz .av-ln { transition: none; }
+}
+@media print {
+  .algo-viz .av-ctrl, .algo-viz .av-legend { display: none; }
+}
