@@ -1159,7 +1159,7 @@ def TinhTong(A,B):
 print (TinhTong(3,4))
 ```
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án</summary>
 
 ```python

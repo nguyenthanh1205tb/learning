@@ -1125,7 +1125,7 @@ Phân loại các quyết định sau là cửa một chiều hay hai chiều, v
 4. Bật tính năng thanh toán trả góp cho toàn bộ người dùng
 5. Xóa các tài khoản không hoạt động quá 2 năm
 
-<details>
+<details markdown="1">
 <summary>Đáp án gợi ý</summary>
 
 1. **Hai chiều** - đổi lại dễ, nhất là nếu log qua một interface chung
@@ -1174,7 +1174,7 @@ Với mỗi đề xuất, viết ít nhất 3 bậc hệ quả và một giải 
 2. "Bắt buộc mọi PR phải có 2 approve để tăng chất lượng"
 3. "Thưởng cho developer theo số bug tìm được trong code của người khác"
 
-<details>
+<details markdown="1">
 <summary>Gợi ý cho đề xuất 1</summary>
 
 - Bậc 1: ít lỗi timeout hơn

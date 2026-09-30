@@ -1606,7 +1606,7 @@ Chọn monolith / modular monolith / microservices / serverless cho từng trư�
 3. Sàn thương mại điện tử 300 kỹ sư, 25 team.
 4. Tạo thumbnail mỗi khi người dùng upload ảnh, lượng upload thất thường.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 1. **Monolith** đơn giản (hoặc thậm chí nền tảng có sẵn) — không cần gì hơn.
 2. **Modular monolith** — một lần deploy, ranh giới module theo nghiệp vụ (bán hàng, kho, khách hàng), sẵn sàng tách sau.
@@ -1619,7 +1619,7 @@ Chọn monolith / modular monolith / microservices / serverless cho từng trư�
 
 Phân loại trong hệ thống giao đồ ăn: `Driver`, `GeoPoint(lat, lng)`, `Order`, `DeliveryAddress`, `PhoneNumber`, `Restaurant`, `TimeWindow(open, close)`, `Voucher`, `Rating(stars, comment)`.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Entity: `Driver`, `Order`, `Restaurant`, `Voucher` (có mã, có vòng đời: còn lượt/hết lượt). Value object: `GeoPoint`, `DeliveryAddress` (snapshot trong đơn), `PhoneNumber`, `TimeWindow`. `Rating` tùy ngữ cảnh: nếu khách sửa/xóa được đánh giá và cần tham chiếu tới nó → entity; nếu chỉ là giá trị gắn vào đơn → value object.
 

@@ -1569,7 +1569,7 @@ Những quyết định thiết kế và lý do:
 
 Với mỗi việc sau, chọn làm **đồng bộ** hay **bất đồng bộ** và giải thích: (a) kiểm tra mã giảm giá khi thanh toán, (b) gửi email xác nhận đơn, (c) tạo thumbnail cho ảnh vừa upload, (d) trừ số dư ví khi chuyển tiền, (e) cập nhật số liệu dashboard doanh thu.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 (a) Đồng bộ - người dùng cần biết ngay mã có hợp lệ để thấy giá cuối. (b) Bất đồng bộ - trễ vài giây không sao, email service lỗi không được làm hỏng đơn. (c) Bất đồng bộ - việc nặng; hiển thị ảnh gốc/placeholder trước. (d) Đồng bộ (trong transaction DB) - người dùng cần biết chuyển thành công hay không; các việc **sau** đó (thông báo, cộng điểm) mới async. (e) Bất đồng bộ - dashboard chấp nhận trễ.
 
@@ -1579,7 +1579,7 @@ Với mỗi việc sau, chọn làm **đồng bộ** hay **bất đồng bộ** 
 
 Topic exchange có các binding: Q1 `order.*`, Q2 `order.#`, Q3 `*.created.*`, Q4 `#.vn`. Message với routing key sau vào queue nào: (a) `order.created`, (b) `order.created.vn`, (c) `payment.created.th`, (d) `order`?
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 (a) Q1, Q2. (b) Q2, Q3, Q4. (c) Q3. (d) Q2 (`#` khớp 0 từ).
 
@@ -1589,7 +1589,7 @@ Topic exchange có các binding: Q1 `order.*`, Q2 `order.#`, Q3 `*.created.*`, Q
 
 Topic có 6 partition. Group A có 4 consumer, group B có 8 consumer. Mỗi consumer trong A và B nhận bao nhiêu partition? Nếu cần thứ tự sự kiện theo từng **khách hàng**, chọn key là gì?
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Group A: 6 partition chia cho 4 consumer → 2 consumer nhận 2 partition, 2 consumer nhận 1. Group B: 6 consumer mỗi người 1 partition, **2 consumer rảnh**. Key = `customer_id`.
 
@@ -1603,7 +1603,7 @@ Sửa ví dụ worker pool (mục 8.3): (1) backoff dùng **full jitter** `rando
 
 Trong bản Python outbox, chạy **2 relay** song song (2 thread, mỗi thread một connection SQLite tới cùng một file DB). Điều gì xảy ra? Vì sao PostgreSQL dùng `FOR UPDATE SKIP LOCKED` để giải quyết? Viết câu SQL lấy lô 100 event cho PostgreSQL.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Hai relay có thể đọc **cùng** các event chưa gửi và cùng publish → trùng lặp (vẫn đúng nếu consumer idempotent, nhưng lãng phí). Với PostgreSQL:
 

@@ -1252,7 +1252,7 @@ Dùng `pathlib` viết script sắp xếp các file trong thư mục `Downloads`
 2. Đọc `grades.json`, tính điểm trung bình, xuất ra `grades.csv` có thêm cột `average` và `rank`
 3. Xử lý trường hợp file JSON không tồn tại hoặc bị hỏng
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án Bài tập 4</summary>
 
 ```python

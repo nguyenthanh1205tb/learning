@@ -174,7 +174,7 @@ sequenceDiagram
     participant BUF as Buffer pool (RAM)
     participant WAL as WAL (đĩa, tuần tự)
     participant DATA as Data files (đĩa)
-    C->>PG: UPDATE ... ; COMMIT
+    C->>PG: UPDATE ... , COMMIT
     PG->>BUF: Sửa page trong RAM (dirty)
     PG->>WAL: Ghi bản ghi WAL + fsync
     PG-->>C: COMMIT OK
@@ -1061,7 +1061,7 @@ Ngay trên **localhost** (mạng gần như bằng 0), N+1 đã chậm hơn **10
 
 ## 📖 6. Transaction & ACID
 
-**Transaction** là một nhóm thao tác được đối xử như **một đơn vị duy nhất**: hoặc **tất cả** thành công, hoặc **không có gì** xảy ra. (Cách dùng transaction trong code Go đã học ở [Go Bài 13](../golang/13-database-sql.md), Python ở [Python Bài 13](../python/13-database-sql.md).)
+**Transaction** là một nhóm thao tác được đối xử như **một đơn vị duy nhất**: hoặc **tất cả** thành công, hoặc **không có gì** xảy ra. (Cách dùng transaction trong code Go đã học ở [Go Bài 13](../golang/13-database-sql.md), Python ở [Python Bài 13](../python/13-databases.md).)
 
 Ví dụ kinh điển: chuyển 100k từ An sang Bình = 2 lệnh `UPDATE`. Nếu server chết giữa 2 lệnh → tiền **biến mất**. Transaction ngăn điều đó.
 
@@ -1145,7 +1145,7 @@ sequenceDiagram
     participant A as Transaction A
     participant DB as Database
     participant B as Transaction B
-    A->>DB: BEGIN; UPDATE balance = 0 (id=1)
+    A->>DB: BEGIN, UPDATE balance = 0 (id=1)
     B->>DB: SELECT balance (id=1)
     DB-->>B: 0 ❌ (nếu cho phép dirty read)
     A->>DB: ROLLBACK
@@ -1178,7 +1178,7 @@ sequenceDiagram
     A->>DB: BEGIN
     A->>DB: SELECT balance (id=1)
     DB-->>A: 100
-    B->>DB: UPDATE balance = 50 (id=1); COMMIT
+    B->>DB: UPDATE balance = 50 (id=1), COMMIT
     A->>DB: SELECT balance (id=1)
     DB-->>A: 50 ⚠️ khác lần trước
 ```
@@ -1220,7 +1220,7 @@ sequenceDiagram
     participant B as Transaction B
     A->>DB: SELECT count(*) WHERE balance >= 100
     DB-->>A: 2
-    B->>DB: INSERT (3, 'Chi', 500); COMMIT
+    B->>DB: INSERT (3, 'Chi', 500), COMMIT
     A->>DB: SELECT count(*) WHERE balance >= 100
     DB-->>A: 3 👻 dòng "ma" xuất hiện
 ```
@@ -1262,8 +1262,8 @@ sequenceDiagram
     B->>DB: SELECT stock → 10
     Note over A: app tính 10 - 1 = 9
     Note over B: app tính 10 - 1 = 9
-    A->>DB: UPDATE stock = 9; COMMIT
-    B->>DB: UPDATE stock = 9; COMMIT
+    A->>DB: UPDATE stock = 9, COMMIT
+    B->>DB: UPDATE stock = 9, COMMIT
     Note over DB: stock = 9 nhưng đã bán 2 máy!<br/>Lần cập nhật của A bị "mất"
 ```
 
@@ -1320,8 +1320,8 @@ sequenceDiagram
     B->>DB: SELECT count(*) WHERE on_call → 2
     Note over A: 2 người trực, mình nghỉ được
     Note over B: 2 người trực, mình nghỉ được
-    A->>DB: UPDATE Alice on_call=false; COMMIT
-    B->>DB: UPDATE Bob on_call=false; COMMIT
+    A->>DB: UPDATE Alice on_call=false, COMMIT
+    B->>DB: UPDATE Bob on_call=false, COMMIT
     Note over DB: 0 bác sĩ trực! 🚨
 ```
 
@@ -2187,13 +2187,13 @@ gantt
     dateFormat HH:mm
     axisFormat %H:%M
     section Base backup
-    Base backup lúc 02:00 :done, b1, 02:00, 10m
+    Base backup lúc 2h00 :done, b1, 02:00, 10m
     section WAL archive
     WAL liên tục lên S3 :active, w1, 02:10, 12h
     section Sự cố
-    DELETE nhầm lúc 14:32 :crit, s1, 14:32, 5m
+    DELETE nhầm lúc 14h32 :crit, s1, 14:32, 5m
     section Khôi phục
-    Restore base + replay WAL tới 14:31:59 :r1, 14:40, 30m
+    Restore base + replay WAL tới 14h31m59s :r1, 14:40, 30m
 ```
 
 Công cụ: **pgBackRest**, **WAL-G**, **Barman**; dịch vụ managed (RDS, Cloud SQL) có sẵn PITR.
@@ -2339,7 +2339,7 @@ db.execute("UPDATE products SET stock = stock - 1 WHERE id=1 AND stock >= 1")
 
 Với dataset trong bài, viết query tìm **tất cả đơn `cancelled` của khách `777`**. Đo `EXPLAIN ANALYZE` khi: (a) không có index nào ngoài khóa chính, (b) có index `(customer_id)`, (c) có index `(customer_id, status)`. Ghi lại thời gian và số buffer.
 
-<details><summary>Gợi ý đáp án</summary>
+<details markdown="1"><summary>Gợi ý đáp án</summary>
 
 ```sql
 DROP INDEX IF EXISTS idx_orders_cust_created;  -- làm sạch
@@ -2364,7 +2364,7 @@ Viết lại các điều kiện sau để dùng được index B-tree trên c�
 2. `WHERE total / 1000 > 4000`
 3. `WHERE substring(email, 1, 5) = 'user7'`
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 1. `WHERE created_at >= '2025-01-01' AND created_at < '2026-01-01'`
 2. `WHERE total > 4000000`
@@ -2382,7 +2382,7 @@ Viết hàm `Transfer(from, to, amount)` (Go **hoặc** Python) chạy trong tra
 - **Không bao giờ deadlock** dù có 100 goroutine/thread chuyển qua lại ngẫu nhiên giữa 10 tài khoản
 - Kiểm tra: tổng tiền 10 tài khoản trước và sau **bằng nhau**
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Khóa hai dòng theo thứ tự id tăng dần trong **một** câu:
 

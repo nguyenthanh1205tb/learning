@@ -1038,7 +1038,7 @@ Nhiều hệ thống thực (bộ hẹn giờ của Go runtime, `setTimeout` c�
 
 **Bài 1.1** Mảng `[10, 20, 15, 30, 40]` có phải min-heap không? Còn `[10, 15, 20, 12, 40]`?
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 - `[10, 20, 15, 30, 40]`: cha i=0 (10) ≤ 20, 15 ✅; i=1 (20) ≤ 30, 40 ✅ → **là** min-heap.
 - `[10, 15, 20, 12, 40]`: i=1 (15) có con i=3 là 12 < 15 ❌ → **không phải**.
@@ -1047,7 +1047,7 @@ Nhiều hệ thống thực (bộ hẹn giờ của Go runtime, `setTimeout` c�
 
 **Bài 1.2** Vẽ min-heap sau khi chèn lần lượt `7, 2, 9, 4, 1` và sau một lần `pop`.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Chèn: [7] → [2,7] → [2,7,9] → [2,4,9,7] → chèn 1 vào i=4, cha i=1 (4) → đổi → [2,1,9,7,4], cha i=0 (2) → đổi → **[1,2,9,7,4]**.
 
@@ -1057,7 +1057,7 @@ Pop: lấy 1, đưa 4 lên → [4,2,9,7]; 4 > min(2,9)=2 → đổi → [2,4,9,7
 
 **Bài 1.3** (LeetCode 1046 — Last Stone Weight) Mỗi lượt lấy 2 viên đá nặng nhất `x ≤ y`; nếu bằng nhau cả hai biến mất, không thì còn lại viên `y - x`. Trả về khối lượng viên cuối (hoặc 0).
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Max-heap, lặp tới khi còn ≤ 1 viên. O(n log n).
 
@@ -1082,7 +1082,7 @@ print(last_stone([2, 7, 4, 1, 8, 1]))  # 1
 
 **Bài 2.1** (LeetCode 703 — Kth Largest in a Stream) Thiết kế lớp nhận từng số và trả về số lớn thứ k sau mỗi lần thêm.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Min-heap cỡ k; sau mỗi `add`, nếu cỡ > k thì pop; đỉnh là đáp án. `add` O(log k).
 
@@ -1090,7 +1090,7 @@ Min-heap cỡ k; sau mỗi `add`, nếu cỡ > k thì pop; đỉnh là đáp án
 
 **Bài 2.2** (LeetCode 347 — Top K Frequent Elements) Trả về k phần tử xuất hiện nhiều nhất.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Đếm bằng hash map, rồi top-K theo tần suất bằng min-heap cỡ k trên cặp `(count, value)`: O(n log k). (Cách O(n): bucket sort theo tần suất.)
 
@@ -1167,7 +1167,7 @@ Min-heap cỡ k; sau mỗi `add`, nếu cỡ > k thì pop; đỉnh là đáp án
 
 **Bài 2.3** (LeetCode 973 — K Closest Points to Origin) Tìm k điểm gần gốc tọa độ nhất.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Top-K **nhỏ nhất** theo `x² + y²` → **max-heap** cỡ k (Python: đẩy `(-dist, x, y)`). Không cần căn bậc hai.
 
@@ -1175,7 +1175,7 @@ Top-K **nhỏ nhất** theo `x² + y²` → **max-heap** cỡ k (Python: đẩy 
 
 **Bài 2.4** (LeetCode 767 — Reorganize String) Sắp xếp lại chuỗi sao cho không có 2 ký tự giống nhau kề nhau.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Max-heap theo số lần còn lại; mỗi bước lấy ký tự nhiều nhất **khác** ký tự vừa đặt (giữ ký tự vừa dùng ở ngoài heap một lượt rồi mới đẩy lại). Nếu có ký tự xuất hiện > ⌈n/2⌉ lần → không thể.
 
@@ -1185,7 +1185,7 @@ Max-heap theo số lần còn lại; mỗi bước lấy ký tự nhiều nhất
 
 **Bài 3.1** (LeetCode 632 — Smallest Range Covering Elements from K Lists) Tìm khoảng `[a, b]` nhỏ nhất chứa ít nhất một số từ mỗi danh sách.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Giống merge K lists: heap chứa phần tử hiện tại của mỗi list, đồng thời theo dõi `max` hiện tại. Khoảng ứng viên = `[heap.min, max]`. Pop min, push phần tử kế của list đó, cập nhật max; dừng khi một list hết. O(N log k).
 
@@ -1193,7 +1193,7 @@ Giống merge K lists: heap chứa phần tử hiện tại của mỗi list, đ
 
 **Bài 3.2** (LeetCode 480 — Sliding Window Median) Trung vị của mọi cửa sổ kích thước k.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Hai heap + **lazy deletion**: phần tử rời cửa sổ được ghi vào hash map "chờ xóa"; chỉ thật sự bỏ khi nó nổi lên đỉnh. Cần đếm kích thước "hiệu lực" của mỗi heap để cân bằng đúng.
 
@@ -1201,7 +1201,7 @@ Hai heap + **lazy deletion**: phần tử rời cửa sổ được ghi vào has
 
 **Bài 3.3** (LeetCode 502 — IPO) Có vốn `w`, được làm tối đa `k` dự án; mỗi dự án cần vốn `capital[i]` và cho lãi `profits[i]`. Tối đa hóa vốn cuối.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Sắp xếp dự án theo vốn cần. Mỗi vòng: đẩy mọi dự án có `capital ≤ w` vào **max-heap theo lãi**, pop dự án lãi nhất, `w += profit`. Hai "heap" (một mảng đã sort đóng vai min-heap theo vốn + một max-heap theo lãi). O(n log n).
 

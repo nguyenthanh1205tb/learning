@@ -80,7 +80,7 @@ Mỗi node biết cả node **trước** (`prev`) và **sau** (`next`). Đi đư
 
 ```mermaid
 flowchart LR
-    N1(["nil"]) <-- "prev" --- A["1"]
+    A["1"] -- "prev" --> N1(["nil"])
     A <--> B["2"]
     B <--> C["3"]
     C -- "next" --> N2(["nil"])

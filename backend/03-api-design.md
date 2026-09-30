@@ -1428,7 +1428,7 @@ Client retry tự động (thư viện HTTP, service mesh, load balancer) + endp
 
 Chọn status code cho: (a) tạo review thành công; (b) người dùng chưa đăng nhập xem lịch sử vé; (c) nhân viên rạp A sửa suất chiếu của rạp B; (d) đặt 12 ghế trong khi tối đa 8; (e) hủy vé đã soát; (f) server gọi cổng thanh toán bị timeout; (g) xóa một thẻ đã lưu thành công.
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 (a) `201` + `Location`; (b) `401`; (c) `403` (hoặc `404` nếu không muốn lộ suất chiếu rạp B tồn tại); (d) `422`; (e) `409`; (f) `504` (hoặc `502` nếu cổng trả lỗi); (g) `204`.
@@ -1439,7 +1439,7 @@ Chọn status code cho: (a) tạo review thành công; (b) người dùng chưa 
 
 Viết lại theo phong cách REST: `POST /getShowtimesByMovie`, `GET /Movie/42/`, `POST /bookings/delete/7`, `GET /cinemas/3/rooms/5/showtimes/12/seats/F7/status`.
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 `GET /showtimes?movie_id=...`; `GET /movies/42`; `DELETE /bookings/7` (hoặc `POST /bookings/7/cancel`); `GET /showtimes/12/seats/F7` (hoặc `GET /showtimes/12/seats?code=F7`).
@@ -1450,7 +1450,7 @@ Viết lại theo phong cách REST: `POST /getShowtimesByMovie`, `GET /Movie/42/
 
 Mở rộng ví dụ pagination để hỗ trợ `sort=rating` (giảm dần), phá hòa bằng `id`. Cursor phải chứa những gì? Nếu client đổi `sort` giữa chừng nhưng vẫn gửi cursor cũ thì sao - làm thế nào phát hiện?
 
-<details>
+<details markdown="1">
 <summary>Gợi ý</summary>
 
 Cursor chứa `(rating, id)` **và tên cột sort** (vd `{"s":"rating","v":8.7,"i":42}`). Khi decode, nếu `s` khác tham số `sort` hiện tại → `400 Bad Request` "cursor không khớp với sort". Có thể ký HMAC để chống sửa.

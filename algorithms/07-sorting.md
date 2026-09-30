@@ -1873,7 +1873,7 @@ flowchart TD
 
 **Bài 1.1** (LeetCode 75 — Sort Colors): Mảng chỉ gồm 0, 1, 2 (đỏ, trắng, xanh). Sắp xếp **tại chỗ, một lượt duyệt**.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Chính là 3-way partition với pivot = 1 (bài toán cờ Hà Lan của Dijkstra).
 
@@ -1935,7 +1935,7 @@ Chính là 3-way partition với pivot = 1 (bài toán cờ Hà Lan của Dijkst
 
 **Bài 1.2** (LeetCode 88 — Merge Sorted Array): `nums1` có độ dài `m+n` (n ô cuối trống), trộn `nums2` vào `nums1` tại chỗ.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Trộn **từ cuối lên** để không ghi đè phần tử chưa xét: `i=m-1, j=n-1, k=m+n-1`; lấy số lớn hơn giữa `nums1[i]` và `nums2[j]` đặt vào `nums1[k]`. Khi `j < 0` thì xong. O(m+n) thời gian, O(1) bộ nhớ.
 
@@ -1943,7 +1943,7 @@ Trộn **từ cuối lên** để không ghi đè phần tử chưa xét: `i=m-1
 
 **Bài 1.3**: Chạy tay insertion sort trên `[3, 7, 4, 9, 5, 2, 6, 1]`, đếm số lần dịch. Kiểm tra bằng cách đếm số nghịch thế.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Số nghịch thế = 17 (ví dụ 3 nghịch thế với 2, 1; 7 với 4, 5, 2, 6, 1; ...). Số lần dịch của insertion sort đúng bằng 17.
 
@@ -1953,7 +1953,7 @@ Số nghịch thế = 17 (ví dụ 3 nghịch thế với 2, 1; 7 với 4, 5, 2,
 
 **Bài 2.1** (LeetCode 56 — Merge Intervals): Gộp các khoảng chồng lấn. `[[1,3],[2,6],[8,10],[15,18]]` → `[[1,6],[8,10],[15,18]]`.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Sắp xếp theo điểm đầu, rồi duyệt: nếu khoảng hiện tại bắt đầu ≤ điểm cuối của khoảng cuối cùng trong kết quả → gộp (lấy max điểm cuối), ngược lại thêm mới. O(n log n).
 
@@ -1982,7 +1982,7 @@ Sắp xếp theo điểm đầu, rồi duyệt: nếu khoảng hiện tại bắ
 
 **Bài 2.2** (LeetCode 179 — Largest Number): Ghép các số thành số lớn nhất. `[3,30,34,5,9]` → `"9534330"`.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Comparator: đặt `a` trước `b` nếu chuỗi `a+b > b+a`. Ví dụ "3" vs "30": "330" > "303" → 3 đứng trước 30.
 
@@ -2044,7 +2044,7 @@ Comparator: đặt `a` trước `b` nếu chuỗi `a+b > b+a`. Ví dụ "3" vs "
 
 **Bài 2.3** (LeetCode 215 — Kth Largest Element): Tìm phần tử lớn thứ k **không sắp xếp toàn bộ**.
 
-<details><summary>Đáp án — Quickselect O(n) trung bình</summary>
+<details markdown="1"><summary>Đáp án — Quickselect O(n) trung bình</summary>
 
 Partition như quick sort, nhưng chỉ đệ quy vào **một** bên chứa vị trí cần tìm: `n + n/2 + n/4 + ... = 2n` → O(n) trung bình. (Cách khác: min-heap kích thước k, O(n log k) — xem [Bài 10](./10-heaps.md).)
 
@@ -2098,7 +2098,7 @@ Partition như quick sort, nhưng chỉ đệ quy vào **một** bên chứa v�
 
 **Bài 3.1** (Đếm nghịch thế — kinh điển): Đếm số cặp `i < j` mà `a[i] > a[j]` trong O(n log n).
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Sửa merge sort: khi trộn, nếu lấy phần tử từ nửa **phải** (`right[j] < left[i]`), thì `right[j]` nhỏ hơn **tất cả** phần tử còn lại ở nửa trái → cộng thêm `len(left) - i` nghịch thế.
 
@@ -2137,7 +2137,7 @@ Sửa merge sort: khi trộn, nếu lấy phần tử từ nửa **phải** (`ri
 
 **Bài 3.4** (Thiết kế): Bạn có file log 50 GB, mỗi dòng có timestamp, cần sắp xếp theo thời gian trên máy RAM 4 GB. Mô tả thuật toán và ước lượng số lần đọc/ghi đĩa.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 External merge sort: đọc từng khúc ~3 GB, sort trong RAM, ghi ra ~17 file tạm (run). Sau đó mở 17 file, trộn k-đường bằng min-heap chứa phần tử đầu của mỗi file (O(N log k)), ghi ra file kết quả. Tổng cộng đọc 2 lần và ghi 2 lần toàn bộ dữ liệu.
 

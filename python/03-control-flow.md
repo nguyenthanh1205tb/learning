@@ -1299,7 +1299,7 @@ Chương trình chọn ngẫu nhiên một số từ 1-100 (`import random; secr
 
 Nhập một chuỗi như `"5 + 3"`, `"10 / 2"`, dùng `split()` và `match` để tính kết quả. Xử lý chia cho 0 và phép toán không hợp lệ.
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án Bài tập 1</summary>
 
 ```python

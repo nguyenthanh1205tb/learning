@@ -1701,7 +1701,7 @@ os.system("convert " + filename + " out.png")
 if request.headers.get("X-Api-Key") == settings.API_KEY: ...
 ```
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 (a) SQL injection ở cả `category` và `sort` → placeholder cho `category`, allowlist cho `sort`. (b) Path traversal (và `name` là đường dẫn tuyệt đối thì `join` bỏ luôn `uploads`) → resolve + `is_relative_to`, hoặc lưu theo UUID. (c) Mass assignment (client gửi `is_admin=True`) → schema riêng cho đăng ký. (d) Command injection → `subprocess.run(["convert", "--", filename, "out.png"])` hoặc dùng thư viện Pillow. (e) So sánh không constant-time → `hmac.compare_digest`.
@@ -1712,7 +1712,7 @@ if request.headers.get("X-Api-Key") == settings.API_KEY: ...
 
 Luồng: user đăng nhập → nhập email mới → hệ thống gửi link xác nhận tới email mới → click link → đổi email. Liệt kê ít nhất một mối đe dọa cho mỗi chữ của STRIDE và biện pháp.
 
-<details>
+<details markdown="1">
 <summary>Gợi ý</summary>
 
 S: kẻ chiếm session đổi email để chiếm tài khoản → yêu cầu nhập lại mật khẩu, gửi thông báo tới **email cũ**. T: sửa `user_id` trong link xác nhận → token ký HMAC/ngẫu nhiên lưu DB. R: audit log thay đổi. I: link chứa email lộ qua Referer → token không chứa PII, `Referrer-Policy`. D: spam gửi email xác nhận → rate limit. E: link xác nhận dùng được cho tài khoản khác → token gắn với user + hết hạn 30 phút + dùng một lần.

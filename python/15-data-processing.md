@@ -1814,7 +1814,7 @@ Mở rộng Ứng dụng 3: mỗi lần chạy, **lưu lịch sử giá** vào S
 
 Viết `weekly_report.py` gồm các bước tách rời: `extract()` (đọc 7 file CSV hằng ngày), `transform()` (làm sạch, tổng hợp), `load()` (Excel + biểu đồ), `notify()` (email). Mỗi bước ghi log thời gian chạy. Nếu một bước lỗi, ghi log và gửi email báo lỗi thay vì báo cáo.
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án Bài tập 1</summary>
 
 ```python

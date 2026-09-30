@@ -2733,7 +2733,7 @@ Insert ngẫu nhiên khắp B-tree → page split, index phình to, cache kém. 
 
 500 triệu DAU, mỗi người đăng 0,2 ảnh/ngày, xem 50 ảnh/ngày. Ảnh trung bình 300 KB (sau nén), lưu vĩnh viễn, 3 bản sao. Tính: upload QPS, view QPS, dung lượng ảnh mới mỗi ngày và sau 10 năm, băng thông đọc.
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 - Upload: 500M × 0,2 = 100M ảnh/ngày ÷ 10^5 ≈ **1.000 ảnh/s** (peak ~3.000)
@@ -2748,7 +2748,7 @@ Insert ngẫu nhiên khắp B-tree → page split, index phình to, cache kém. 
 
 Request đi qua: LB (99,99%) → 2 app server song song (mỗi cái 99,5%) → Redis (99,9%) → PostgreSQL primary (99,95%). Availability tổng? Nếu thêm 1 replica PostgreSQL có auto-failover (coi như song song, mỗi cái 99,95%) thì sao?
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 - App song song: 1 − 0,005² = 0,999975
@@ -2765,7 +2765,7 @@ Sửa `TokenBucket` trong bài để: (a) dùng `time.Now()`/`time.monotonic()` 
 
 Mở rộng `Ring` để mỗi node có **trọng số** (node 32GB RAM có weight 2 so với node 16GB weight 1). Kiểm tra phân bố 100.000 key đúng tỉ lệ. Thêm hàm `GetN(key, n)` trả về **n node khác nhau** liên tiếp trên vòng (dùng để lưu n bản sao, như Cassandra).
 
-<details>
+<details markdown="1">
 <summary>Gợi ý</summary>
 
 Số vnode = `replicas × weight`. `GetN`: từ vị trí tìm được, đi tiếp theo chiều kim đồng hồ, bỏ qua vnode thuộc node đã chọn, đến khi đủ n node khác nhau (hoặc hết node).

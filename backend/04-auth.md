@@ -1594,7 +1594,7 @@ if hmac.Equal(providedSig, expectedSig) { ... }
 
 Với mỗi tình huống, chọn status code: (a) gọi API không kèm token; (b) token hết hạn; (c) user thường gọi `DELETE /users/7`; (d) user An gọi `GET /orders/1002` là đơn của Bình; (e) API key đã bị thu hồi.
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 (a) 401. (b) 401 (client nên dùng refresh token rồi thử lại). (c) 403. (d) 403 hoặc **404** (khuyến khích 404 để không lộ đơn 1002 tồn tại). (e) 401 - key không còn định danh được ai.
@@ -1605,7 +1605,7 @@ Với mỗi tình huống, chọn status code: (a) gọi API không kèm token; 
 
 Lấy token trong mục 4, tách 3 phần, decode base64url phần giữa (bằng `base64 -d` hoặc Python) và cho biết `sub`, `role`, `exp`. Sau đó đổi `exp` thành Unix time ra giờ Việt Nam.
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 `sub = u_42`, `role = editor`, `exp = 1700000900` → 2023-11-14 22:28:20 UTC = **2023-11-15 05:28:20 giờ Việt Nam (UTC+7)**. Bài học: ai cũng đọc được payload.
@@ -1638,7 +1638,7 @@ Cài đặt (có thể dùng SQLite) bảng `refresh_tokens` như mục 4 và h�
 
 Mở rộng code TOTP: (1) lưu `last_counter` cho mỗi user và từ chối mã đã dùng; (2) sinh 10 recovery code dạng `xxxx-xxxx`, chỉ lưu hash, mỗi mã dùng được một lần; (3) sinh URI `otpauth://` để hiển thị QR. Kiểm tra lại bằng vector RFC 6238.
 
-<details>
+<details markdown="1">
 <summary>Đáp án gợi ý (phần chống replay, Python)</summary>
 
 ```python

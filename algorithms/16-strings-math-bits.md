@@ -2307,7 +2307,7 @@ So với backtracking ở [Bài 6](./06-recursion-backtracking.md): bitmask **kh
 
 **1.1** Find the Index of the First Occurrence in a String (LeetCode 28) — cài bằng **KMP**.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Dùng đúng `kmp_search` ở mục 3.5, trả về phần tử đầu tiên hoặc −1. Nhớ trường hợp `needle` rỗng (trả về 0).
 
@@ -2315,7 +2315,7 @@ Dùng đúng `kmp_search` ở mục 3.5, trả về phần tử đầu tiên ho�
 
 **1.2** Valid Anagram (242), Valid Palindrome (125).
 
-<details><summary>Đáp án 125</summary>
+<details markdown="1"><summary>Đáp án 125</summary>
 
 ```python
 def is_palindrome(s: str) -> bool:
@@ -2335,7 +2335,7 @@ def is_palindrome(s: str) -> bool:
 
 **1.4** Count Primes (204): đếm số nguyên tố **< n**.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Sàng Eratosthenes đến `n − 1`. Cẩn thận `n ≤ 2` → 0. Python dùng slice assignment để không bị TLE.
 
@@ -2345,7 +2345,7 @@ Sàng Eratosthenes đến `n − 1`. Cẩn thận `n ≤ 2` → 0. Python dùng 
 
 **2.1** Repeated Substring Pattern (459) bằng mảng LPS (xem tip ở mục 3.5).
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 ```python
 def repeated_substring_pattern(s: str) -> bool:
@@ -2360,7 +2360,7 @@ def repeated_substring_pattern(s: str) -> bool:
 
 **2.3** Pow(x, n) (50) — luỹ thừa nhanh, chú ý n âm và `n = −2³¹`.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Nếu `n < 0` thì `x = 1/x, n = −n` (trong Go dùng `int64` để `−n` không tràn khi n = −2³¹). Sau đó vòng lặp bit như mục 11.
 
@@ -2374,7 +2374,7 @@ Nếu `n < 0` thì `x = 1/x, n = −n` (trong Go dùng `int64` để `−n` khô
 
 **3.1** Shortest Palindrome (214): thêm ký tự **vào đầu** để thành palindrome ngắn nhất.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Tìm **tiền tố palindrome dài nhất** của s: xây LPS của `t = s + "#" + reverse(s)`; `k = lps[-1]` là độ dài tiền tố đó. Đáp án = `reverse(s[k:]) + s`. O(n).
 
@@ -2384,7 +2384,7 @@ Tìm **tiền tố palindrome dài nhất** của s: xây LPS của `t = s + "#"
 
 **3.3** Single Number II (137): mọi số xuất hiện **3 lần** trừ một số.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Đếm bit: với mỗi vị trí bit i (0..31), tổng các bit i của mọi số `mod 3` chính là bit i của số cần tìm. Cẩn thận số âm (bit 31) trong Python: nếu kết quả ≥ 2³¹ thì trừ 2³².
 

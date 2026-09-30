@@ -1721,7 +1721,7 @@ e) m := map[string]float64{}              (giá theo mã sản phẩm)
 f) def do_stuff(o)                        (hủy đơn và hoàn tiền)
 ```
 
-<details><summary>Đáp án gợi ý</summary>
+<details markdown="1"><summary>Đáp án gợi ý</summary>
 
 | | Go | Python |
 |---|---|---|
@@ -1755,7 +1755,7 @@ def can_publish(post, user):
         return False
 ```
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 ```python
 def can_publish(post, user) -> bool:
@@ -1796,7 +1796,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-<details><summary>Đáp án gợi ý</summary>
+<details markdown="1"><summary>Đáp án gợi ý</summary>
 
 1. **Global mutable state** (`var db`) → inject vào struct handler (`type CustomerHandler struct{ repo CustomerRepo }`)
 2. **Nuốt lỗi** (`rows, _ :=`, `rows.Scan` bỏ lỗi, không `rows.Close()`) → xử lý lỗi, trả 500/404
@@ -1828,7 +1828,7 @@ def greet(name):
         print("Chào buổi tối, " + name)
 ```
 
-<details><summary>Đáp án gợi ý</summary>
+<details markdown="1"><summary>Đáp án gợi ý</summary>
 
 ```python
 from datetime import datetime, time

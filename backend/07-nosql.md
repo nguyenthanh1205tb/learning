@@ -1318,7 +1318,7 @@ Với mỗi tình huống, bạn ưu tiên **C** hay **A** khi mạng đứt, v�
 3. Giỏ hàng
 4. Số dư ví điện tử
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 1. **PA/EL** - sai lệch vài lượt xem không ảnh hưởng; cần nhanh.
@@ -1332,7 +1332,7 @@ Với mỗi tình huống, bạn ưu tiên **C** hay **A** khi mạng đứt, v�
 
 Cụm Cassandra có `N = 5`. Liệt kê các cặp (R, W) đảm bảo luôn đọc được bản ghi mới nhất. Cặp nào chịu được 2 node chết mà vẫn đọc và ghi được?
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 Cần `R + W > 5`, ví dụ (1,5), (2,4), (3,3), (4,2), (5,1) và các cặp lớn hơn. Chịu 2 node chết nghĩa là còn 3 node → cần `R ≤ 3` và `W ≤ 3` → chỉ có **(3,3)** - chính là `QUORUM` (`⌊5/2⌋ + 1 = 3`).
@@ -1343,7 +1343,7 @@ Cần `R + W > 5`, ví dụ (1,5), (2,4), (3,3), (4,2), (5,1) và các cặp l�
 
 Thiết kế document MongoDB cho blog: `User`, `Post`, `Comment`, `Tag`. Một post có trung bình 20 comment nhưng bài viral có 50.000 comment. Trang chi tiết post hiển thị tên + avatar tác giả, 10 comment mới nhất, danh sách tag. Viết cấu trúc JSON mẫu và giải thích từng lựa chọn.
 
-<details>
+<details markdown="1">
 <summary>Gợi ý</summary>
 
 - `posts`: nhúng `author: {id, name, avatar}` (extended reference - chấp nhận cập nhật lại khi user đổi avatar, hoặc chỉ nhúng id + name), nhúng `tags: ["go", "backend"]` (mảng nhỏ, có giới hạn), nhúng `recent_comments` (≤ 10, subset pattern), lưu `comment_count` (computed pattern).
@@ -1362,7 +1362,7 @@ Mở rộng code inverted index:
 1. Thêm bước **bỏ dấu tiếng Việt** vào analyzer để "ao thun" tìm ra "Áo thun". Python: `unicodedata.normalize("NFD", s)` rồi bỏ ký tự thuộc loại `Mn`, xử lý riêng `đ → d`. Go: `golang.org/x/text/unicode/norm` + `runes.Remove(runes.In(unicode.Mn))`.
 2. Thêm `SearchAny(query)` trả về tài liệu chứa **ít nhất một** từ, **xếp hạng** theo số từ khớp (nhiều hơn đứng trước).
 
-<details>
+<details markdown="1">
 <summary>Gợi ý Python cho bước 1</summary>
 
 ```python

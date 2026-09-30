@@ -1064,7 +1064,7 @@ Và khi bài toán **quá khó** (NP-hard như Set Cover, Traveling Salesman), g
 
 **Bài 1.1** (LeetCode 122 — Best Time to Buy and Sell Stock II) Được mua bán nhiều lần (giữ tối đa 1 cổ phiếu). Tối đa hóa lợi nhuận.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Cộng **mọi** đoạn tăng: `sum(max(0, p[i] - p[i-1]))`. Lập luận: một lần mua-bán dài bằng tổng các bước tăng nhỏ bên trong; bỏ các bước giảm. O(n).
 
@@ -1079,7 +1079,7 @@ print(max_profit([7, 1, 5, 3, 6, 4]))  # 7
 
 **Bài 1.2** (LeetCode 881 — Boats to Save People) Mỗi thuyền chở tối đa 2 người, tải trọng `limit`. Số thuyền ít nhất?
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Sort; hai con trỏ: người **nặng nhất** luôn đi; nếu ghép được với người **nhẹ nhất** thì ghép. O(n log n).
 
@@ -1101,7 +1101,7 @@ print(num_boats([3, 2, 2, 1], 3))  # 3
 
 **Bài 1.3** Với mệnh giá `{1, 5, 10, 25}` (xu Mỹ), greedy có luôn đúng không? Còn `{1, 5, 10, 20, 25}`?
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 `{1, 5, 10, 25}`: đúng (hệ chuẩn tắc). `{1, 5, 10, 20, 25}`: sai — đổi 40: greedy 25 + 10 + 5 = 3 đồng; tối ưu 20 + 20 = 2 đồng.
 
@@ -1111,7 +1111,7 @@ print(num_boats([3, 2, 2, 1], 3))  # 3
 
 **Bài 2.1** (LeetCode 452 — Minimum Number of Arrows) Mỗi bóng là đoạn `[x1, x2]`; mũi tên bắn tại `x` làm vỡ mọi bóng chứa `x`. Số mũi tên ít nhất?
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Sort theo **end**; bắn tại end của bóng đầu tiên; bỏ qua mọi bóng có `start ≤` vị trí bắn; gặp bóng chưa vỡ → bắn mũi mới tại end của nó. Chính là activity selection (chú ý ở đây chạm biên **vẫn vỡ** nên dùng `start > arrow` để bắn mũi mới).
 
@@ -1119,7 +1119,7 @@ Sort theo **end**; bắn tại end của bóng đầu tiên; bỏ qua mọi bón
 
 **Bài 2.2** (LeetCode 763 — Partition Labels) Chia chuỗi thành nhiều phần nhất sao cho mỗi chữ cái chỉ xuất hiện trong một phần.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Ghi `last[c]` = vị trí cuối của mỗi chữ. Duyệt, mở rộng `end = max(end, last[s[i]])`; khi `i == end` → cắt. O(n).
 
@@ -1141,7 +1141,7 @@ print(partition_labels("ababcbacadefegdehijhklij"))  # [9, 7, 8]
 
 **Bài 2.3** (LeetCode 406 — Queue Reconstruction by Height) Mỗi người `(h, k)`: cao `h`, có đúng `k` người cao ≥ h đứng trước. Dựng lại hàng.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Sort theo `h` **giảm dần**, `k` tăng dần; chèn từng người vào vị trí `k`. Người thấp hơn chèn sau không ảnh hưởng số đếm của người cao hơn. O(n²).
 
@@ -1153,7 +1153,7 @@ Sort theo `h` **giảm dần**, `k` tăng dần; chèn từng người vào vị
 
 **Bài 3.1** (LeetCode 135 — Candy) Trẻ đứng hàng có điểm `ratings`; mỗi trẻ ≥ 1 kẹo; trẻ điểm cao hơn **hàng xóm** phải nhiều kẹo hơn hàng xóm đó. Tổng kẹo ít nhất?
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Hai lượt quét: trái → phải đảm bảo điều kiện với hàng xóm trái; phải → trái lấy `max` để đảm bảo với hàng xóm phải. O(n).
 
@@ -1176,7 +1176,7 @@ print(candy([1, 0, 2]), candy([1, 2, 2]))  # 5 4
 
 **Bài 3.2** (LeetCode 630 — Course Schedule III) Mỗi khóa học có `(duration, lastDay)`. Học tối đa bao nhiêu khóa?
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Sort theo `lastDay`; duyệt, cộng dồn thời gian và đẩy `duration` vào **max-heap**; nếu tổng vượt `lastDay` → bỏ khóa **dài nhất** đã chọn (pop heap). Exchange argument: bỏ khóa dài nhất giữ số khóa như cũ nhưng tổng thời gian nhỏ nhất.
 

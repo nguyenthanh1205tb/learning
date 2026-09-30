@@ -1474,7 +1474,7 @@ Viết class `Range2D(rows, cols)` có thể dùng trong `for`, trả về các 
 
 Viết chương trình giả lập tải 10 file, mỗi file mất ngẫu nhiên 0.1-0.5 giây (`asyncio.sleep`). So sánh thời gian tải tuần tự và đồng thời. Bonus: dùng `asyncio.Semaphore(3)` để giới hạn tối đa 3 file tải cùng lúc.
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án Bài tập 2.2 và 3.4</summary>
 
 ```python

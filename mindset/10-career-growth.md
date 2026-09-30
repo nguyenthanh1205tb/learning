@@ -1068,7 +1068,7 @@ Tạo brag document theo mẫu ở mục 7. Điền những gì bạn đã làm 
 
 Chọn 5 bullet point trong CV hiện tại của bạn (hoặc viết mới nếu chưa có). Viết lại theo công thức XYZ. Mỗi bullet phải có: động từ mạnh, kết quả, cách đo, và cách làm.
 
-<details><summary>Ví dụ</summary>
+<details markdown="1"><summary>Ví dụ</summary>
 
 - Trước: *"Làm việc với Redis"*
 - Sau: *"Giảm tải database 60% và thời gian phản hồi trang sản phẩm từ 400ms xuống 80ms bằng cách thêm cache Redis với chiến lược cache-aside và invalidation theo sự kiện."*

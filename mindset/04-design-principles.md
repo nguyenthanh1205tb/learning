@@ -1623,7 +1623,7 @@ Với mỗi mô tả, cho biết vấn đề là **coupling cao** hay **cohesion
 3. Hàm `ProcessOrder(order, mode int)` với `mode` 1-5 làm 5 việc khác nhau
 4. Đổi tên cột `phone` thành `phone_number` phải sửa 14 file ở 6 package
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 1. **Cohesion thấp** (các thứ không liên quan gom chung) - và thường dẫn đến coupling cao vì ai cũng import `common`.
 2. **Coupling cao** (content coupling - phụ thuộc vào dữ liệu nội bộ của module khác) và **rò rỉ kiến thức** (quy tắc phí ship bị lặp). Module Đơn hàng nên cung cấp dữ liệu phí ship đã tính, hoặc phát sự kiện.
@@ -1653,7 +1653,7 @@ class ReportService:
         self.smtp.sendmail("bot@company.vn", "boss@company.vn", content)
 ```
 
-<details><summary>Đáp án gợi ý</summary>
+<details markdown="1"><summary>Đáp án gợi ý</summary>
 
 - **D (DIP)**: tự tạo kết nối DB và SMTP thật trong `__init__` → không test được. Truyền `SalesRepo` và `Mailer` vào.
 - **S (SRP)**: một class vừa truy vấn, vừa định dạng, vừa gửi email - ba lý do thay đổi (schema DB, định dạng báo cáo, kênh gửi).
@@ -1699,7 +1699,7 @@ func validateWalletPIN(pin string) error {
 }
 ```
 
-<details><summary>Đáp án gợi ý</summary>
+<details markdown="1"><summary>Đáp án gợi ý</summary>
 
 **Không nên gộp.** Chúng là hai **kiến thức khác nhau**, do hai nhóm khác nhau quyết định (chính sách bảo mật tài khoản vs quy định của ví/ngân hàng) và sẽ thay đổi độc lập: PIN sắp tới có thể phải **đúng** 6 chữ số, **chỉ** chữ số, không được là ngày sinh; mật khẩu có thể phải kiểm tra danh sách mật khẩu bị lộ. Gộp lại sẽ sinh ra `validateSecret(s, minLen, onlyDigits, checkBreached, ...)`. Phần thật sự chung (`hasDigit`) đã được dùng chung rồi - thế là đủ.
 

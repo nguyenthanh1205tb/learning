@@ -2024,7 +2024,7 @@ Cảm nhận độ lớn (giả sử máy làm ~10⁸ phép tính/giây):
 
 **Bài 1.1**: Viết hàm đệ quy `reverse(s)` đảo ngược chuỗi và `isPalindrome(s)` kiểm tra chuỗi đối xứng.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 === "Go"
 
@@ -2074,7 +2074,7 @@ Cảm nhận độ lớn (giả sử máy làm ~10⁸ phép tính/giây):
 
 **Bài 1.2** (LeetCode 509, 70): Tính số cách leo `n` bậc thang, mỗi lần bước 1 hoặc 2 bậc. Viết bản đệ quy thuần, sau đó thêm memo.
 
-<details><summary>Gợi ý & đáp án</summary>
+<details markdown="1"><summary>Gợi ý & đáp án</summary>
 
 `ways(n) = ways(n-1) + ways(n-2)`, `ways(0) = ways(1) = 1` — chính là Fibonacci dịch một vị trí. Bản memo giống hệt `fibMemo` ở mục 4. `ways(10) = 89`, `ways(45) = 1836311903`.
 
@@ -2082,7 +2082,7 @@ Cảm nhận độ lớn (giả sử máy làm ~10⁸ phép tính/giây):
 
 **Bài 1.3** (LeetCode 50 — Pow(x, n)): Cài `myPow(x, n)` với `n` có thể âm và rất lớn (`-2³¹ ≤ n ≤ 2³¹-1`).
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Dùng đúng hàm `power` ở mục 7. Lưu ý Go: `-n` với `n = math.MinInt32` vẫn vừa kiểu `int` 64-bit nên an toàn; trong C/Java phải đổi sang `long`.
 
@@ -2092,7 +2092,7 @@ Dùng đúng hàm `power` ở mục 7. Lưu ý Go: `-n` với `n = math.MinInt32
 
 **Bài 2.1** (LeetCode 22 — Generate Parentheses): Sinh mọi chuỗi ngoặc hợp lệ gồm `n` cặp. `n=3` → `((())) (()()) (())() ()(()) ()()()`.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Cắt tỉa: chỉ thêm `(` khi `open < n`; chỉ thêm `)` khi `close < open`.
 
@@ -2166,7 +2166,7 @@ Cắt tỉa: chỉ thêm `(` khi `open < n`; chỉ thêm `)` khi `close < open`.
 
 **Bài 2.2** (LeetCode 17 — Letter Combinations of a Phone Number): Bàn phím điện thoại cũ `2→abc, 3→def, ...`. Cho `"23"`, liệt kê mọi chuỗi chữ có thể.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 === "Python"
 
@@ -2202,7 +2202,7 @@ Cắt tỉa: chỉ thêm `(` khi `open < n`; chỉ thêm `)` khi `close < open`.
 
 **Bài 2.3** (LeetCode 90 — Subsets II): Tập con của mảng **có phần tử trùng**, không được sinh tập con trùng. `[1,2,2]` → `[[],[1],[1,2],[1,2,2],[2],[2,2]]`.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Sắp xếp, dùng template "vòng for từ start" và thêm `if i > start && nums[i] == nums[i-1] { continue }` — ở **cùng một tầng**, chỉ thử mỗi giá trị một lần.
 
@@ -2249,7 +2249,7 @@ Sắp xếp, dùng template "vòng for từ start" và thêm `if i > start && nu
 
 **Bài 3.1** (LeetCode 131 — Palindrome Partitioning): Chia chuỗi thành các đoạn mà mỗi đoạn đều là palindrome. `"aab"` → `[["a","a","b"],["aa","b"]]`.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Ở vị trí `start`, thử mọi điểm cắt `end`; nếu `s[start:end+1]` là palindrome thì chọn nó và đệ quy từ `end+1`.
 
@@ -2285,7 +2285,7 @@ Sắp xếp, dùng template "vòng for từ start" và thêm `if i > start && nu
 
 **Bài 3.2** (LeetCode 52 — N-Queens II): Chỉ đếm số lời giải, dùng bitmask. Kiểm tra `n = 12` ra `14200`.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 === "Go"
 

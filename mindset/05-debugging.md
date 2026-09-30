@@ -1449,7 +1449,7 @@ net/http.HandlerFunc.ServeHTTP(0xc0001101a0, {0x9a1c80, 0xc0002b4000}, 0xc0002a6
 
 Trả lời: (a) Lỗi gì? (b) Ở file nào, dòng nào? (c) Frame nào là code của team, frame nào của thư viện chuẩn? (d) Giả thuyết đầu tiên của bạn là gì, và bạn sẽ kiểm tra nó thế nào?
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 (a) Truy cập phần tử chỉ số 3 trong slice chỉ có 3 phần tử (hợp lệ: 0, 1, 2) - lỗi lệch 1 hoặc giả định sai về độ dài.
 
@@ -1465,7 +1465,7 @@ Trả lời: (a) Lỗi gì? (b) Ở file nào, dòng nào? (c) Frame nào là co
 
 Viết lại bug report sau theo template ở mục 13 (tự bịa các chi tiết hợp lý): *"Không upload được ảnh đại diện, mọi người xem giúp."*
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Những thông tin cần có: nền tảng (web/iOS/Android + version), trình duyệt, loại file (JPG/PNG/HEIC), **dung lượng file** (rất hay là nguyên nhân: giới hạn 5MB), thông báo lỗi nguyên văn, các bước, tần suất (mọi ảnh hay chỉ ảnh từ iPhone? - ảnh HEIC là thủ phạm kinh điển), request_id hoặc thời điểm, mức độ ảnh hưởng.
 
@@ -1475,7 +1475,7 @@ Những thông tin cần có: nền tảng (web/iOS/Android + version), trình d
 
 Chạy script ở mục 6 để tạo repo. Lần này **không dùng** `git bisect run` - hãy dùng `git bisect good` / `git bisect bad` bằng tay sau mỗi lần chạy test. Đếm số bước. Sau đó thêm 20 commit "docs" nữa sau commit cuối (dùng vòng lặp bash) và chạy lại `git bisect run`: số bước tăng bao nhiêu? Giải thích bằng log₂.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Với 8 commit (7 commit cần xét giữa tốt và xấu), bisect cần khoảng 3 bước. Thêm 20 commit → 27 commit giữa hai đầu → khoảng log₂(27) ≈ 4,75 → 5 bước. Số commit tăng gần 4 lần nhưng số bước chỉ tăng 2. Đó là sức mạnh của tìm kiếm nhị phân: 1000 commit cũng chỉ cần khoảng 10 bước.
 
@@ -1491,7 +1491,7 @@ for i in $(seq 1 20); do echo "note $i" >> NOTES.md; git add -A; git commit -q -
 
 Viết một chương trình Go mô phỏng **bán vé**: 100 vé, 150 goroutine cùng "mua" (nếu `tickets > 0` thì `tickets--` và tăng `sold`). Chạy nhiều lần: có lần nào `sold > 100` không? Chạy với `-race`. Sửa bằng `sync.Mutex`. Làm tương tự bằng Python với `threading` (thêm `time.sleep(0)` giữa kiểm tra và trừ).
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Lỗi là **check-then-act**: kiểm tra `tickets > 0` và `tickets--` phải nằm trong **cùng một** vùng khóa. Nếu bạn khóa riêng từng thao tác (khóa khi đọc, mở, rồi khóa khi ghi), race vẫn còn - race detector có thể không báo vì mỗi truy cập đều có khóa, nhưng **logic** vẫn sai (race condition khác data race!). Trong DB, đây chính là bài toán bán quá số tồn kho - cách sửa là `UPDATE ... WHERE stock > 0` nguyên tử.
 

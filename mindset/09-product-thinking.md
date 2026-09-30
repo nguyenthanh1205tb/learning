@@ -895,7 +895,7 @@ flowchart LR
 
 Chọn 3 ứng dụng bạn dùng hằng ngày (ví dụ: app ngân hàng, app giao đồ ăn, Zalo). Với mỗi app, viết **một** câu JTBD theo mẫu "Khi... tôi muốn... để...". Sau đó nghĩ: app đó có **đối thủ bất ngờ** nào (không cùng ngành) cũng làm được job đó không?
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Ví dụ app giao đồ ăn: *"Khi tôi làm việc muộn ở văn phòng và đói, tôi muốn có bữa tối nóng mà không phải ra ngoài, để làm xong việc và về nhà sớm."* Đối thủ bất ngờ: căng-tin công ty mở muộn, đồ ăn mang theo từ nhà, mì gói trong tủ văn phòng, dịch vụ nấu cơm theo tháng. Hiểu đối thủ theo job giúp bạn thấy sản phẩm cạnh tranh với **cái gì thật sự**.
 
@@ -907,7 +907,7 @@ Luồng đăng ký của một app: Mở màn hình đăng ký 20.000 → Nhập
 
 (a) Tính tỉ lệ chuyển đổi từng bước và tổng. (b) Bước nào đáng điều tra nhất? (c) Đưa ra 3 giả thuyết **kỹ thuật** cho bước đó và cách kiểm chứng từng giả thuyết.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 (a) 70% → 95% → 70% → 90%. Tổng: 8.379 / 20.000 ≈ 41,9%.
 
@@ -924,7 +924,7 @@ Luồng đăng ký của một app: Mở màn hình đăng ký 20.000 → Nhập
 
 Sửa code ở mục 5 để trả lời: (a) Với nhóm A 2.000/40.000 và nhóm B 2.100/40.000, kết quả có ý nghĩa thống kê không? (b) Nếu muốn phát hiện được mức cải thiện từ 5,0% lên 5,25%, cần bao nhiêu người mỗi nhóm? (c) Với 5.000 người dùng mới mỗi ngày chia đều hai nhóm, cần chạy bao nhiêu ngày?
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 (a) p_A = 5,00%, p_B = 5,25%, z ≈ 1,60, p ≈ 0,109 → **chưa** có ý nghĩa thống kê, dù có 80.000 người.
 
@@ -942,7 +942,7 @@ Lấy 5 việc trong backlog thật của team bạn (hoặc của một side pr
 
 PM yêu cầu: *"Tính năng đăng ký tài khoản doanh nghiệp cần: đăng ký, xác minh mã số thuế tự động, mời thành viên, phân quyền 5 vai trò, SSO với Google Workspace, xuất hóa đơn điện tử, dashboard sử dụng. Còn 4 tuần."* Bạn ước lượng cần 10 tuần. Viết (a) bảng MoSCoW, (b) tin nhắn trả lời PM theo mẫu đàm phán ở mục 8.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Bắt đầu bằng câu hỏi: **khách hàng đầu tiên** dùng tính năng này là ai, và họ cần gì để **bắt đầu dùng**? Thường thì: đăng ký + mời thành viên + 2 vai trò (admin/member) là Must. Xác minh mã số thuế có thể làm tay lúc đầu (concierge). SSO và 5 vai trò có thể chờ đến khi có khách yêu cầu. Hóa đơn điện tử có thể là Must nếu **pháp luật** yêu cầu - hỏi rõ. Đừng quên nêu phần **không cắt**: bảo mật phân quyền (một thành viên không xem được dữ liệu công ty khác).
 
@@ -952,7 +952,7 @@ Bắt đầu bằng câu hỏi: **khách hàng đầu tiên** dùng tính năng 
 
 Team muốn thêm tính năng "Lưu lịch sử vị trí tài xế mỗi 5 giây" để giải quyết khiếu nại. Có 8.000 tài xế hoạt động, mỗi người trung bình 10 giờ/ngày, mỗi bản ghi vị trí 100 byte. Dùng code ở mục 9 (hoặc tự viết) để tính: (a) Bao nhiêu GB mỗi tháng? (b) Chi phí lưu trữ sau 12 tháng nếu giữ hết? (c) Đề xuất ít nhất 3 cách giảm chi phí mà vẫn giải quyết được job "xử lý khiếu nại". Mỗi cách có trade-off gì?
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 (a) Mỗi tài xế: 10h × 3.600s / 5s = 7.200 bản ghi/ngày. 8.000 tài xế → 57,6 triệu bản ghi/ngày × 100 byte = 5,76 GB/ngày ≈ **173 GB/tháng** (30 ngày).
 

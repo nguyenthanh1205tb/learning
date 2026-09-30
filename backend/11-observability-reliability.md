@@ -1486,7 +1486,7 @@ api_latency_seconds_bucket{le="+Inf"} 1000
 api_latency_seconds_count 1000
 ```
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 (a) 1000 (bằng `_count` và bucket `+Inf`). (b) 900/1000 = **90%**. (c) Request thứ 500 nằm trong bucket đầu tiên (600 request ≤ 50ms) → p50 **≤ 50ms**. Prometheus `histogram_quantile` sẽ nội suy tuyến tính trong khoảng 0–0.05s: 0.05 × 500/600 ≈ **41.7ms**.
@@ -1497,7 +1497,7 @@ api_latency_seconds_count 1000
 
 Mỗi đại lượng sau nên là counter, gauge hay histogram? (1) số đơn hàng đã tạo; (2) số message đang nằm trong queue; (3) kích thước response (byte); (4) số connection DB đang mở; (5) tổng tiền (VNĐ) đã thanh toán.
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 (1) counter, (2) gauge, (3) histogram (để biết phân bố), (4) gauge, (5) counter (chỉ tăng; hoàn tiền nên là counter riêng `refunds_total`).
@@ -1508,7 +1508,7 @@ Mỗi đại lượng sau nên là counter, gauge hay histogram? (1) số đơn 
 
 API thanh toán có SLO availability **99.95%** theo cửa sổ 28 ngày, lưu lượng trung bình 200 request/giây. (a) Được phép bao nhiêu phút downtime hoàn toàn? (b) Bao nhiêu request lỗi? (c) Hôm nay có sự cố 12 phút với 30% request lỗi — đã tiêu bao nhiêu % budget?
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 (a) 28 × 24 × 60 = 40.320 phút × 0.0005 = **20,16 phút**. (b) Tổng request = 200 × 86.400 × 28 = 483.840.000 → × 0.0005 = **241.920 request**. (c) 12 phút × 60 × 200 × 30% = 43.200 request lỗi → 43.200 / 241.920 ≈ **17,9%** budget.
@@ -1527,7 +1527,7 @@ Kết hợp mục 4.3 và mục 5: middleware đọc header `traceparent` (nếu
 
 Cho các luồng: xem menu, đặt đơn, thanh toán, theo dõi vị trí tài xế. Với mỗi luồng hãy viết: (1) SLI cụ thể (công thức), (2) SLO hợp lý và **lý do**, (3) alert burn-rate (PromQL) và mức độ (page/ticket), (4) dependency nào là non-critical và fallback là gì. Cuối cùng viết một runbook ngắn cho alert "thanh toán lỗi tăng".
 
-<details>
+<details markdown="1">
 <summary>Gợi ý</summary>
 
 Thanh toán cần SLO cao nhất (99.95%) vì ảnh hưởng trực tiếp doanh thu; xem menu có thể 99.9% và cache CDN mạnh; vị trí tài xế là **freshness SLI** ("99% lần cập nhật hiển thị trễ < 10 giây"). Non-critical: gợi ý món, đánh giá, ảnh độ phân giải cao, ước lượng thời gian giao chính xác (fallback: khoảng thời gian mặc định).

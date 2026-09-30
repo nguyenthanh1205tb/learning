@@ -1226,7 +1226,7 @@ Trong code thật, **đừng tự viết binary search** nếu thư viện đã 
 
 **Bài 1.2** (LeetCode 35 — Search Insert Position): Trả về chỉ số của target, hoặc vị trí nên chèn nếu không có.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Chính là `lowerBound(a, target)` ở mục 4 — một dòng với thư viện: Go `sort.SearchInts(a, target)`, Python `bisect.bisect_left(a, target)`.
 
@@ -1234,7 +1234,7 @@ Chính là `lowerBound(a, target)` ở mục 4 — một dòng với thư viện
 
 **Bài 1.3** (LeetCode 374 — Guess Number Higher or Lower): Chơi trò đoán số từ 1 đến n với API `guess(num)` trả về -1/0/1.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Template `lo <= hi` tiêu chuẩn: `guess(mid) == -1` (số cần tìm nhỏ hơn) → `hi = mid - 1`; `1` → `lo = mid + 1`; `0` → trả về mid.
 
@@ -1242,7 +1242,7 @@ Template `lo <= hi` tiêu chuẩn: `guess(mid) == -1` (số cần tìm nhỏ hơ
 
 **Bài 1.4** (LeetCode 278 — First Bad Version): Các phiên bản `1..n`, từ một phiên bản nào đó trở đi đều lỗi. Tìm phiên bản lỗi đầu tiên với ít lần gọi `isBadVersion` nhất.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Predicate `isBadVersion` có dạng `F F F T T T` → template "first true": `lo=1, hi=n; while lo<hi: mid; if bad(mid): hi=mid else lo=mid+1; return lo`. Đây chính là `git bisect`!
 
@@ -1254,7 +1254,7 @@ Predicate `isBadVersion` có dạng `F F F T T T` → template "first true": `lo
 
 **Bài 2.2** (LeetCode 1011, 875): Đã giải ở mục 8. Hãy tự giải LeetCode 1482 — *Minimum Number of Days to Make m Bouquets*: `bloomDay[i]` là ngày hoa i nở; cần `m` bó, mỗi bó gồm `k` hoa **liền kề**. Tìm số ngày ít nhất.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Miền đáp án `[min(bloomDay), max(bloomDay)]`; nếu `m*k > n` trả về -1. `feasible(day)`: duyệt, đếm chuỗi hoa liền kề đã nở (`bloomDay[i] <= day`), mỗi khi đủ `k` thì +1 bó và reset. Đơn điệu: đợi càng lâu càng nhiều hoa nở.
 
@@ -1296,7 +1296,7 @@ Miền đáp án `[min(bloomDay), max(bloomDay)]`; nếu `m*k > n` trả về -1
 
 **Bài 2.4** (LeetCode 658 — Find K Closest Elements): Tìm `k` phần tử gần `x` nhất trong mảng đã sắp xếp.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Binary search vị trí **bắt đầu** `left ∈ [0, n-k]` của cửa sổ: so sánh `x - a[mid]` với `a[mid+k] - x`; nếu `x - a[mid] > a[mid+k] - x` thì cửa sổ nên dịch phải (`lo = mid + 1`), ngược lại `hi = mid`. O(log(n-k) + k).
 
@@ -1306,7 +1306,7 @@ Binary search vị trí **bắt đầu** `left ∈ [0, n-k]` của cửa sổ: s
 
 **Bài 3.1** (LeetCode 410 — Split Array Largest Sum): Chia mảng thành `k` đoạn liên tiếp sao cho **tổng lớn nhất** trong các đoạn là **nhỏ nhất**.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Giống hệt bài chở hàng (Ship packages): đáp án ∈ `[max(a), sum(a)]`, `feasible(limit)` = tham lam cắt đoạn khi tổng vượt `limit`, đếm số đoạn ≤ k.
 

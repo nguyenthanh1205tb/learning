@@ -1645,7 +1645,7 @@ Mỗi request hợp lệ gọi lại `EXPIRE` để **gia hạn trượt** (slid
 
 Một API có `t_cache = 1ms`, `t_db = 30ms`. Sau khi thêm cache, độ trễ trung bình đo được là 3,9 ms. Hit ratio là bao nhiêu? Tải DB giảm bao nhiêu lần?
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 `h × 1 + (1 − h) × 30 = 3,9` → `30 − 29h = 3,9` → `h = 0,9` → **hit ratio 90%**. Chỉ 10% request xuống DB → tải DB giảm **10 lần**.
 
@@ -1655,7 +1655,7 @@ Một API có `t_cache = 1ms`, `t_db = 30ms`. Sau khi thêm cache, độ trễ t
 
 Chọn header phù hợp cho: (a) `logo.8f3a2c.png`, (b) `GET /api/me` trả thông tin tài khoản, (c) trang danh sách tin tức công khai cập nhật mỗi phút, (d) trang hiển thị số thẻ tín dụng.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 (a) `public, max-age=31536000, immutable` - tên file có hash, đổi nội dung là đổi tên.
 (b) `private, no-cache` (kèm ETag) - chỉ browser của người đó, luôn revalidate.
@@ -1676,7 +1676,7 @@ Viết hàm `GetOrLoad(key, softTTL, hardTTL, loader)`:
 - Quá `softTTL` nhưng chưa quá `hardTTL` → **trả bản cũ ngay**, đồng thời chạy `loader` ở nền (chỉ **một** goroutine/thread làm mới cho mỗi key).
 - Quá `hardTTL` hoặc chưa có → gọi `loader` đồng bộ (dùng singleflight / khoá theo key).
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Lưu trong mỗi entry: `value`, `softExpire`, `hardExpire`, `refreshing bool`. Khi quá soft TTL, dưới mutex kiểm tra `refreshing`; nếu `false` thì đặt `true` và khởi chạy goroutine/thread làm mới, cuối goroutine đặt lại `false` và cập nhật value + hai mốc hết hạn.
 
@@ -1700,7 +1700,7 @@ def get_product(product_id):
     return p
 ```
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 1. Xoá cache **trước** khi ghi DB → request đọc chen giữa nạp lại giá cũ. Sửa: ghi DB trước rồi mới `delete`.
 2. `r.set` không có TTL → dữ liệu sai (nếu có) sống mãi và Redis phình. Sửa: `ex=300 + jitter`.
@@ -1712,7 +1712,7 @@ def get_product(product_id):
 
 Cài rate limiter "tối đa N request trong 60 giây gần nhất" dùng Sorted Set: mỗi request `ZADD key now now-uuid`, xoá phần tử cũ bằng `ZREMRANGEBYSCORE key 0 now-60000`, đếm bằng `ZCARD`. Viết thành **một Lua script** để atomic. So sánh bộ nhớ dùng với token bucket khi N = 10.000.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Sliding window log lưu **mỗi request một phần tử** → O(N) bộ nhớ mỗi user (10.000 phần tử!), trong khi token bucket chỉ 2 số. Đổi lại sliding log chính xác tuyệt đối. Thực tế hay dùng "sliding window counter" (2 bộ đếm của cửa sổ hiện tại và trước đó) làm điểm cân bằng.
 

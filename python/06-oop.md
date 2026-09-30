@@ -1304,7 +1304,7 @@ Tạo class `Vector` hỗ trợ: `v1 + v2`, `v1 - v2`, `v * 3`, `abs(v)` (độ 
 
 Tạo `CartItem` (dataclass) và `ShoppingCart` hỗ trợ: `len(cart)`, `cart[0]`, `"Táo" in cart`, `for item in cart`, `cart + other_cart`, `print(cart)` in hóa đơn đẹp.
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án Bài tập 4</summary>
 
 ```python

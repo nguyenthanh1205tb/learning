@@ -2013,7 +2013,7 @@ graph TD
 
 **Bài 1.1** Cho BST dựng bằng cách chèn `8, 3, 10, 1, 6, 14, 4, 7, 13`. Vẽ cây và viết ra preorder, inorder, postorder, level order.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 ```text
           8
@@ -2034,7 +2034,7 @@ graph TD
 
 **Bài 1.2** (LeetCode 226 — Invert Binary Tree) Đảo ngược cây: đổi trái ↔ phải ở **mọi** nút.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Postorder (hoặc preorder) — đổi chỗ hai con rồi đệ quy xuống. O(n).
 
@@ -2049,7 +2049,7 @@ def invert(n):
 
 **Bài 1.3** (LeetCode 100 — Same Tree) Kiểm tra hai cây có giống hệt nhau (cấu trúc + giá trị).
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 ```python
 def same(a, b):
@@ -2064,7 +2064,7 @@ def same(a, b):
 
 **Bài 2.1** (LeetCode 230 — Kth Smallest in BST) Tìm phần tử nhỏ thứ k trong BST.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Inorder của BST tăng dần → phần tử thứ k được thăm chính là đáp án. Dùng inorder vòng lặp và **dừng sớm**: O(h + k).
 
@@ -2164,7 +2164,7 @@ Inorder của BST tăng dần → phần tử thứ k được thăm chính là 
 
 **Bài 2.2** (LeetCode 199 — Right Side View) Đứng bên phải cây, liệt kê các nút nhìn thấy từ trên xuống.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Level order, lấy phần tử **cuối** mỗi tầng. Hoặc DFS thăm phải trước, nút đầu tiên chạm tới mỗi depth là nút nhìn thấy.
 
@@ -2185,7 +2185,7 @@ def right_view(root):
 
 **Bài 2.3** (LeetCode 108 — Sorted Array to BST) Từ mảng tăng dần, dựng BST **cân bằng**.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Chọn phần tử **giữa** làm gốc, đệ quy nửa trái làm cây con trái, nửa phải làm cây con phải. O(n).
 
@@ -2203,7 +2203,7 @@ def build(a, lo=0, hi=None):
 
 **Bài 2.4** (LeetCode 112/113 — Path Sum) Có đường đi gốc → lá nào có tổng bằng `target`? Liệt kê tất cả.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 DFS mang theo tổng còn lại `target - n.val`; tại **lá** kiểm tra bằng 0. Để liệt kê: backtracking với một `path` chung — `append` khi vào, `pop` khi ra ([Bài 6](./06-recursion-backtracking.md)).
 
@@ -2213,7 +2213,7 @@ DFS mang theo tổng còn lại `target - n.val`; tại **lá** kiểm tra bằn
 
 **Bài 3.1** (LeetCode 124 — Binary Tree Maximum Path Sum) Giá trị nút có thể âm. Tìm tổng lớn nhất của một đường đi bất kỳ.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Giống đường kính: hàm trả về "tổng lớn nhất của đường **một nhánh** đi xuống từ n" = `n.val + max(0, left, right)`; tại mỗi nút cập nhật đáp án toàn cục `n.val + max(0,left) + max(0,right)`. Dùng `max(0, ...)` để **bỏ** nhánh âm.
 
@@ -2235,7 +2235,7 @@ def max_path_sum(root):
 
 **Bài 3.2** (LeetCode 105) Dựng cây từ **preorder** và **inorder**.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 `preorder[0]` là gốc. Tìm vị trí gốc trong inorder (dùng hash map vị trí → O(1)) → bên trái là cây con trái (kích thước `k`), bên phải là cây con phải. Đệ quy với chỉ số, không cắt slice. O(n).
 
@@ -2245,7 +2245,7 @@ def max_path_sum(root):
 
 **Bài 3.4** (LeetCode 173 — BST Iterator) Thiết kế iterator có `next()` và `hasNext()` chạy O(1) trung bình, bộ nhớ O(h).
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Chính là inorder vòng lặp được "cắt nhỏ": constructor push toàn bộ nhánh trái; `next()` pop một nút, rồi push nhánh trái của con phải nó.
 

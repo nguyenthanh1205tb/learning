@@ -1279,7 +1279,7 @@ Viết lại các commit message sau theo Conventional Commits (tự bịa bối
 3. `thêm chức năng mới và sửa mấy lỗi linh tinh`
 4. `WIP`
 
-<details>
+<details markdown="1">
 <summary>Gợi ý</summary>
 
 1. `fix(auth): trả 401 thay vì 500 khi token hết hạn`
@@ -1298,7 +1298,7 @@ Viết lại các comment sau cho mang tính xây dựng, có tiền tố phù h
 3. "Anh không thích cách đặt tên này."
 4. "Sao không viết test?"
 
-<details>
+<details markdown="1">
 <summary>Gợi ý</summary>
 
 1. `suggestion: Hàm processOrder đang làm 4 việc (validate, tính giá, lưu, gửi mail). Tách thành các hàm nhỏ sẽ dễ test từng phần hơn - ví dụ tách phần tính giá ra calculateTotal. Bạn thấy sao?`
@@ -1330,7 +1330,7 @@ Viết postmortem theo mẫu ở mục 12 cho sự cố giả định sau: *"M�
 
 Yêu cầu: phần nguyên nhân **không được** có tên người; ít nhất 4 hành động cải tiến mang tính hệ thống.
 
-<details>
+<details markdown="1">
 <summary>Gợi ý hành động cải tiến</summary>
 
 - Validate config: cảnh báo khi giá trị thay đổi quá 50% so với hiện tại

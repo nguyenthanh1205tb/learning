@@ -2016,7 +2016,7 @@ Với mỗi tình huống, chọn dummy / stub / fake / spy / mock:
 4. Test "sau khi đặt hàng thành công thì đã publish đúng 1 event `OrderPlaced`".
 5. Test "phải gọi `Refund(orderID, amount)` đúng một lần với đúng số tiền khi hủy đơn".
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 1. **Dummy** — chỉ để lấp tham số.
 2. **Stub** — trả lỗi đóng hộp để đi vào nhánh lỗi.
@@ -2030,7 +2030,7 @@ Với mỗi tình huống, chọn dummy / stub / fake / spy / mock:
 
 Thêm vào ví dụ mục 3: nếu `repo.Save` trả lỗi sau khi đã trừ tiền thành công thì `Place` phải trả lỗi và **không** gửi thông báo. Viết fake repo có thể "cấu hình để lỗi". Câu hỏi thêm: trong đời thật, tình huống "đã trừ tiền nhưng không lưu được đơn" nên xử lý thế nào? (Gợi ý: outbox, saga — [Bài 9](./09-message-queues.md), [Bài 14](./14-architecture-microservices.md).)
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 Go: `type fakeRepo struct{ data map[string]Order; failSave bool }`, trong `Save` trả `errors.New("db down")` nếu `failSave`. Python: `FakeRepo(fail_save=True)` raise exception. Assert `err != nil` và `len(spy.msgs) == 0`. Đời thật: ghi đơn `PENDING` **trước** khi trừ tiền (có idempotency key), sau đó cập nhật trạng thái; nếu cập nhật lỗi, job đối soát (reconciliation) hoặc saga sẽ hoàn tiền/hoàn tất đơn.
 
@@ -2048,7 +2048,7 @@ Cho một service (Go hoặc Python) của bạn từ các bài trước, viết
 
 Bảng `orders` có 50 triệu dòng, cột `status TEXT` với giá trị `'paid'`, `'shipped'`... Yêu cầu: chuyển sang cột `status_code SMALLINT` (1 = paid, 2 = shipped...) và cuối cùng xóa cột cũ. Viết danh sách các release (code + migration) theo thứ tự, câu SQL cho từng bước, cách backfill không khóa bảng, và điểm nào có thể rollback an toàn.
 
-<details><summary>Gợi ý</summary>
+<details markdown="1"><summary>Gợi ý</summary>
 
 R1: `ADD COLUMN status_code SMALLINT` (nullable). R2: code ghi cả hai cột, đọc `status`. Backfill theo lô `WHERE id BETWEEN x AND x+10000`, có sleep giữa các lô, theo dõi replica lag. R3: code đọc `status_code` (fallback `status` nếu NULL). Thêm `CHECK`/`NOT NULL` bằng `NOT VALID` rồi `VALIDATE CONSTRAINT`. R4: code chỉ ghi `status_code`. R5: `DROP COLUMN status`. Từ R1 đến R4 đều rollback code được; sau R5 thì không.
 

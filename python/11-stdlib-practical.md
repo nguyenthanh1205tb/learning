@@ -1580,7 +1580,7 @@ Viết CLI `logtool` với subcommands:
 
 Dùng `StrEnum` cho `--format` (`csv`, `json`), cấu hình mức log qua biến môi trường `LOGTOOL_LEVEL`.
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án Bài tập 1</summary>
 
 ```python

@@ -1894,7 +1894,7 @@ Tất cả bài tập dùng schema và dữ liệu mẫu ở mục 3.
 
 Từ ERD ở mục 1, trả lời: (a) Một khách hàng có thể có bao nhiêu hồ sơ? (b) Một đơn hàng có thể không có dòng sản phẩm nào không? (c) Vì sao `cart_items` dùng khóa chính kép `(customer_id, product_id)`?
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 (a) 0 hoặc 1 (`||--o|`). (b) Theo ERD thì không (`||--|{` - ít nhất một); lưu ý DB **không tự đảm bảo** được điều này bằng FK - phải đảm bảo trong code/transaction đặt hàng. (c) Để mỗi sản phẩm chỉ xuất hiện **một lần** trong giỏ của một khách - thêm lần nữa thì tăng `quantity` (UPSERT ở mục 10).
@@ -1910,7 +1910,7 @@ enrollments(student_id, course_id, student_name, student_email, course_title, te
 PK = (student_id, course_id)
 ```
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 Vi phạm **2NF**: `student_name`, `student_email` chỉ phụ thuộc `student_id`; `course_title`, `teacher_name` chỉ phụ thuộc `course_id`. Vi phạm **3NF**: `teacher_phone` phụ thuộc `teacher` (bắc cầu qua `course_id → teacher`).
@@ -1932,7 +1932,7 @@ Viết SQL (chạy thử bằng SQLite):
 2. Với mỗi danh mục, số sản phẩm và giá trung bình, **kể cả** danh mục chưa có sản phẩm (Đồ chơi: 0 sản phẩm).
 3. Tổng số tiền mỗi đơn, kèm cột `hang_trong_khach` = thứ hạng đơn đó theo giá trị trong số các đơn của cùng khách.
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 ```sql

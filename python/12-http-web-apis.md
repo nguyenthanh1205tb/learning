@@ -1522,7 +1522,7 @@ Thêm vào Ứng dụng 2:
 
 Kết hợp Ứng dụng 2 và 3: `POST /orders` tạo đơn trạng thái `pending` (trừ tồn kho), webhook `payment.succeeded` chuyển sang `paid`, `payment.failed` chuyển sang `cancelled` và **hoàn lại tồn kho**. Viết script giả lập cổng thanh toán gửi webhook có chữ ký, và test đầy đủ các trường hợp (kể cả webhook đến 2 lần, webhook cho đơn không tồn tại).
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án Bài tập 2</summary>
 
 ```python

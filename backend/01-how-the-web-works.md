@@ -1801,7 +1801,7 @@ Client tự đặt được header này. Chỉ tin giá trị do **proxy của b
 
 Chạy `curl -sv http://localhost:8080/hello` với server TCP thuần ở mục 6. Trả lời: (a) Dòng nào là request line? (b) Tại sao `Content-Length` là 35 mà body chỉ có 30 ký tự? (c) Nếu bỏ dòng `Connection: close` ở server, curl có biết lúc nào kết thúc body không?
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 (a) `> GET /hello HTTP/1.1`. (b) Tiếng Việt có dấu chiếm 2-3 byte trong UTF-8: "à", "ừ", "ầ", "ơ" mỗi chữ 2-3 byte, `Content-Length` đếm **byte**. (c) Có - curl dựa vào `Content-Length` để biết đọc bao nhiêu byte; `Connection: close` chỉ báo rằng server sẽ đóng kết nối sau response. Nếu **thiếu cả hai**, client sẽ chờ tới khi server đóng kết nối.
@@ -1812,7 +1812,7 @@ Chạy `curl -sv http://localhost:8080/hello` với server TCP thuần ở mục
 
 Dùng `dig` để trả lời: (a) Tên miền của trường/công ty bạn có mấy bản ghi A? TTL bao nhiêu? (b) Server email (MX) của nó là gì? (c) Có bản ghi TXT nào chứa `v=spf1` không? Nó có ý nghĩa gì?
 
-<details>
+<details markdown="1">
 <summary>Gợi ý</summary>
 
 `dig +noall +answer A ten-mien`, `dig +short MX ten-mien`, `dig +short TXT ten-mien`. Bản ghi SPF liệt kê những server được phép gửi email thay mặt tên miền - giúp chống giả mạo email.
@@ -1829,7 +1829,7 @@ Sửa server ở mục 6 (Go hoặc Python) để:
 
 Test: `curl -sv -X POST -d 'xin chào' http://localhost:8080/echo`
 
-<details>
+<details markdown="1">
 <summary>Gợi ý (Go)</summary>
 
 ```go
@@ -1860,7 +1860,7 @@ Chú ý dùng `io.ReadFull` (Go) hoặc `f.read(n)` (Python) - không phải m�
 
 Chọn một API công khai bất kỳ (vd `https://api.github.com`). Dùng `curl -w` để đo `dns`, `tcp`, `tls`, `ttfb`, `total` **5 lần liên tiếp**. Lần đầu và các lần sau khác nhau thế nào? Vì sao? Sau đó dùng `curl -v URL URL` (2 URL trong một lệnh) và tìm dòng chứng minh kết nối được tái sử dụng.
 
-<details>
+<details markdown="1">
 <summary>Gợi ý</summary>
 
 Lần đầu `dns` cao hơn vì chưa có cache; các lần sau resolver đã cache. Mỗi lệnh `curl` là một process mới nên vẫn phải bắt tay TCP + TLS lại - chỉ khi nhiều URL trong **cùng một lệnh** mới thấy `Re-using existing connection`. Đây chính là lý do app phải **dùng lại HTTP client** (connection pool).
@@ -1876,7 +1876,7 @@ Xây dựng phòng chat đơn giản chỉ với thư viện chuẩn:
 - Hỗ trợ `Last-Event-ID`: client kết nối lại sẽ nhận các tin nhắn bị lỡ (giữ 100 tin gần nhất trong bộ nhớ)
 - Test bằng 2 terminal `curl -N .../stream` và 1 terminal gửi POST
 
-<details>
+<details markdown="1">
 <summary>Gợi ý thiết kế (Go)</summary>
 
 - Một `Hub` giữ `sync.Mutex`, slice `history []Message` (tối đa 100), và `map[chan Message]struct{}` các subscriber

@@ -2495,7 +2495,7 @@ flowchart TD
 
 **1.1** Implement Trie (LeetCode 208). Thêm hàm `CountPrefix(prefix)` trả về số từ có tiền tố đó.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Lưu thêm `count` ở mỗi node = số từ **đi qua** node đó. Khi `Insert`, tăng `count` của mọi node trên đường đi. `CountPrefix` = `walk(prefix).count` (hoặc 0 nếu `nil`).
 
@@ -2524,7 +2524,7 @@ def count_prefix(root, p):
 
 **1.2** LRU Cache (LeetCode 146) — tự viết lại **không nhìn code**, dùng sentinel.
 
-<details><summary>Gợi ý kiểm tra</summary>
+<details markdown="1"><summary>Gợi ý kiểm tra</summary>
 
 Chạy lại bảng trace capacity = 2 ở mục 2.3. Test thêm: `capacity = 1`; `put` cùng key 2 lần (không được đuổi nhầm key khác); `get` key không tồn tại.
 
@@ -2532,7 +2532,7 @@ Chạy lại bảng trace capacity = 2 ở mục 2.3. Test thêm: `capacity = 1`
 
 **1.3** Range Sum Query – Mutable (LeetCode 307) bằng **Fenwick tree**.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Giữ mảng `nums` gốc. `update(i, val)`: `delta = val - nums[i]; nums[i] = val; add(i+1, delta)`. `sumRange(l, r) = prefix(r+1) - prefix(l)`.
 
@@ -2542,7 +2542,7 @@ Giữ mảng `nums` gốc. `update(i, val)`: `delta = val - nums[i]; nums[i] = v
 
 **2.1** Design Add and Search Words (LeetCode 211): `search` hỗ trợ ký tự `.` khớp với mọi chữ.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Trie bình thường. `search` dùng DFS: gặp `.` thì thử **mọi con**; gặp chữ thường thì đi đúng con đó.
 
@@ -2563,7 +2563,7 @@ def search(node, word, i=0):
 
 **2.3** Number of Provinces (547) và Redundant Connection (684) bằng Union-Find.
 
-<details><summary>Đáp án 684</summary>
+<details markdown="1"><summary>Đáp án 684</summary>
 
 Duyệt các cạnh theo thứ tự; cạnh `(u, v)` nào mà `union(u, v)` trả về `false` (đã cùng nhóm) chính là cạnh tạo chu trình → trả về cạnh đó.
 
@@ -2579,7 +2579,7 @@ Duyệt các cạnh theo thứ tự; cạnh `(u, v)` nào mà `union(u, v)` tr�
 
 **3.3** Count of Smaller Numbers After Self (315): với mỗi `i`, đếm số phần tử bên phải nhỏ hơn `a[i]`.
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 Nén toạ độ, duyệt **từ phải sang trái**: `ans[i] = prefix(rank[a[i]] - 1)` rồi `add(rank[a[i]], 1)`. O(n log n).
 
@@ -2606,7 +2606,7 @@ def count_smaller(nums):
 
 **3.5** Thiết kế: bạn cần chặn 1 tỉ email spam đã biết, RAM cho phép 2 GB, chấp nhận sai 0,1%. Tính m, k của Bloom filter. Có vừa không?
 
-<details><summary>Đáp án</summary>
+<details markdown="1"><summary>Đáp án</summary>
 
 m = −n·ln(p)/(ln2)² = −10⁹ × ln(0,001) / 0,4805 ≈ 10⁹ × 6,908 / 0,4805 ≈ **1,44 × 10¹⁰ bit ≈ 1,8 GB**; k = (m/n)·ln2 ≈ 14,4 × 0,693 ≈ **10**. Vừa đủ 2 GB nhưng sát nút — thực tế nên chia shard hoặc chấp nhận p = 1% (≈ 1,2 GB, k = 7).
 

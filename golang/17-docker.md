@@ -3132,7 +3132,7 @@ EXPOSE 8080
 CMD ./app
 ```
 
-<details>
+<details markdown="1">
 <summary>💡 Gợi ý</summary>
 
 `latest`, không multi-stage, thứ tự COPY phá cache, bí mật trong ENV, thiếu `CGO_ENABLED=0`/`-ldflags`, `rm` ở layer riêng không làm nhỏ image, shell form `CMD`, chạy bằng root, không `WORKDIR`, không `.dockerignore`...

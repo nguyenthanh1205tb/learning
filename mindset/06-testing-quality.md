@@ -1551,7 +1551,7 @@ Cho yêu cầu: *"Mật khẩu hợp lệ nếu dài 8-64 ký tự, có ít nh�
 
 Dùng mindmap chọn test case ở mục 3, liệt kê **ít nhất 10 test case** (input + kết quả mong đợi).
 
-<details>
+<details markdown="1">
 <summary>Đáp án gợi ý</summary>
 
 | # | Input | Kết quả | Nhóm |
@@ -1588,7 +1588,7 @@ def test_order():
     assert order_status(order.id) == "cancelled"
 ```
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 - **Không Independent**: tạo user thật không dọn dẹp → chạy lần 2 có thể lỗi "email đã tồn tại"
@@ -1614,7 +1614,7 @@ Dùng TDD (Go hoặc Python) để viết hàm `ParseVND(s string) (int, error)`
 
 Yêu cầu: commit (hoặc ghi lại) **mỗi vòng Red/Green/Refactor** riêng biệt, để thấy code tiến hóa. Viết ít nhất 1 test case biên do bạn tự nghĩ ra.
 
-<details>
+<details markdown="1">
 <summary>Gợi ý</summary>
 
 Thứ tự test gợi ý: `"0đ"` (đơn giản nhất) → `"150.000đ"` (có dấu chấm) → `"1.250.000 VND"` (hậu tố khác, khoảng trắng) → `"abc"` → `"-50.000đ"`. Case biên tự nghĩ: `""`, `"150,000đ"` (dấu phẩy kiểu Mỹ - chấp nhận hay không? hỏi PM!), `"  150.000đ  "`, số vượt quá `int64`.
@@ -1635,7 +1635,7 @@ Nếu bạn đang học: viết DoD cho dự án cá nhân của bạn (ví dụ
 
 Lấy code `shipping` ở mục 6. Tự tay tạo 5 "mutant" (đổi `>=` thành `>`, `20_000` thành `25_000`, `math.Ceil` thành `math.Floor`, xóa `if extraKg <= 0`, đổi `+` thành `-`). Với mỗi mutant, chạy test: có test nào đỏ không? Nếu mutant "sống sót", viết thêm test để "giết" nó.
 
-<details>
+<details markdown="1">
 <summary>Gợi ý</summary>
 
 - `>=` → `>`: bị giết bởi case "đúng ngưỡng 500k thì free ship"

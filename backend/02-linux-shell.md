@@ -1415,7 +1415,7 @@ Xem lại [Bài 1](./01-how-the-web-works.md) - phía sau nginx thì `127.0.0.1`
 
 Trả lời bằng lệnh: (a) Máy có bao nhiêu core và RAM? (b) Phân vùng `/` còn trống bao nhiêu phần trăm? (c) Có những port TCP nào đang listen? (d) 5 process tốn RAM nhất?
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 ```bash
@@ -1431,7 +1431,7 @@ ps aux --sort=-%mem | head -6
 
 Tạo file `secret.env` sao cho: owner đọc/ghi, group chỉ đọc, others không có quyền. Viết bằng cả octal và ký hiệu. Rồi giải thích vì sao thư mục chứa nó cần quyền `x` cho group.
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 ```bash
@@ -1448,7 +1448,7 @@ Quyền `x` trên thư mục cho phép "đi vào" và truy cập file bên trong
 
 Với `access.log` mẫu ở mục 6, viết pipeline: (a) tỉ lệ phần trăm request lỗi 5xx; (b) endpoint (path) có latency trung bình cao nhất; (c) số request theo method.
 
-<details>
+<details markdown="1">
 <summary>Đáp án</summary>
 
 ```bash
@@ -1474,7 +1474,7 @@ awk '{gsub(/"/, "", $6); print $6}' access.log | sort | uniq -c | sort -rn
 
 Chạy ví dụ graceful shutdown ở mục 4. Viết một script bash: khởi động server nền, gửi request `/slow` nền, sau 1 giây gửi SIGTERM, rồi in ra kết quả curl và exit code của server. Lặp lại với `kill -9` và so sánh.
 
-<details>
+<details markdown="1">
 <summary>Gợi ý</summary>
 
 ```bash

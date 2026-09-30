@@ -1371,7 +1371,7 @@ Viết `main.py` dùng cả 3 kiểu import.
 
 Lấy một bài tập bất kỳ từ [Bài 5](./05-data-structures.md) hoặc [Bài 6](./06-oop.md), thêm type hints đầy đủ, cài `mypy` trong venv và chạy `mypy --strict` cho đến khi không còn lỗi.
 
-<details>
+<details markdown="1">
 <summary>💡 Xem đáp án gợi ý Bài tập 3 (slugify)</summary>
 
 ```python
