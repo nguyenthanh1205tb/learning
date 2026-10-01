@@ -167,7 +167,7 @@ Tổng quan nhanh:
 | 2 | Sliding window | **mảng/chuỗi con liên tiếp** dài/ngắn nhất thỏa điều kiện | [Bài 2](./02-arrays-strings.md) |
 | 3 | Fast & slow pointers | chu trình, nút giữa linked list | [Bài 4](./04-linked-lists.md) |
 | 4 | Merge intervals | danh sách **khoảng** chồng lấn | [Bài 13](./13-greedy.md) |
-| 5 | Cyclic sort | số trong khoảng `1..n`, tìm số thiếu/trùng, `O(1)` bộ nhớ | [Bài 2](./02-arrays-strings.md) |
+| 5 | Cyclic sort | số trong khoảng `1..n`, tìm số thiếu/trùng, `O(1)` bộ nhớ | [Bài 17](./17-problem-solving-patterns.md) (§3.5; liên quan [Bài 2](./02-arrays-strings.md)) |
 | 6 | Đảo linked list tại chỗ | đảo toàn bộ/một đoạn/theo nhóm k | [Bài 4](./04-linked-lists.md) |
 | 7 | Tree BFS | theo **tầng**, gần gốc nhất | [Bài 9](./09-trees-bst.md) |
 | 8 | Tree DFS | đường đi gốc-lá, chiều cao, LCA | [Bài 9](./09-trees-bst.md) |

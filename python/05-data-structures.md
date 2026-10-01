@@ -595,7 +595,8 @@ print(groups[frozenset([3, 2, 1])])     # Thứ tự không quan trọng
 | Thêm vào cuối (`append`, `d[k]=v`, `add`) | O(1) | O(1) | O(1) |
 | Thêm/xóa ở đầu (`insert(0, x)`, `pop(0)`) | **O(n)** 🐢 | - | - |
 | Xóa phần tử cuối (`pop()`) | O(1) | O(1) (`popitem()`) | O(1) (`pop()` lấy phần tử bất kỳ) |
-| Xóa theo giá trị (`remove`) | O(n) | O(1) (`del`) | O(1) |
+| Xóa theo khóa (`del` / `pop(key)`) | - | O(1) trung bình | - |
+| Xóa theo giá trị (`remove` / duyệt value) | O(n) (`list.remove`) | O(n) (phải duyệt) | O(1) trung bình (`set.remove`) |
 | Sắp xếp | O(n log n) | - | - |
 
 ### Thử nghiệm thực tế

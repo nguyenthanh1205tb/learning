@@ -575,7 +575,7 @@ Bấm ▶ và để ý mảng được chia tới từng phần tử đơn, rồ
 !!! tip "Merge sort — lựa chọn cho các tình huống đặc biệt"
     - **Đảm bảo** O(n log n) ở mọi trường hợp (quick sort không đảm bảo).
     - **Ổn định** — cần khi sắp xếp theo nhiều khóa.
-    - **Sắp xếp linked list**: không cần truy cập ngẫu nhiên, trộn chỉ cần nối con trỏ → O(1) bộ nhớ phụ (LeetCode 148).
+    - **Sắp xếp linked list**: không cần truy cập ngẫu nhiên, trộn chỉ cần nối con trỏ (LeetCode 148). Bản **đệ quy** dùng O(log n) stack; muốn **O(1)** bộ nhớ phụ thì dùng merge sort **bottom-up**.
     - **External sort**: sắp xếp file 100 GB với 8 GB RAM — cắt thành từng khúc vừa RAM, sort từng khúc, ghi ra đĩa, rồi **trộn k-đường** (dùng heap, xem [Bài 10](./10-heaps.md)). Đây là cách database sắp xếp khi `ORDER BY` không vừa bộ nhớ.
 
 !!! note "Bottom-up merge sort"

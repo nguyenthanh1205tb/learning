@@ -1369,7 +1369,7 @@ Sửa ví dụ worker pool ở mục 9:
 
 ### Bài tập 4: Rate limiter
 
-Dùng `time.Tick(100 * time.Millisecond)` để xử lý tối đa 10 request/giây. Có 15 request trong một channel, in ra thời điểm xử lý mỗi request (dùng `time.Since(start)`).
+Dùng `time.NewTicker(100 * time.Millisecond)` (và `defer ticker.Stop()`) để xử lý tối đa 10 request/giây. Có 15 request trong một channel, in ra thời điểm xử lý mỗi request (dùng `time.Since(start)`). Tránh `time.Tick` — ticker đó không `Stop()` được và dễ rò rỉ nếu dùng trong hàm chạy lâu/gọi nhiều lần.
 
 ### Bài tập 5: Tìm kiếm nhanh nhất
 

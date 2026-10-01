@@ -10,7 +10,7 @@
 - Dùng mẫu **comma-ok** để kiểm tra key có tồn tại
 - Hiểu tại sao **thứ tự duyệt map là ngẫu nhiên**
 - Duyệt chuỗi theo **byte** và theo **rune**
-- Sử dụng package chuẩn **`slices`** và **`maps`** (Go 1.21+)
+- Sử dụng package chuẩn **`slices`** và **`maps`** (Go 1.21+; iterator `Keys`/`Values` từ 1.23+)
 
 ## 📖 1. Array - Mảng có kích thước cố định
 
@@ -861,7 +861,7 @@ func main() {
 // [0 0 0]
 ```
 
-## 📖 8. Package `slices` và `maps` (Go 1.21+) ⭐
+## 📖 8. Package `slices` và `maps` (Go 1.21+; `Keys`/`Values` từ 1.23+) ⭐
 
 Trước Go 1.21, bạn phải tự viết vòng lặp cho những việc đơn giản như "tìm phần tử", "sắp xếp". Giờ đây đã có package chuẩn!
 

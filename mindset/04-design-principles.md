@@ -542,7 +542,7 @@ flowchart TB
     end
 ```
 
-Mũi tên phụ thuộc giờ chỉ **từ chi tiết vào trừu tượng**. Logic nghiệp vụ không biết (và không quan tâm) email được gửi bằng SMTP, SendGrid hay chỉ ghi vào slice trong test. Cách "cắm" chi tiết vào là **dependency injection** - xem mục 10.
+Mũi tên phụ thuộc đều **hướng vào trừu tượng**: module cấp cao phụ thuộc interface; module cấp thấp *cài đặt* interface (chi tiết phụ thuộc trừu tượng). Không còn mũi tên từ nghiệp vụ → MySQL/SMTP cụ thể. Logic nghiệp vụ không biết (và không quan tâm) email được gửi bằng SMTP, SendGrid hay chỉ ghi vào slice trong test. Cách "cắm" chi tiết vào là **dependency injection** - xem mục 10.
 
 ### SOLID - tóm tắt thực dụng
 
@@ -1643,7 +1643,9 @@ class ReportService:
         self.smtp = smtplib.SMTP("smtp.company.vn")
 
     def run(self, kind):
-        rows = self.db.cursor().execute("SELECT * FROM sales").fetchall()
+        cur = self.db.cursor()
+        cur.execute("SELECT * FROM sales")
+        rows = cur.fetchall()
         if kind == "pdf":
             content = self._to_pdf(rows)
         elif kind == "excel":

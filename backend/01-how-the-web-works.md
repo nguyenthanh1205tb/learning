@@ -161,7 +161,7 @@ Một máy có **một IP** nhưng chạy **nhiều dịch vụ**. Port (0-65535
 | 8080, 8000, 3000 | Hay dùng khi dev | Không cần quyền root |
 
 - Port **0-1023** là "well-known", trên Linux cần quyền root để listen
-- Port **49152-65535** (ephemeral) được OS **tự cấp cho phía client** khi kết nối đi
+- Port **ephemeral** do OS **tự cấp cho phía client** khi kết nối đi: Linux mặc định thường **32768–60999** (`/proc/sys/net/ipv4/ip_local_port_range`); IANA khuyến nghị 49152–65535
 
 ### Socket - "Một cuộc điện thoại cụ thể"
 
@@ -1405,7 +1405,7 @@ server {
 
 Khi đi qua proxy, `RemoteAddr` ở app là **IP của proxy**. IP thật nằm trong `X-Forwarded-For: <client>, <proxy1>, <proxy2>`.
 
-> ⚠️ `X-Forwarded-For` **do client gửi được**! Kẻ tấn công có thể tự đặt `X-Forwarded-For: 1.2.3.4` để lách rate limit theo IP. Chỉ tin header này khi request **đến từ proxy của bạn**, và lấy IP ở vị trí do proxy tin cậy của bạn thêm vào (thường là phần tử **cuối cùng** do proxy của bạn append).
+> ⚠️ `X-Forwarded-For` **do client gửi được**! Kẻ tấn công có thể tự đặt `X-Forwarded-For: 1.2.3.4` để lách rate limit theo IP. Chỉ tin header này khi request **đến từ proxy của bạn**. Đếm số hop proxy tin cậy **từ phải sang trái** (hoặc dùng header riêng của CDN như `CF-Connecting-IP`). Chỉ khi có **một** reverse proxy và client nối thẳng thì phần tử proxy append (thường là phải nhất) mới là IP client — chuỗi CDN → nginx → app thì phần tử phải nhất thường là IP của CDN.
 
 ### CDN cache hoạt động thế nào?
 

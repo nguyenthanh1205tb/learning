@@ -1120,7 +1120,7 @@ Bonus: giờ bạn test được cả **biên** (13:59, 14:00, 15:59, 16:00) - �
 
 ## 📖 9. Code coverage: con số dễ gây ảo tưởng
 
-**Coverage** đo **bao nhiêu phần trăm dòng code được chạy qua** khi chạy test. Chú ý: *được chạy qua*, không phải *được kiểm tra*.
+**Coverage** đo **bao nhiêu phần trăm code được chạy qua** khi chạy test — có nhiều loại (line / statement / branch). `go test -cover` mặc định đo **statements**; Python `coverage.py` mặc định đo **lines**. Chú ý: *được chạy qua*, không phải *được kiểm tra*.
 
 ```text
 $ go test -cover ./...

@@ -39,7 +39,7 @@ Khóa học gồm **2 phần**:
 
 ### Phần mềm cần cài đặt
 
-1. **Go** - Phiên bản 1.23 trở lên (khuyến nghị bản mới nhất, ví dụ 1.24). Một số ví dụ dùng tính năng mới như `for i := range 10` (1.22), routing `"GET /todos/{id}"` (1.22), `maps.Keys` + `slices.Sorted` (1.23)
+1. **Go** - Phiên bản **1.24 trở lên** (khuyến nghị bản mới nhất). Một số ví dụ dùng tính năng theo phiên bản: `for i := range 10` và routing `"GET /todos/{id}"` (1.22+), `maps.Keys` + `slices.Sorted` (1.23+), `json:",omitzero"`, `b.Loop()`, `slog.DiscardHandler`, `strings.SplitSeq` (1.24+)
 2. **Visual Studio Code** + extension **Go** (của Go Team at Google) - hoặc GoLand nếu bạn thích JetBrains
 3. **Git** - Để quản lý code và tải package
 4. **Terminal** - PowerShell (Windows), Terminal (macOS/Linux)

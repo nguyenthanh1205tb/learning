@@ -128,7 +128,7 @@ flowchart TD
 | Merge sort | O(n log n) | O(n log n) | O(n log n) | O(n) | ✅ |
 | Quick sort | O(n log n) | O(n log n) | O(n²) | O(log n) | ❌ |
 | Heap sort | O(n log n) | O(n log n) | O(n log n) | O(1) | ❌ |
-| Counting sort | O(n + k) | O(n + k) | O(n + k) | O(k) | ✅ |
+| Counting sort | O(n + k) | O(n + k) | O(n + k) | O(n + k) | ✅ |
 | Radix sort | O(d·(n + b)) | O(d·(n + b)) | O(d·(n + b)) | O(n + b) | ✅ |
 
 ### Đồ thị

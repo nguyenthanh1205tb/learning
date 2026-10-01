@@ -984,6 +984,11 @@ func validatePhone(phone string) error {
 	if len(phone) != 10 || !strings.HasPrefix(phone, "0") {
 		return errors.New("số điện thoại phải có 10 số và bắt đầu bằng 0")
 	}
+	for _, ch := range phone {
+		if !unicode.IsDigit(ch) {
+			return errors.New("số điện thoại phải có 10 số và bắt đầu bằng 0")
+		}
+	}
 	return nil
 }
 
