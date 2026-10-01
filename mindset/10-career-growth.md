@@ -1136,7 +1136,7 @@ Với câu nào dưới 3 điểm, viết **một hành động nhỏ** bạn c�
 
 ## 🎓 Lời kết khóa học
 
-Bạn đã đi hết 10 bài của khóa **Tư duy Software Engineer**: từ việc hiểu nghề là gì, cách giải quyết vấn đề, viết code sạch, thiết kế, debug, testing, ra quyết định, làm việc nhóm, tư duy sản phẩm, đến phát triển sự nghiệp.
+Bạn đã đi hết 10 bài nền của khóa **Tư duy Software Engineer**: từ việc hiểu nghề là gì, cách giải quyết vấn đề, viết code sạch, thiết kế, debug, testing, ra quyết định, làm việc nhóm, tư duy sản phẩm, đến phát triển sự nghiệp. [Bài 11](./11-working-with-ai.md) là cách áp dụng nguyên tắc "bạn chịu trách nhiệm dòng code" khi công cụ viết giúp bạn.
 
 Nhưng tư duy không thay đổi chỉ bằng việc đọc. Nó thay đổi khi bạn **áp dụng** - vào ticket tiếp theo, PR tiếp theo, sự cố tiếp theo, buổi 1:1 tiếp theo. Hãy chọn **một** điều từ khóa học để áp dụng ngay tuần này. Rồi một điều khác vào tuần sau.
 

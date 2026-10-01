@@ -107,6 +107,7 @@ flowchart LR
     subgraph C3["Chặng 3: Con người và sự nghiệp"]
         B8["Bài 8<br/>Teamwork"] --> B9["Bài 9<br/>Tư duy sản phẩm"]
         B9 --> B10["Bài 10<br/>Sự nghiệp"]
+        B10 --> B11["Bài 11<br/>Làm việc với AI"]
     end
     B2 --> B3
     B7 --> B8
@@ -130,6 +131,7 @@ flowchart LR
 - [x] **Bài 8**: [Làm việc nhóm & Giao tiếp](./08-teamwork-communication.md) - Code review, viết tài liệu kỹ thuật, họp hiệu quả, phản hồi, làm việc với PM/QA/designer, xử lý bất đồng
 - [x] **Bài 9**: [Tư duy sản phẩm](./09-product-thinking.md) - Hiểu người dùng và mục tiêu kinh doanh, đo lường tác động, MVP, ưu tiên hóa, "kỹ sư sản phẩm"
 - [x] **Bài 10**: [Phát triển sự nghiệp](./10-career-growth.md) - Học có chủ đích, xây dựng uy tín, mentor, lộ trình IC vs manager, phỏng vấn, kế hoạch phát triển cá nhân
+- [x] **Bài 11**: [Làm việc với AI](./11-working-with-ai.md) - Giao việc có bất biến, review chỗ tiền/quyền/SQL, giữ secret khỏi prompt
 
 ## 📊 Bảng tự đánh giá - Theo dõi sự phát triển của bạn
 

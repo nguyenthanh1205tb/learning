@@ -120,6 +120,9 @@ nav:
       - Bài 12 - Bảo mật Backend: backend/12-security.md
       - Bài 13 - Testing, CI/CD & Deployment: backend/13-testing-cicd-deployment.md
       - Bài 14 - Kiến trúc & Microservices: backend/14-architecture-microservices.md
+      - Bài 15 - Git hằng ngày: backend/15-git.md
+      - Bài 16 - Bẫy tiền, thời gian, chữ: backend/16-production-traps.md
+      - Bài 17 - Dự án shop: backend/17-shop-capstone.md
   - Thuật toán:
       - algorithms/README.md
       - Bài 1 - Độ phức tạp (Big-O): algorithms/01-complexity.md
@@ -151,3 +154,4 @@ nav:
       - Bài 8 - Làm việc nhóm & Giao tiếp: mindset/08-teamwork-communication.md
       - Bài 9 - Tư duy sản phẩm: mindset/09-product-thinking.md
       - Bài 10 - Phát triển sự nghiệp: mindset/10-career-growth.md
+      - Bài 11 - Làm việc với AI: mindset/11-working-with-ai.md
