@@ -17,7 +17,7 @@ Mỗi bài được giải thích **thật chi tiết và dễ hiểu**, dùng v
 - **Thiết kế database quan hệ** từ yêu cầu nghiệp vụ, chuẩn hóa, viết SQL nâng cao (CTE, window function)
 - Hiểu **database từ bên trong**: index, EXPLAIN, transaction, isolation, lock, replication, sharding
 - Biết khi nào dùng **NoSQL** (document, key-value, wide-column, graph) và **cache** (Redis)
-- Xử lý bất đồng bộ bằng **message queue** (RabbitMQ, Kafka), đảm bảo xử lý đúng một lần
+- Xử lý bất đồng bộ bằng **message queue** (RabbitMQ, Kafka): thường **at-least-once**, kết hợp consumer idempotent để hiệu quả như exactly-once
 - **Thiết kế hệ thống** chịu tải lớn: load balancing, scaling, CAP, rate limiting, ước lượng dung lượng
 - Vận hành hệ thống với **observability** (log, metric, trace), SLO, xử lý sự cố
 - **Bảo mật backend** theo OWASP, quản lý secret, chống tấn công phổ biến

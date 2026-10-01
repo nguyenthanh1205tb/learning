@@ -994,7 +994,7 @@ String trong Go **bất biến** (immutable). Mỗi lần `s += "x"` là một l
 
 ### `slices`, `maps` và `sort`
 
-Package `slices` và `maps` (Go 1.21+) là **generics trong thư viện chuẩn** - bạn đã gặp một phần ở [Bài 5](./05-arrays-slices-maps.md). Package `sort` là thế hệ cũ, vẫn gặp nhiều trong code có sẵn.
+Package `slices` và `maps` (Go 1.21+; iterator `Keys`/`Values` từ 1.23+) là **generics trong thư viện chuẩn** - bạn đã gặp một phần ở [Bài 5](./05-arrays-slices-maps.md). Package `sort` là thế hệ cũ, vẫn gặp nhiều trong code có sẵn.
 
 ```go
 package main

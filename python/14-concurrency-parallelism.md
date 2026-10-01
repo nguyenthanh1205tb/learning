@@ -1786,11 +1786,13 @@ def autosave(stop_event: threading.Event) -> None:
 stop = threading.Event()
 t = threading.Thread(target=autosave, args=(stop,))
 t.start()
-time.sleep(0.5)
+time.sleep(1)                           # Đúng đề: yêu cầu dừng sau 1 giây
 stop.set()                              # Yêu cầu dừng
 t.join()
 print("Main kết thúc")
-# Output:
+# Output (khoảng 5 lần lưu với chu kỳ 0.2s trong 1s):
+# 💾 Đã lưu
+# 💾 Đã lưu
 # 💾 Đã lưu
 # 💾 Đã lưu
 # 💾 Đã lưu

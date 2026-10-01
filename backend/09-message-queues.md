@@ -398,7 +398,7 @@ flowchart LR
 | `cleanup.policy=compact` | **Log compaction**: chỉ giữ message **mới nhất cho mỗi key** - hợp với dữ liệu dạng "trạng thái hiện tại" (hồ sơ user, cấu hình) |
 | `replication.factor=3` | Mỗi partition có 3 bản trên 3 broker |
 | `min.insync.replicas=2` | Ghi chỉ thành công khi ≥ 2 bản đã nhận |
-| producer `acks=all` | Producer chờ mọi replica đồng bộ xác nhận - bền nhất |
+| producer `acks=all` | Producer chờ mọi **ISR** (in-sync replicas) xác nhận — kết hợp `min.insync.replicas`; không phải mọi replica trong `replication.factor` |
 | producer `enable.idempotence=true` | Producer retry không tạo message trùng trong partition |
 
 Từ Kafka 4.0, Kafka chạy hoàn toàn ở chế độ **KRaft** (tự quản lý metadata bằng Raft), không còn cần ZooKeeper.
