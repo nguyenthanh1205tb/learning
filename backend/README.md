@@ -23,6 +23,7 @@ Mỗi bài được giải thích **thật chi tiết và dễ hiểu**, dùng v
 - **Bảo mật backend** theo OWASP, quản lý secret, chống tấn công phổ biến
 - **Kiểm thử, CI/CD và triển khai** (Docker, Kubernetes, blue-green, canary)
 - Lựa chọn **kiến trúc**: monolith, modular monolith, microservices, event-driven, DDD
+- Dùng **Git** mỗi ngày, tránh bẫy tiền/giờ/chữ, và hoàn thành một **shop** chạy được (đăng ký, đặt đơn, outbox, cache, metric)
 
 ### 👥 Ai nên học khóa này?
 
@@ -98,6 +99,9 @@ flowchart TB
     B11 --> B14
     B12 --> B14
     B13 --> B14
+    B14 --> B17["17. Shop<br/>một đơn hàng chạy thật"]
+    B15["15. Git"] --> B17
+    B16["16. Tiền, giờ, chữ"] --> B17
 ```
 
 ## 📚 Cấu trúc khóa học
@@ -137,6 +141,12 @@ flowchart TB
 - [ ] **Bài 13**: [Testing, CI/CD & Deployment](./13-testing-cicd-deployment.md) - kim tự tháp test, integration test với container, pipeline CI/CD, Docker, Kubernetes, blue-green, canary, feature flag
 - [ ] **Bài 14**: [Kiến trúc & Microservices](./14-architecture-microservices.md) - monolith vs microservices, clean/hexagonal architecture, DDD, API gateway, saga, event-driven
 
+#### Thực hành: việc làm mỗi ngày và một hệ thống chạy được
+
+- [ ] **Bài 15**: [Git](./15-git.md) - diff, nhánh, merge, rebase, conflict, đọc pull request
+- [ ] **Bài 16**: [Bẫy tiền, thời gian và chữ](./16-production-traps.md) - số nguyên cho tiền, UTC, UTF-8, idempotency key
+- [ ] **Bài 17**: [Dự án shop](./17-shop-capstone.md) - API đăng ký, đăng nhập, đặt một dòng đơn, outbox, cache, metric (`projects/shop`)
+
 > 💡 **Học theo thứ tự nào?** Bài 1-6 là **nền bắt buộc**, nên học theo thứ tự. Sau đó bạn có thể nhảy theo nhu cầu: đang gặp vấn đề hiệu năng → Bài 8, 10; chuẩn bị đưa hệ thống lên production → Bài 11, 12, 13. Bài 14 nên học cuối cùng vì tổng hợp kiến thức của mọi bài trước.
 
 ## 🚀 Bắt đầu học
@@ -147,7 +157,7 @@ flowchart TB
 2. **Chạy lại mọi ví dụ**. Code trong bài đã được chạy thử; hãy tự gõ lại, sửa, làm hỏng nó và quan sát.
 3. **Vẽ lại sơ đồ** bằng tay hoặc Mermaid. Nếu bạn vẽ lại được luồng OAuth2 hay luồng xử lý message mà không nhìn bài, bạn đã hiểu.
 4. **Làm bài tập** ít nhất tới mức "Trung bình". Bài "Khó" và "Thử thách" là thứ sẽ gặp khi đi làm và khi phỏng vấn.
-5. **Xây một dự án xuyên suốt**: ví dụ một backend **đặt vé xem phim** hoặc **shop bán hàng**; sau mỗi bài, thêm tính năng tương ứng (API → đăng nhập → database → cache → queue gửi email → metrics → CI/CD).
+5. **Xây một dự án xuyên suốt**: làm [Bài 17](./17-shop-capstone.md) (`projects/shop`) sau khi đã có API, auth, database và queue. Mỗi bài trước đó là một mảnh của cùng một đơn hàng.
 
 ### Dựng môi trường thí nghiệm nhanh bằng Docker
 
@@ -189,6 +199,9 @@ docker exec -it redis redis-cli PING
 - [ ] Bài 12 - Bảo mật Backend
 - [ ] Bài 13 - Testing, CI/CD & Deployment
 - [ ] Bài 14 - Kiến trúc & Microservices
+- [ ] Bài 15 - Git
+- [ ] Bài 16 - Bẫy tiền, thời gian và chữ
+- [ ] Bài 17 - Dự án shop (`go test ./...` trong `projects/shop`)
 - [ ] 🏆 **Dự án cá nhân**: một backend hoàn chỉnh (API + auth + PostgreSQL + Redis + queue + metrics + CI/CD), có README mô tả kiến trúc bằng sơ đồ
 
 ## 📖 Tài liệu tham khảo

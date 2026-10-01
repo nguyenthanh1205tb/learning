@@ -10,20 +10,21 @@ Tài liệu tự học bằng tiếng Việt để trở thành một Backend En
 | --- | --- | --- |
 | 🐹 **Golang** | Cú pháp Go, struct & interface, error handling, concurrency, file/JSON/CLI, HTTP API, database, production, Docker, gRPC | [golang/README.md](./golang/README.md) |
 | 🐍 **Python** | Cú pháp Python, OOP, file, module, advanced Python, FastAPI, database, xử lý dữ liệu, production | [python/README.md](./python/README.md) |
-| 🏗️ **Backend** | Mạng & HTTP, Linux, thiết kế API, auth, database, NoSQL, cache/Redis, message queue, system design, observability, bảo mật, CI/CD, microservices | [backend/README.md](./backend/README.md) |
+| 🏗️ **Backend** | Mạng & HTTP, Linux, thiết kế API, auth, database, NoSQL, cache/Redis, message queue, system design, observability, bảo mật, CI/CD, microservices, Git, bẫy production, dự án shop | [backend/README.md](./backend/README.md) |
 | 🧮 **Thuật toán** | Big-O, cấu trúc dữ liệu, sắp xếp, tìm kiếm, cây, heap, đồ thị, greedy, quy hoạch động, pattern phỏng vấn — có animation từng bước | [algorithms/README.md](./algorithms/README.md) |
-| 🧠 **Tư duy SE** | Giải quyết vấn đề, clean code, nguyên tắc thiết kế, debug, trade-off, làm việc nhóm, tư duy sản phẩm, phát triển sự nghiệp | [mindset/README.md](./mindset/README.md) |
+| 🧠 **Tư duy SE** | Giải quyết vấn đề, clean code, nguyên tắc thiết kế, debug, trade-off, làm việc nhóm, tư duy sản phẩm, phát triển sự nghiệp, làm việc với AI | [mindset/README.md](./mindset/README.md) |
 
 ## 📁 Cấu trúc thư mục
 
 ```
 .
-├── golang/      # Khóa học Golang (18 bài)
-├── python/      # Khóa học Python (16 bài)
-├── backend/     # Backend Engineering toàn diện (14 bài)
-├── algorithms/  # Cấu trúc dữ liệu & Giải thuật (17 bài)
-├── mindset/     # Tư duy Software Engineer (10 bài)
-└── static/      # JS/CSS cho animation thuật toán trên website
+├── golang/        # Khóa học Golang (18 bài)
+├── python/        # Khóa học Python (16 bài)
+├── backend/       # Backend Engineering (17 bài)
+├── algorithms/    # Cấu trúc dữ liệu & Giải thuật (17 bài)
+├── mindset/       # Tư duy Software Engineer (11 bài)
+├── projects/shop/ # API shop chạy được, đi với Backend bài 17
+└── static/        # JS/CSS cho animation thuật toán trên website
 ```
 
 ## 🧭 Lộ trình gợi ý
@@ -37,6 +38,19 @@ flowchart LR
     D -.-> B
     D -.-> C
 ```
+
+## ⏱️ Lộ trình 6 tuần
+
+Chọn một ngôn ngữ. Bảng dưới dùng Go. Học Python thì đổi các bài Go thành Python 1–7, 12 và 13. Phần còn lại của mỗi khóa để sau, khi lối này đã chạy được một đơn hàng.
+
+| Tuần | Việc |
+| --- | --- |
+| 1 | Go 1–7. Tư duy SE bài 1–2 |
+| 2 | Go 8, 9, 12, 13. Thuật toán bài 1–3 |
+| 3 | Backend 1–4 và [bài 15 (Git)](./backend/15-git.md) |
+| 4 | Backend 5, 6, 8 và [bài 16 (tiền, giờ, chữ)](./backend/16-production-traps.md) |
+| 5 | Backend 9, 11, 12 |
+| 6 | [Shop](./backend/17-shop-capstone.md) (`projects/shop`, `go test ./...`) và [Tư duy SE bài 11](./mindset/11-working-with-ai.md) |
 
 ## 🎯 Cách học
 

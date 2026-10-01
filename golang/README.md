@@ -239,6 +239,7 @@ go run .
 - [ ] Hoàn thành Bài 18: gRPC với Go
 - [ ] Chạy được Go API + PostgreSQL bằng Docker Compose
 - [ ] Viết được 2 service Go giao tiếp với nhau qua gRPC
+- [ ] Chạy [dự án shop](../backend/17-shop-capstone.md) (`projects/shop`) và giữ `go test ./...` xanh
 
 ## 🎯 Tips học hiệu quả
 
