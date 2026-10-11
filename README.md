@@ -13,6 +13,7 @@ Tài liệu tự học bằng tiếng Việt để trở thành một Backend En
 | 🏗️ **Backend** | Mạng & HTTP, Linux, thiết kế API, auth, database, NoSQL, cache/Redis, message queue, system design, observability, bảo mật, CI/CD, microservices, Git, bẫy production, dự án shop | [backend/README.md](./backend/README.md) |
 | 🧮 **Thuật toán** | Big-O, cấu trúc dữ liệu, sắp xếp, tìm kiếm, cây, heap, đồ thị, greedy, quy hoạch động, pattern phỏng vấn — có animation từng bước | [algorithms/README.md](./algorithms/README.md) |
 | 🧠 **Tư duy SE** | Giải quyết vấn đề, clean code, nguyên tắc thiết kế, debug, trade-off, làm việc nhóm, tư duy sản phẩm, phát triển sự nghiệp, làm việc với AI | [mindset/README.md](./mindset/README.md) |
+| 🌐 **Tư duy hệ thống** | Tư duy trong thời đại AI: systems thinking, đặt đúng vấn đề, mental models, tư duy thất bại, từ ý tưởng đến kiến trúc, làm việc với AI, hệ thống có AI, tư duy kiểm chứng | [systems-thinking/README.md](./systems-thinking/README.md) |
 
 ## 📁 Cấu trúc thư mục
 
@@ -23,6 +24,7 @@ Tài liệu tự học bằng tiếng Việt để trở thành một Backend En
 ├── backend/       # Backend Engineering (17 bài)
 ├── algorithms/    # Cấu trúc dữ liệu & Giải thuật (17 bài)
 ├── mindset/       # Tư duy Software Engineer (11 bài)
+├── systems-thinking/ # Tư duy hệ thống trong thời đại AI (10 bài)
 ├── projects/shop/ # API shop chạy được, đi với Backend bài 17
 └── static/        # JS/CSS cho animation thuật toán trên website
 ```
@@ -37,6 +39,8 @@ flowchart LR
     D["Tư duy SE<br/>(học song song)"] -.-> A
     D -.-> B
     D -.-> C
+    C --> E["Tư duy hệ thống<br/>trong thời đại AI"]
+    D --> E
 ```
 
 ## ⏱️ Lộ trình 6 tuần
@@ -65,6 +69,6 @@ Website được build bằng [MkDocs Material](https://squidfunk.github.io/mkdo
 
 ```bash
 pip install -r requirements.txt
-mkdir -p docs && cp -r README.md golang python backend algorithms mindset static docs/
+mkdir -p docs && cp -r README.md golang python backend algorithms mindset systems-thinking static docs/
 mkdocs serve   # mở http://127.0.0.1:8000
 ```
