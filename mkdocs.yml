@@ -3,7 +3,7 @@ site_description: Tài liệu tự học Golang, Python, Backend, Thuật toán 
 site_url: https://nguyenthanh1205tb.github.io/learning/
 repo_url: https://github.com/nguyenthanh1205tb/learning
 
-# Thư mục docs/ được tạo lúc build bằng cách copy README.md, golang/, python/, backend/, algorithms/, mindset/, static/
+# Thư mục docs/ được tạo lúc build bằng cách copy README.md, golang/, python/, backend/, algorithms/, mindset/, systems-thinking/, static/
 # (xem .github/workflows/pages.yml) nên không cần di chuyển file bài học
 docs_dir: docs
 
@@ -155,3 +155,15 @@ nav:
       - Bài 9 - Tư duy sản phẩm: mindset/09-product-thinking.md
       - Bài 10 - Phát triển sự nghiệp: mindset/10-career-growth.md
       - Bài 11 - Làm việc với AI: mindset/11-working-with-ai.md
+  - Tư duy hệ thống:
+      - systems-thinking/README.md
+      - Bài 1 - Vì sao tư duy quan trọng hơn code: systems-thinking/01-why-thinking-matters.md
+      - Bài 2 - Systems Thinking căn bản: systems-thinking/02-systems-thinking-basics.md
+      - Bài 3 - Đặt đúng vấn đề: systems-thinking/03-problem-framing.md
+      - Bài 4 - Mental models cho kỹ sư: systems-thinking/04-mental-models.md
+      - Bài 5 - Tư duy về thất bại: systems-thinking/05-failure-thinking.md
+      - Bài 6 - Từ ý tưởng đến kiến trúc: systems-thinking/06-idea-to-architecture.md
+      - Bài 7 - Làm việc với AI như một kỹ sư: systems-thinking/07-engineering-with-ai.md
+      - Bài 8 - Xây hệ thống có AI bên trong: systems-thinking/08-building-ai-systems.md
+      - Bài 9 - Tư duy kiểm chứng: systems-thinking/09-verification-mindset.md
+      - Bài 10 - Case study tổng hợp: systems-thinking/10-case-studies.md
