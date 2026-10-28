@@ -866,7 +866,7 @@ Vì sao: đó là hai chỗ làm bài này **khác** CRUD - tính đúng khi g�
 
 <details markdown="1"><summary>Đáp án mẫu (khoảng 60 giây nói)</summary>
 
-"Em chỉ retry khi thao tác idempotent hoặc có idempotency key - ví dụ thanh toán thì phải có key, không thì retry có thể trừ tiền hai lần. Em dùng exponential backoff có jitter, ví dụ 100ms, 200ms, 400ms cộng ngẫu nhiên, để các client không retry đồng loạt. Giới hạn 3 lần và có retry budget, khoảng 10% lưu lượng, vì khi dependency đang quá tải, retry không giới hạn sẽ nhân tải lên và biến sự cố nhỏ thành sập dây chuyền. Và em chỉ retry ở **một** tầng - nếu mỗi tầng trong 4 tầng đều retry 3 lần thì request cuối có thể bị gửi 81 lần. Cái giá là độ trễ tăng ở các request lỗi, và cần circuit breaker đi kèm để ngừng hẳn khi dependency chết."
+"Em chỉ retry khi thao tác idempotent hoặc có idempotency key - ví dụ thanh toán thì phải có key, không thì retry có thể trừ tiền hai lần. Em dùng exponential backoff có jitter, ví dụ 100ms, 200ms, 400ms cộng ngẫu nhiên, để các client không retry đồng loạt. Giới hạn 3 lần và có retry budget, khoảng 10% lưu lượng, vì khi dependency đang quá tải, retry không giới hạn sẽ nhân tải lên và biến sự cố nhỏ thành sập dây chuyền. Và em chỉ retry ở **một** tầng - nếu mỗi tầng trong 4 tầng đều thử tối đa 3 lần thì request cuối có thể bị gửi 3^4 = 81 lần. Cái giá là độ trễ tăng ở các request lỗi, và cần circuit breaker đi kèm để ngừng hẳn khi dependency chết."
 
 Chấm: cơ chế (backoff, jitter, budget, một tầng) ✓; trade-off (độ trễ, cần circuit breaker) ✓; ví dụ (thanh toán, 3^4 = 81) ✓.
 
