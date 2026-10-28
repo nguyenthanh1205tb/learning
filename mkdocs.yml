@@ -170,8 +170,8 @@ nav:
   - System Design:
       - system-design/README.md
       - Bài 1 - Framework & ước lượng: system-design/01-framework-estimation.md
-      - Bài 2 - Building blocks: mạng, LB, CDN, gateway: system-design/02-building-blocks-network.md
-      - Bài 3 - Building blocks: cache, replication, sharding: system-design/03-building-blocks-data.md
+      - "Bài 2 - Building blocks: mạng, LB, CDN, gateway": system-design/02-building-blocks-network.md
+      - "Bài 3 - Building blocks: cache, replication, sharding": system-design/03-building-blocks-data.md
       - Bài 4 - Nhất quán, đồng thuận & multi-region: system-design/04-consistency-consensus.md
       - Bài 5 - Messaging & stream processing: system-design/05-messaging-streaming.md
       - Bài 6 - Lưu trữ chuyên dụng: system-design/06-specialized-storage.md
